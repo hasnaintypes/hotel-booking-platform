@@ -510,15 +510,15 @@ const AnalyticsDashboard = () => {
                   <XAxis
                     dataKey="date"
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString()
+                      new Date(String(value)).toLocaleDateString()
                     }
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip
                     labelFormatter={(value) =>
-                      new Date(value).toLocaleDateString()
+                      new Date(String(value)).toLocaleDateString()
                     }
-                    formatter={(value) => [value, "Bookings"]}
+                    formatter={(value) => [String(value ?? ""), "Bookings"]}
                   />
                   <Bar dataKey="bookings" fill="#3B82F6" radius={[4, 4, 0, 0]}>
                     <LabelList
@@ -545,9 +545,14 @@ const AnalyticsDashboard = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ _id, percent, count }) =>
-                      `${_id} ${((percent || 0) * 100).toFixed(0)}% (${count})`
-                    }
+                    label={(props) => {
+                      const { _id, percent, count } = props as unknown as {
+                        _id: string;
+                        percent?: number;
+                        count: number;
+                      };
+                      return `${_id} ${((percent || 0) * 100).toFixed(0)}% (${count})`;
+                    }}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
@@ -560,7 +565,7 @@ const AnalyticsDashboard = () => {
                     ))}
                   </Pie>
                   <Tooltip
-                    formatter={(value) => [value, "Bookings"]}
+                    formatter={(value) => [String(value ?? ""), "Bookings"]}
                     labelFormatter={(label) => String(label)}
                   />
                 </PieChart>
@@ -583,9 +588,14 @@ const AnalyticsDashboard = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ status, percent, count }) =>
-                      `${status} ${((percent || 0) * 100).toFixed(0)}% (${count})`
-                    }
+                    label={(props) => {
+                      const { status, percent, count } = props as unknown as {
+                        status: string;
+                        percent?: number;
+                        count: number;
+                      };
+                      return `${status} ${((percent || 0) * 100).toFixed(0)}% (${count})`;
+                    }}
                     outerRadius={80}
                     dataKey="count"
                     nameKey="status"
@@ -599,7 +609,7 @@ const AnalyticsDashboard = () => {
                       ),
                     )}
                   </Pie>
-                  <Tooltip formatter={(value) => [value, "Bookings"]} />
+                  <Tooltip formatter={(value) => [String(value ?? ""), "Bookings"]} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -826,15 +836,15 @@ const AnalyticsDashboard = () => {
                   <XAxis
                     dataKey="week"
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString()
+                      new Date(String(value)).toLocaleDateString()
                     }
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip
                     labelFormatter={(value) =>
-                      new Date(value).toLocaleDateString()
+                      new Date(String(value)).toLocaleDateString()
                     }
-                    formatter={(value) => [value, "Bookings"]}
+                    formatter={(value) => [String(value ?? ""), "Bookings"]}
                   />
                   <Area
                     type="monotone"
@@ -868,16 +878,16 @@ const AnalyticsDashboard = () => {
                   <XAxis
                     dataKey="week"
                     tickFormatter={(value) =>
-                      new Date(value).toLocaleDateString()
+                      new Date(String(value)).toLocaleDateString()
                     }
                   />
                   <YAxis />
                   <Tooltip
                     labelFormatter={(value) =>
-                      new Date(value).toLocaleDateString()
+                      new Date(String(value)).toLocaleDateString()
                     }
                     formatter={(value) => [
-                      formatCurrency(value as number),
+                      formatCurrency(Number(value)),
                       "Revenue",
                     ]}
                   />
@@ -892,8 +902,8 @@ const AnalyticsDashboard = () => {
                       dataKey="revenue"
                       position="top"
                       className="text-xs fill-gray-700"
-                      formatter={(v: number | string) =>
-                        typeof v === "number" ? `$${Math.round(v)}` : v
+                      formatter={(v) =>
+                        typeof v === "number" ? `$${Math.round(v)}` : String(v ?? "")
                       }
                     />
                   </Line>
@@ -1044,7 +1054,7 @@ const AnalyticsDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="status" />
                   <YAxis allowDecimals={false} />
-                  <Tooltip formatter={(value) => [value, "Bookings"]} />
+                  <Tooltip formatter={(value) => [String(value ?? ""), "Bookings"]} />
                   <Bar dataKey="count" fill="#6366F1" radius={[4, 4, 0, 0]}>
                     <LabelList
                       dataKey="count"
@@ -1137,9 +1147,15 @@ const AnalyticsDashboard = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent, count }) =>
-                          `${name} ${((percent || 0) * 100).toFixed(0)}% (${count})`
-                        }
+                        label={(props) => {
+                          const { name, percent, count } =
+                            props as unknown as {
+                              name: string;
+                              percent?: number;
+                              count: number;
+                            };
+                          return `${name} ${((percent || 0) * 100).toFixed(0)}% (${count})`;
+                        }}
                         outerRadius={80}
                         dataKey="count"
                         nameKey="name"

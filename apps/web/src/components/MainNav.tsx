@@ -18,14 +18,11 @@ const MainNav = () => {
   // Prefetch owner lists on hover so destination chrome + data arrive faster
   const prefetchMyHotels = () => {
     if (!isLoggedIn) return;
-    void queryClient.prefetchQuery("fetchMyHotels", apiClient.fetchMyHotels);
+    void queryClient.prefetchQuery({ queryKey: ["fetchMyHotels"], queryFn: apiClient.fetchMyHotels });
   };
   const prefetchMyBookings = () => {
     if (!isLoggedIn) return;
-    void queryClient.prefetchQuery(
-      "fetchMyBookings",
-      apiClient.fetchMyBookings,
-    );
+    void queryClient.prefetchQuery({ queryKey: ["fetchMyBookings"], queryFn: apiClient.fetchMyBookings });
   };
 
   return (

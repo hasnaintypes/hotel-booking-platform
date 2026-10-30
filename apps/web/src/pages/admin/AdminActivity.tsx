@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../../api-client";
 import type { BookingType, ReviewType } from "@hotel-booking/types";
 
@@ -11,14 +11,14 @@ type ActivityItem = {
 };
 
 const AdminActivity = () => {
-  const { data: bookings, isLoading: bLoading } = useQuery(
-    "fetchAdminBookings",
-    apiClient.fetchAdminBookings,
-  );
-  const { data: reviews, isLoading: rLoading } = useQuery(
-    "fetchAdminReviews",
-    apiClient.fetchAdminReviews,
-  );
+  const { data: bookings, isLoading: bLoading } = useQuery({
+    queryKey: ["fetchAdminBookings"],
+    queryFn: apiClient.fetchAdminBookings,
+  });
+  const { data: reviews, isLoading: rLoading } = useQuery({
+    queryKey: ["fetchAdminReviews"],
+    queryFn: apiClient.fetchAdminReviews,
+  });
 
   const items: ActivityItem[] = [];
   (bookings as BookingType[] | undefined)?.forEach((b) => {

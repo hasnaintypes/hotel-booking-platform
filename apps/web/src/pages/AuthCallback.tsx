@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import useAppContext from "../hooks/useAppContext";
 import { welcomeBackToast } from "../lib/toast-messages";
 import { Loader2 } from "lucide-react";
@@ -46,7 +46,7 @@ const AuthCallback = () => {
       if (name) localStorage.setItem("user_name", name);
       if (image) localStorage.setItem("user_image", image);
 
-      queryClient.invalidateQueries("validateToken");
+      queryClient.invalidateQueries({ queryKey: ["validateToken"] });
       showToast(welcomeBackToast(name || undefined));
       navigate("/");
     } else {

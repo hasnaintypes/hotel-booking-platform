@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import { invalidateReviewQueries } from "../lib/invalidate-queries";
 import { Button } from "./ui/button";
@@ -29,25 +29,26 @@ const WriteReviewForm = ({ hotelId, bookingId, onDone }: Props) => {
   const [comment, setComment] = useState("");
   const [open, setOpen] = useState(false);
 
-  const { mutate, isLoading } = useMutation(apiClient.createHotelReview, {
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: apiClient.createHotelReview,
     onSuccess: async () => {
-      await invalidateReviewQueries(queryClient);
-      showToast({
-        title: "Review submitted",
-        description: "Thanks for sharing your stay experience.",
-        type: "SUCCESS",
-      });
-      setOpen(false);
-      setComment("");
-      onDone?.();
-    },
-    onError: () => {
-      showToast({
-        title: "Could not submit review",
-        description: "You may have already reviewed this booking.",
-        type: "ERROR",
-      });
-    },
+    await invalidateReviewQueries(queryClient);
+    showToast({
+      title: "Review submitted",
+      description: "Thanks for sharing your stay experience.",
+      type: "SUCCESS",
+    });
+    setOpen(false);
+    setComment("");
+    onDone?.();
+  },
+  onError: () => {
+    showToast({
+      title: "Could not submit review",
+      description: "You may have already reviewed this booking.",
+      type: "ERROR",
+    });
+  },
   });
 
   if (!open) {

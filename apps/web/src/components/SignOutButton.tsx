@@ -1,4 +1,4 @@
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
@@ -33,10 +33,10 @@ const SignOutButton = () => {
     onSuccess: async () => {
       // Soft logout: invalidate auth queries; no hard reload so Sonner can show
       await Promise.all([
-        queryClient.invalidateQueries("validateToken"),
-        queryClient.invalidateQueries("fetchCurrentUser"),
+        queryClient.invalidateQueries({ queryKey: ["validateToken"] }),
+        queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
       ]);
-      queryClient.removeQueries("fetchCurrentUser");
+      queryClient.removeQueries({ queryKey: ["fetchCurrentUser"] });
       navigate("/sign-in");
     },
     onError: (error: Error) => {
@@ -52,10 +52,10 @@ const SignOutButton = () => {
   const clearAuthMutation = useMutationWithLoading(apiClient.signOut, {
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries("validateToken"),
-        queryClient.invalidateQueries("fetchCurrentUser"),
+        queryClient.invalidateQueries({ queryKey: ["validateToken"] }),
+        queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
       ]);
-      queryClient.removeQueries("fetchCurrentUser");
+      queryClient.removeQueries({ queryKey: ["fetchCurrentUser"] });
       showToast({
         title: "Auth State Cleared",
         description:

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useQuery } from "react-query";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useQuery } from "@tanstack/react-query";
+import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import * as apiClient from "../../api-client";
 import type { BookingType } from "@hotel-booking/types";
 import { Badge } from "../../components/ui/badge";
@@ -25,12 +25,12 @@ const statusClass = (status?: string) => {
 };
 
 const AdminBookings = () => {
-  const { data: bookings, isLoading } = useQuery(
-    "fetchAdminBookings",
-    apiClient.fetchAdminBookings,
-  );
+  const { data: bookings, isLoading } = useQuery({
+    queryKey: ["fetchAdminBookings"],
+    queryFn: apiClient.fetchAdminBookings,
+  });
 
-  const columns = useMemo<ColumnDef<BookingType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<BookingType, unknown>[]>(
     () => [
       {
         id: "guest",

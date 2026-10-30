@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import { BsBuilding, BsMap } from "react-icons/bs";
@@ -52,27 +52,25 @@ const MyHotels = () => {
   });
 
   // Owner isActive toggle — invalidates My Hotels + search/home/admin hotel lists
-  const activeMutation = useMutation(
-    ({ hotelId, isActive }: { hotelId: string; isActive: boolean }) =>
+  const activeMutation = useMutation({
+    mutationFn: ({ hotelId, isActive }: { hotelId: string; isActive: boolean }) =>
       apiClient.updateMyHotelActive(hotelId, isActive),
-    {
-      onSuccess: async () => {
-        await invalidateHotelQueries(queryClient);
-        showToast({
-          title: "Hotel status updated",
-          description: "Visibility updated. Lists will refresh automatically.",
-          type: "SUCCESS",
-        });
-      },
-      onError: () => {
-        showToast({
-          title: "Failed to update hotel status",
-          description: "Please try again in a moment.",
-          type: "ERROR",
-        });
-      },
+    onSuccess: async () => {
+      await invalidateHotelQueries(queryClient);
+      showToast({
+        title: "Hotel status updated",
+        description: "Visibility updated. Lists will refresh automatically.",
+        type: "SUCCESS",
+      });
     },
-  );
+    onError: () => {
+      showToast({
+        title: "Failed to update hotel status",
+        description: "Please try again in a moment.",
+        type: "ERROR",
+      });
+    },
+  });
 
   if (!isLoggedIn) {
     return (
@@ -440,7 +438,7 @@ const MyHotels = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={activeMutation.isLoading}
+                  disabled={activeMutation.isPending}
                   className="w-full font-medium"
                   onClick={() =>
                     activeMutation.mutate({

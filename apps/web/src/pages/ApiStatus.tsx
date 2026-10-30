@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   Server,
@@ -49,30 +49,28 @@ const ApiStatus = () => {
     isLoading,
     error,
     refetch,
-  } = useQuery<HealthData>(
-    "health",
-    async () => {
+  } = useQuery<HealthData>({
+    queryKey: ["health"],
+    queryFn: async () => {
       const response = await fetch(`${apiBaseUrl}/api/health`);
       if (!response.ok) {
         throw new Error("Health check failed");
       }
       return response.json();
     },
-    {
-      refetchInterval: 30000,
-      retry: 3,
-      retryDelay: 1000,
-    },
-  );
+    refetchInterval: 30000,
+    retry: 3,
+    retryDelay: 1000,
+  });
 
   // Detailed requires JWT — Bearer from localStorage (same as axios interceptor)
   const {
     data: detailedData,
     error: detailedError,
     isError: isDetailedError,
-  } = useQuery<DetailedHealthData>(
-    "detailedHealth",
-    async () => {
+  } = useQuery<DetailedHealthData>({
+    queryKey: ["detailedHealth"],
+    queryFn: async () => {
       const token = localStorage.getItem("session_id");
       const response = await fetch(`${apiBaseUrl}/api/health/detailed`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -85,12 +83,10 @@ const ApiStatus = () => {
       }
       return response.json();
     },
-    {
-      enabled: isDetailed && isLoggedIn,
-      refetchInterval: isDetailed && isLoggedIn ? 30000 : false,
-      retry: false,
-    },
-  );
+    enabled: isDetailed && isLoggedIn,
+    refetchInterval: isDetailed && isLoggedIn ? 30000 : false,
+    retry: false,
+  });
 
   const getStatusIcon = (status: string) => {
     switch (status) {

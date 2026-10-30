@@ -48,8 +48,8 @@ export const signIn = async (formData: SignInFormData) => {
   // Refresh validateToken cache so isLoggedIn flips without full reload
   try {
     await validateToken();
-    await queryClient.invalidateQueries("validateToken");
-    await queryClient.refetchQueries("validateToken");
+    await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
+    await queryClient.refetchQueries({ queryKey: ["validateToken"] });
   } catch {
     // Token stored — UI still works if validate races; do not spam console
   }
@@ -81,9 +81,9 @@ export const validateToken = async () => {
       ?.status;
     if (status === 401) {
       clearAuthStorage();
-      throw new Error("Token invalid");
+      throw new Error("Token invalid", { cause: error });
     }
-    throw new Error("Token validation failed");
+    throw new Error("Token validation failed", { cause: error });
   }
 };
 

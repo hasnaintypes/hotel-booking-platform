@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import LatestDestinationCard from "../components/LastestDestinationCard";
 import Hero from "../components/Hero";
@@ -9,9 +9,11 @@ import { StaggerItem, StaggerScope } from "../components/ui/stagger";
 const DEST_SKELETON_COUNT = 3;
 
 const Home = () => {
-  const { data: hotels, isLoading } = useQuery("fetchQuery", () =>
+  const { data: hotels, isLoading } = useQuery({
+    queryKey: ["fetchQuery"],
+    queryFn: () =>
     apiClient.fetchHotels(),
-  );
+  });
 
   const handleSearch = (_searchData: unknown) => {
     // Search is handled by Hero → SearchContext / navigation

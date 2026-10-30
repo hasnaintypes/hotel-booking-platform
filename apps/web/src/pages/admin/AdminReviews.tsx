@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useQuery } from "react-query";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useQuery } from "@tanstack/react-query";
+import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import { Link } from "react-router-dom";
 import * as apiClient from "../../api-client";
 import type { ReviewType } from "@hotel-booking/types";
@@ -8,12 +8,12 @@ import { Badge } from "../../components/ui/badge";
 import { DataTable } from "../../components/ui/data-table";
 
 const AdminReviews = () => {
-  const { data: reviews, isLoading } = useQuery(
-    "fetchAdminReviews",
-    apiClient.fetchAdminReviews,
-  );
+  const { data: reviews, isLoading } = useQuery({
+    queryKey: ["fetchAdminReviews"],
+    queryFn: apiClient.fetchAdminReviews,
+  });
 
-  const columns = useMemo<ColumnDef<ReviewType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<ReviewType, unknown>[]>(
     () => [
       {
         accessorKey: "rating",

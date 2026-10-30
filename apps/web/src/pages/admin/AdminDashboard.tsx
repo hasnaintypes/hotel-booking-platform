@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import * as apiClient from "../../api-client";
 import { invalidateAdminQueries } from "../../lib/invalidate-queries";
@@ -10,10 +10,10 @@ const AdminDashboard = () => {
   const queryClient = useQueryClient();
   const { showToast } = useAppContext();
 
-  const { data: insights, isLoading: insightsLoading } = useQuery(
-    "fetchAdminBusinessInsightsDashboard",
-    apiClient.fetchAdminBusinessInsightsDashboard,
-  );
+  const { data: insights, isLoading: insightsLoading } = useQuery({
+    queryKey: ["fetchAdminBusinessInsightsDashboard"],
+    queryFn: apiClient.fetchAdminBusinessInsightsDashboard,
+  });
 
   // Rollups via /api/business-insights/rollups (not /analytics — ad-blocker safe)
   const {
@@ -21,68 +21,64 @@ const AdminDashboard = () => {
     isLoading: rollupsLoading,
     isError: rollupsError,
     refetch: refetchRollups,
-  } = useQuery(
-    "fetchBusinessInsightsRollups",
-    apiClient.fetchBusinessInsightsRollups,
-  );
+  } = useQuery({
+    queryKey: ["fetchBusinessInsightsRollups"],
+    queryFn: apiClient.fetchBusinessInsightsRollups,
+  });
 
-  const { mutate: capture, isLoading: capturing } = useMutation(
-    apiClient.createBusinessInsightsRollup,
-    {
-      onSuccess: async () => {
-        await invalidateAdminQueries(queryClient);
-        showToast({
-          title: "Rollup saved",
-          description: "Live figures captured to business insights rollups.",
-          type: "SUCCESS",
-        });
-      },
-      onError: () => {
-        showToast({
-          title: "Rollup failed",
-          description: "Could not create business insights rollup.",
-          type: "ERROR",
-        });
-      },
+  const { mutate: capture, isPending: capturing } = useMutation({
+    mutationFn: apiClient.createBusinessInsightsRollup,
+    onSuccess: async () => {
+      await invalidateAdminQueries(queryClient);
+      showToast({
+        title: "Rollup saved",
+        description: "Live figures captured to business insights rollups.",
+        type: "SUCCESS",
+      });
     },
-  );
+    onError: () => {
+      showToast({
+        title: "Rollup failed",
+        description: "Could not create business insights rollup.",
+        type: "ERROR",
+      });
+    },
+  });
 
   const [insightsDraft, setInsightsDraft] = useState<string | null>(null);
   const [insightsProvider, setInsightsProvider] = useState<string | null>(null);
   const [aiDisabled, setAiDisabled] = useState(false);
 
-  const { mutate: suggestInsights, isLoading: suggesting } = useMutation(
-    () =>
+  const { mutate: suggestInsights, isPending: suggesting } = useMutation({
+    mutationFn: () =>
       apiClient.suggestAiAssist({
         kind: "insights_copy",
         input: JSON.stringify(insights?.overview || {}),
       }),
-    {
-      onSuccess: (data) => {
-        setInsightsDraft(data.draft);
-        setInsightsProvider(data.provider);
-        setAiDisabled(false);
-      },
-      onError: (err: unknown) => {
-        const status = (err as { response?: { status?: number } })?.response
-          ?.status;
-        if (status === 503) {
-          setAiDisabled(true);
-          showToast({
-            title: "AI assist unavailable",
-            description: "Enable AI_ASSIST_ENABLED on the server.",
-            type: "INFO",
-          });
-          return;
-        }
-        showToast({
-          title: "Suggestion failed",
-          description: "Could not generate a draft. Please try again.",
-          type: "ERROR",
-        });
-      },
+    onSuccess: (data) => {
+      setInsightsDraft(data.draft);
+      setInsightsProvider(data.provider);
+      setAiDisabled(false);
     },
-  );
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response
+        ?.status;
+      if (status === 503) {
+        setAiDisabled(true);
+        showToast({
+          title: "AI assist unavailable",
+          description: "Enable AI_ASSIST_ENABLED on the server.",
+          type: "INFO",
+        });
+        return;
+      }
+      showToast({
+        title: "Suggestion failed",
+        description: "Could not generate a draft. Please try again.",
+        type: "ERROR",
+      });
+    },
+  });
 
   const overview = insights?.overview;
 

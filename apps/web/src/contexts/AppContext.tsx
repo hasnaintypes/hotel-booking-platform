@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { toast as sonnerToast } from "sonner";
@@ -48,20 +48,19 @@ export const AppContextProvider = ({
     typeof window !== "undefined" && !!localStorage.getItem("session_id");
 
   // Guests: skip validate-token (avoids expected 401 noise in prod console)
-  const { isError, data } = useQuery(
-    "validateToken",
-    apiClient.validateToken,
-    {
-      retry: false,
-      refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000,
-      enabled: hasStoredToken,
-      onError: () => {
-        // Stale/expired JWT — clear storage so isLoggedIn stays false
-        clearAuthStorage();
-      },
-    }
-  );
+  const { isError, data } = useQuery({
+    queryKey: ["validateToken"],
+    queryFn: apiClient.validateToken,
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+    enabled: hasStoredToken,
+  });
+
+  useEffect(() => {
+    // Stale/expired JWT — clear storage so isLoggedIn stays false
+    if (isError) clearAuthStorage();
+  }, [isError]);
 
   // Optimistic nav chrome: JWT in localStorage → show profile until validate fails
   // (avoids Log In flash on refresh while validateToken is loading)

@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 
@@ -11,11 +11,11 @@ type Props = {
 const AdminRoute = ({ children }: Props) => {
   const { isLoggedIn } = useAppContext();
 
-  const { data: user, isLoading } = useQuery(
-    "fetchCurrentUser",
-    apiClient.fetchCurrentUser,
-    { enabled: isLoggedIn },
-  );
+  const { data: user, isLoading } = useQuery({
+    queryKey: ["fetchCurrentUser"],
+    queryFn: apiClient.fetchCurrentUser,
+    enabled: isLoggedIn,
+  });
 
   if (!isLoggedIn) {
     return <Navigate to="/sign-in" replace />;

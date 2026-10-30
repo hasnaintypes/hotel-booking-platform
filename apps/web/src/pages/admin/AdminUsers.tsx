@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import * as apiClient from "../../api-client";
 import type { UserType } from "@hotel-booking/types";
 import { invalidateAdminQueries } from "../../lib/invalidate-queries";
@@ -28,34 +28,32 @@ const ROLE_ICONS: Record<(typeof ROLES)[number], LucideIcon> = {
 const AdminUsers = () => {
   const queryClient = useQueryClient();
   const { showToast } = useAppContext();
-  const { data: users, isLoading } = useQuery(
-    "fetchAdminUsers",
-    apiClient.fetchAdminUsers,
-  );
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["fetchAdminUsers"],
+    queryFn: apiClient.fetchAdminUsers,
+  });
 
-  const mutation = useMutation(
-    ({ userId, role }: { userId: string; role: (typeof ROLES)[number] }) =>
+  const mutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: (typeof ROLES)[number] }) =>
       apiClient.updateUserRole(userId, role),
-    {
-      onSuccess: async () => {
-        await invalidateAdminQueries(queryClient);
-        showToast({
-          title: "Role updated",
-          description: "User role saved. Admin lists stay in sync.",
-          type: "SUCCESS",
-        });
-      },
-      onError: () => {
-        showToast({
-          title: "Failed to update role",
-          description: "Please try again in a moment.",
-          type: "ERROR",
-        });
-      },
+    onSuccess: async () => {
+      await invalidateAdminQueries(queryClient);
+      showToast({
+        title: "Role updated",
+        description: "User role saved. Admin lists stay in sync.",
+        type: "SUCCESS",
+      });
     },
-  );
+    onError: () => {
+      showToast({
+        title: "Failed to update role",
+        description: "Please try again in a moment.",
+        type: "ERROR",
+      });
+    },
+  });
 
-  const columns = useMemo<ColumnDef<UserType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<UserType, unknown>[]>(
     () => [
       {
         accessorKey: "firstName",
@@ -79,7 +77,7 @@ const AdminUsers = () => {
           return (
             <Select
               value={u.role || "user"}
-              disabled={mutation.isLoading}
+              disabled={mutation.isPending}
               onValueChange={(role) =>
                 mutation.mutate({
                   userId: u._id,

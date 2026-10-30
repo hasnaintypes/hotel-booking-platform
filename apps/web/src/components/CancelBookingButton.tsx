@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import { invalidateBookingQueries } from "../lib/invalidate-queries";
 import { isBookingCancellable } from "../lib/booking-utils";
@@ -20,39 +20,37 @@ const CancelBookingButton = ({ booking, className }: Props) => {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
 
-  const { mutate, isLoading } = useMutation(
-    () =>
+  const { mutate, isPending: isLoading } = useMutation({
+    mutationFn: () =>
       apiClient.cancelBooking(booking._id, {
         cancellationReason: reason.trim() || undefined,
       }),
-    {
-      onSuccess: async (data) => {
-        await invalidateBookingQueries(queryClient);
-        const skipNote = data.refundSkipped ? ` ${data.refundSkipped}` : "";
-        const refundNote =
-          data.refundAmount > 0
-            ? ` Refunded £${data.refundAmount.toFixed(2)}.`
-            : "";
-        showToast({
-          title: "Booking cancelled",
-          description: `${refundNote}${skipNote}`.trim() || "Status updated.",
-          type: "SUCCESS",
-        });
-        setOpen(false);
-        setReason("");
-      },
-      onError: (err: unknown) => {
-        const message =
-          (err as { response?: { data?: { message?: string } } })?.response
-            ?.data?.message || "Could not cancel booking";
-        showToast({
-          title: "Cancel failed",
-          description: message,
-          type: "ERROR",
-        });
-      },
+    onSuccess: async (data) => {
+      await invalidateBookingQueries(queryClient);
+      const skipNote = data.refundSkipped ? ` ${data.refundSkipped}` : "";
+      const refundNote =
+        data.refundAmount > 0
+          ? ` Refunded £${data.refundAmount.toFixed(2)}.`
+          : "";
+      showToast({
+        title: "Booking cancelled",
+        description: `${refundNote}${skipNote}`.trim() || "Status updated.",
+        type: "SUCCESS",
+      });
+      setOpen(false);
+      setReason("");
     },
-  );
+    onError: (err: unknown) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message || "Could not cancel booking";
+      showToast({
+        title: "Cancel failed",
+        description: message,
+        type: "ERROR",
+      });
+    },
+  });
 
   if (!isBookingCancellable(booking)) {
     return null;

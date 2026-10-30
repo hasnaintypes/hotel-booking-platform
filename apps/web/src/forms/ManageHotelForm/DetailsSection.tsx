@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { HotelFormData } from "./ManageHotelForm";
 import * as apiClient from "../../api-client";
 import { Button } from "../../components/ui/button";
@@ -28,39 +28,37 @@ const DetailsSection = () => {
   const [provider, setProvider] = useState<string | null>(null);
   const [aiDisabled, setAiDisabled] = useState(false);
 
-  const { mutate: suggest, isLoading } = useMutation(
-    () =>
+  const { mutate: suggest, isPending: isLoading } = useMutation({
+    mutationFn: () =>
       apiClient.suggestAiAssist({
         kind: "hotel_description",
         input: getValues("description") || getValues("name") || "",
       }),
-    {
-      onSuccess: (data) => {
-        setDraft(data.draft);
-        setProvider(data.provider);
-        setAiDisabled(false);
-      },
-      onError: (err: unknown) => {
-        const status = (err as { response?: { status?: number } })?.response
-          ?.status;
-        if (status === 503) {
-          setAiDisabled(true);
-          showToast({
-            title: "AI assist unavailable",
-            description:
-              "Enable AI_ASSIST_ENABLED on the server to use suggestions.",
-            type: "INFO",
-          });
-          return;
-        }
-        showToast({
-          title: "Suggestion failed",
-          description: "Could not generate a draft.",
-          type: "ERROR",
-        });
-      },
+    onSuccess: (data) => {
+      setDraft(data.draft);
+      setProvider(data.provider);
+      setAiDisabled(false);
     },
-  );
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response
+        ?.status;
+      if (status === 503) {
+        setAiDisabled(true);
+        showToast({
+          title: "AI assist unavailable",
+          description:
+            "Enable AI_ASSIST_ENABLED on the server to use suggestions.",
+          type: "INFO",
+        });
+        return;
+      }
+      showToast({
+        title: "Suggestion failed",
+        description: "Could not generate a draft.",
+        type: "ERROR",
+      });
+    },
+  });
 
   return (
     <div className="flex flex-col gap-4">

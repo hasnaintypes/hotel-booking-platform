@@ -4,7 +4,7 @@ import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { StripeCardElement } from "@stripe/stripe-js";
 import useSearchContext from "../../hooks/useSearchContext";
 import { useParams, useNavigate } from "react-router-dom";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../../api-client";
 import useAppContext from "../../hooks/useAppContext";
 import { Button } from "../../components/ui/button";
@@ -61,32 +61,30 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  const { mutate: bookRoom, isLoading } = useMutation(
-    apiClient.createRoomBooking,
-    {
-      onSuccess: async () => {
-        // My Bookings + hotel lists update immediately without full page refresh
-        await invalidateBookingQueries(queryClient);
-        showToast({
-          title: "Booking Successful",
-          description: "Your hotel booking has been confirmed successfully!",
-          type: "SUCCESS",
-        });
+  const { mutate: bookRoom, isPending: isLoading } = useMutation({
+    mutationFn: apiClient.createRoomBooking,
+    onSuccess: async () => {
+      // My Bookings + hotel lists update immediately without full page refresh
+      await invalidateBookingQueries(queryClient);
+      showToast({
+        title: "Booking Successful",
+        description: "Your hotel booking has been confirmed successfully!",
+        type: "SUCCESS",
+      });
 
-        setTimeout(() => {
-          navigate("/my-bookings");
-        }, 1500);
-      },
-      onError: () => {
-        showToast({
-          title: "Booking Failed",
-          description:
-            "There was an error processing your booking. Please try again.",
-          type: "ERROR",
-        });
-      },
+      setTimeout(() => {
+        navigate("/my-bookings");
+      }, 1500);
     },
-  );
+    onError: () => {
+      showToast({
+        title: "Booking Failed",
+        description:
+          "There was an error processing your booking. Please try again.",
+        type: "ERROR",
+      });
+    },
+  });
 
   const { handleSubmit, register } = useForm<BookingFormData>({
     defaultValues: {

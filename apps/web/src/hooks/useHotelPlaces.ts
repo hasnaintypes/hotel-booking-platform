@@ -1,4 +1,5 @@
-import { useQuery } from "react-query";
+import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import {
   HOTEL_PLACES_QUERY_KEY,
@@ -14,9 +15,9 @@ import {
  * Soft localStorage TTL avoids hammering /api/hotels; CRUD clears cache + invalidates this key.
  */
 export function useHotelPlaces() {
-  const query = useQuery(
-    HOTEL_PLACES_QUERY_KEY,
-    async () => {
+  const query = useQuery({
+    queryKey: [HOTEL_PLACES_QUERY_KEY],
+    queryFn: async () => {
       const soft = readHotelPlacesCache();
       if (soft) return soft;
 
@@ -25,14 +26,13 @@ export function useHotelPlaces() {
       writeHotelPlacesCache(places);
       return places;
     },
-    {
-      staleTime: HOTEL_PLACES_TTL_MS,
-      // After invalidateHotelQueries clears LS, refetch must hit the network
-      onError: () => {
-        clearHotelPlacesCache();
-      },
-    },
-  );
+    staleTime: HOTEL_PLACES_TTL_MS,
+  });
+
+  useEffect(() => {
+    // After invalidateHotelQueries clears LS, refetch must hit the network
+    if (query.isError) clearHotelPlacesCache();
+  }, [query.isError]);
 
   return {
     places: query.data ?? [],

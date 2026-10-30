@@ -1,4 +1,4 @@
-import { QueryClient } from "react-query";
+import { QueryClient } from "@tanstack/react-query";
 import {
   fetchBusinessInsightsDashboard,
   fetchBusinessInsightsForecast,
@@ -33,51 +33,42 @@ export const invalidateBusinessInsightsQueries = async (
   queryClient: QueryClient,
 ) => {
   await Promise.all([
-    queryClient.invalidateQueries("business-insights-dashboard"),
-    queryClient.invalidateQueries("business-insights-forecast"),
-    queryClient.invalidateQueries("business-insights-ops"),
-    queryClient.invalidateQueries("fetchAdminBusinessInsightsDashboard"),
-    queryClient.invalidateQueries("fetchBusinessInsightsRollups"),
+    queryClient.invalidateQueries({ queryKey: ["business-insights-dashboard"] }),
+    queryClient.invalidateQueries({ queryKey: ["business-insights-forecast"] }),
+    queryClient.invalidateQueries({ queryKey: ["business-insights-ops"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchAdminBusinessInsightsDashboard"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchBusinessInsightsRollups"] }),
   ]);
 };
 
 /** Prefetch Insights tabs on nav hover (MainNav / MobileNavLinks) */
 export const prefetchBusinessInsightsQueries = (queryClient: QueryClient) => {
-  void queryClient.prefetchQuery(
-    "business-insights-dashboard",
-    fetchBusinessInsightsDashboard,
-  );
-  void queryClient.prefetchQuery(
-    "business-insights-forecast",
-    fetchBusinessInsightsForecast,
-  );
-  void queryClient.prefetchQuery(
-    "business-insights-ops",
-    fetchBusinessInsightsSystemStats,
-  );
+  void queryClient.prefetchQuery({ queryKey: ["business-insights-dashboard"], queryFn: fetchBusinessInsightsDashboard });
+  void queryClient.prefetchQuery({ queryKey: ["business-insights-forecast"], queryFn: fetchBusinessInsightsForecast });
+  void queryClient.prefetchQuery({ queryKey: ["business-insights-ops"], queryFn: fetchBusinessInsightsSystemStats });
 };
 
 export const invalidateHotelQueries = async (queryClient: QueryClient) => {
   // Soft LS cache must drop before RQ refetch or AdvancedSearch/SearchBar stay stale
   clearHotelPlacesCache();
   await Promise.all([
-    queryClient.invalidateQueries("fetchMyHotels"),
-    queryClient.invalidateQueries("fetchMyHotelById"),
-    queryClient.invalidateQueries("fetchQuery"),
-    queryClient.invalidateQueries("searchHotels"),
-    queryClient.invalidateQueries("fetchHotels"),
-    queryClient.invalidateQueries("fetchHotelById"),
-    queryClient.invalidateQueries("fetchHotelByID"),
-    queryClient.invalidateQueries(HOTEL_PLACES_QUERY_KEY),
+    queryClient.invalidateQueries({ queryKey: ["fetchMyHotels"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchMyHotelById"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchQuery"] }),
+    queryClient.invalidateQueries({ queryKey: ["searchHotels"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchHotels"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchHotelById"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchHotelByID"] }),
+    queryClient.invalidateQueries({ queryKey: [HOTEL_PLACES_QUERY_KEY] }),
     invalidateBusinessInsightsQueries(queryClient),
   ]);
 };
 
 export const invalidateBookingQueries = async (queryClient: QueryClient) => {
   await Promise.all([
-    queryClient.invalidateQueries("fetchMyBookings"),
-    queryClient.invalidateQueries("fetchHotelBookings"),
-    queryClient.invalidateQueries("fetchAdminBookings"),
+    queryClient.invalidateQueries({ queryKey: ["fetchMyBookings"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchHotelBookings"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchAdminBookings"] }),
     invalidateHotelQueries(queryClient),
   ]);
 };
@@ -85,8 +76,8 @@ export const invalidateBookingQueries = async (queryClient: QueryClient) => {
 /** After create/update review — refresh detail, my-hotels stats, admin lists */
 export const invalidateReviewQueries = async (queryClient: QueryClient) => {
   await Promise.all([
-    queryClient.invalidateQueries("fetchHotelReviews"),
-    queryClient.invalidateQueries("fetchAdminReviews"),
+    queryClient.invalidateQueries({ queryKey: ["fetchHotelReviews"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchAdminReviews"] }),
     invalidateHotelQueries(queryClient),
   ]);
 };
@@ -94,10 +85,10 @@ export const invalidateReviewQueries = async (queryClient: QueryClient) => {
 /** Admin shell lists + rollups + current user (role changes refresh Admin link) */
 export const invalidateAdminQueries = async (queryClient: QueryClient) => {
   await Promise.all([
-    queryClient.invalidateQueries("fetchAdminUsers"),
-    queryClient.invalidateQueries("fetchAdminReviews"),
-    queryClient.invalidateQueries("fetchAdminBookings"),
-    queryClient.invalidateQueries("fetchCurrentUser"),
+    queryClient.invalidateQueries({ queryKey: ["fetchAdminUsers"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchAdminReviews"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchAdminBookings"] }),
+    queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
     invalidateHotelQueries(queryClient),
   ]);
 };

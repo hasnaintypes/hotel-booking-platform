@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "react-query";
-import type { ColumnDef } from "@tanstack/react-table";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import * as apiClient from "../../api-client";
 import type { HotelType } from "@hotel-booking/types";
 import { Badge } from "../../components/ui/badge";
@@ -13,34 +13,32 @@ import useAppContext from "../../hooks/useAppContext";
 const AdminHotels = () => {
   const queryClient = useQueryClient();
   const { showToast } = useAppContext();
-  const { data: hotels, isLoading } = useQuery(
-    "fetchHotels",
-    apiClient.fetchHotels,
-  );
+  const { data: hotels, isLoading } = useQuery({
+    queryKey: ["fetchHotels"],
+    queryFn: apiClient.fetchHotels,
+  });
 
-  const mutation = useMutation(
-    ({ hotelId, isActive }: { hotelId: string; isActive: boolean }) =>
+  const mutation = useMutation({
+    mutationFn: ({ hotelId, isActive }: { hotelId: string; isActive: boolean }) =>
       apiClient.updateHotelActive(hotelId, isActive),
-    {
-      onSuccess: async () => {
-        await invalidateAdminQueries(queryClient);
-        showToast({
-          title: "Hotel status updated",
-          description: "Visibility updated. Lists will refresh automatically.",
-          type: "SUCCESS",
-        });
-      },
-      onError: () => {
-        showToast({
-          title: "Failed to update hotel",
-          description: "Please try again in a moment.",
-          type: "ERROR",
-        });
-      },
+    onSuccess: async () => {
+      await invalidateAdminQueries(queryClient);
+      showToast({
+        title: "Hotel status updated",
+        description: "Visibility updated. Lists will refresh automatically.",
+        type: "SUCCESS",
+      });
     },
-  );
+    onError: () => {
+      showToast({
+        title: "Failed to update hotel",
+        description: "Please try again in a moment.",
+        type: "ERROR",
+      });
+    },
+  });
 
-  const columns = useMemo<ColumnDef<HotelType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<HotelType, unknown>[]>(
     () => [
       {
         accessorKey: "name",
@@ -77,7 +75,7 @@ const AdminHotels = () => {
               type="button"
               variant="outline"
               size="sm"
-              disabled={mutation.isLoading}
+              disabled={mutation.isPending}
               onClick={() =>
                 mutation.mutate({
                   hotelId: h._id,

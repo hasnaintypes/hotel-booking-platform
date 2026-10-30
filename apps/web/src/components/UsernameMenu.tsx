@@ -7,7 +7,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { Separator } from "./ui/separator";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import {
   Plus,
@@ -42,11 +42,11 @@ const UsernameMenu = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
 
-  const { data: currentUser } = useQuery(
-    "fetchCurrentUser",
-    apiClient.fetchCurrentUser,
-    { enabled: isLoggedIn },
-  );
+  const { data: currentUser } = useQuery({
+    queryKey: ["fetchCurrentUser"],
+    queryFn: apiClient.fetchCurrentUser,
+    enabled: isLoggedIn,
+  });
 
   const email = localStorage.getItem("user_email");
   const name = localStorage.getItem("user_name");
@@ -64,10 +64,10 @@ const UsernameMenu = () => {
     await apiClient.signOut();
     setIsOpen(false);
     await Promise.all([
-      queryClient.invalidateQueries("validateToken"),
-      queryClient.invalidateQueries("fetchCurrentUser"),
+      queryClient.invalidateQueries({ queryKey: ["validateToken"] }),
+      queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
     ]);
-    queryClient.removeQueries("fetchCurrentUser");
+    queryClient.removeQueries({ queryKey: ["fetchCurrentUser"] });
     navigate("/");
   };
 

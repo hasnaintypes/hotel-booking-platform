@@ -1,4 +1,4 @@
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import * as apiClient from "../api-client";
 import BookingForm from "../forms/BookingForm/BookingForm";
 import useSearchContext from "../hooks/useSearchContext";
@@ -33,30 +33,26 @@ const Booking = () => {
     }
   }, [search.checkIn, search.checkOut]);
 
-  const { data: paymentIntentData, isLoading: isLoadingPayment } = useQuery(
-    "createPaymentIntent",
-    () =>
+  const { data: paymentIntentData, isLoading: isLoadingPayment } = useQuery({
+    queryKey: ["createPaymentIntent"],
+    queryFn: () =>
       apiClient.createPaymentIntent(
         hotelId as string,
         numberOfNights.toString(),
       ),
-    {
-      enabled: !!hotelId && numberOfNights > 0,
-    },
-  );
+    enabled: !!hotelId && numberOfNights > 0,
+  });
 
-  const { data: hotel, isLoading: isLoadingHotel } = useQuery(
-    "fetchHotelByID",
-    () => apiClient.fetchHotelById(hotelId as string),
-    {
-      enabled: !!hotelId,
-    },
-  );
+  const { data: hotel, isLoading: isLoadingHotel } = useQuery({
+    queryKey: ["fetchHotelByID"],
+    queryFn: () => apiClient.fetchHotelById(hotelId as string),
+    enabled: !!hotelId,
+  });
 
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery(
-    "fetchCurrentUser",
-    apiClient.fetchCurrentUser,
-  );
+  const { data: currentUser, isLoading: isLoadingUser } = useQuery({
+    queryKey: ["fetchCurrentUser"],
+    queryFn: apiClient.fetchCurrentUser,
+  });
 
   if (isLoadingHotel || isLoadingUser) {
     return (
