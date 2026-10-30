@@ -1,0 +1,73 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Put,
+  UploadedFiles,
+  UseGuards,
+  UseInterceptors,
+} from "@nestjs/common";
+import { FilesInterceptor } from "@nestjs/platform-express";
+import multer from "multer";
+import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
+import { MyHotelsService } from "./my-hotels.service";
+
+const uploadOptions = {
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+};
+
+@Controller("api/my-hotels")
+@UseGuards(JwtAuthGuard)
+export class MyHotelsController {
+  constructor(private readonly myHotelsService: MyHotelsService) {}
+
+  @Post()
+  @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
+  create(
+    @Body() body: Record<string, any>,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.myHotelsService.create(body, files, user.userId);
+  }
+
+  @Get()
+  findAll(@CurrentUser() user: AuthenticatedUser) {
+    return this.myHotelsService.findAll(user.userId);
+  }
+
+  @Get(":id")
+  findOne(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.myHotelsService.findOne(id, user.userId);
+  }
+
+  @Patch(":id/active")
+  setActive(
+    @Param("id") id: string,
+    @Body("isActive") isActive: unknown,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    if (typeof isActive !== "boolean") {
+      throw new BadRequestException("isActive boolean required");
+    }
+    return this.myHotelsService.setActive(id, isActive, user.userId);
+  }
+
+  @Put(":hotelId")
+  @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
+  update(
+    @Param("hotelId") hotelId: string,
+    @Body() body: Record<string, any>,
+    @UploadedFiles() files: Express.Multer.File[],
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.myHotelsService.update(hotelId, body, files, user.userId);
+  }
+}

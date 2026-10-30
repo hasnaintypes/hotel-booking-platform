@@ -1,711 +1,244 @@
-# Hotel Booking Management System Backend - React, Express.js MERN Project
+# Hotel Booking API
 
-A production-ready, scalable backend API for the Hotel Booking Management System. Built with Node.js, Express.js, TypeScript, and MongoDB, featuring secure authentication, real-time booking management, and third-party integrations.
+NestJS 11 + TypeScript + Mongoose backend for the Hotel Booking platform. The API preserves the existing HTTP contract (`/api/*`) while using a modular Nest application structure: feature modules, controllers, services, DTOs, guards, and schema definitions.
 
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
-[![Express](https://img.shields.io/badge/Express-4.18-black)](https://expressjs.com/)
-[![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7-646CFF)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.5-38B2AC)](https://tailwindcss.com/)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF)](https://stripe.com/)
+## Stack
 
----
+| Concern       | Technology                                                        |
+| ------------- | ----------------------------------------------------------------- |
+| Runtime       | Node.js 22, TypeScript 6                                          |
+| Framework     | NestJS 11 (`@nestjs/platform-express`)                            |
+| Database      | MongoDB + Mongoose 9 via `@nestjs/mongoose`                       |
+| Auth          | `@nestjs/jwt`, bcryptjs, custom `JwtAuthGuard`, optional Google OAuth |
+| Validation    | `class-validator` + `class-transformer` (global `ValidationPipe`) |
+| Docs          | `@nestjs/swagger` at `/api-docs`                                  |
+| Security      | Helmet, `@nestjs/throttler`, CORS allowlist, cookie parser        |
+| Logging       | `nestjs-pino` / `pino-http`                                       |
+| Payments      | Stripe PaymentIntents                                             |
+| Images        | Cloudinary + multer memory storage                                |
+| AI assist     | Groq / OpenAI / OpenRouter with a deterministic stub fallback     |
 
-## 🎯 Backend Overview
+## Structure
 
-### **What This Backend Provides**
-
-This backend serves as the **core API engine** for a comprehensive hotel booking platform. It handles all server-side operations including user authentication, hotel management, booking processing, payment integration, and business analytics.
-
-### **Core Responsibilities**
-
-- **🔐 Authentication & Authorization**: JWT-based secure user management
-- **🏨 Hotel Management**: CRUD operations for hotel listings and details
-- **📅 Booking System**: Real-time booking creation and management
-- **💳 Payment Processing**: Stripe integration for secure transactions
-- **📊 Analytics Engine**: Business insights and performance metrics
-- **🖼️ File Management**: Cloudinary integration for image handling
-- **🔒 Security**: Rate limiting, CORS, input validation, and data protection
-
-### **Architecture Highlights**
-
-```bash
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Express.js    │    │   MongoDB      │    │   JWT Auth      │
-│   (API Server)  │◄──►│   (Database)   │◄──►│   (Security)    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Multer        │    │   Cloudinary    │    │   Stripe        │
-│  (File Upload)  │    │  (Image Mgmt)   │    │  (Payments)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-```
-
----
-
-## 🚀 Quick Start
-
-### **Prerequisites**
-
-- Node.js (v18 or higher)
-- MongoDB (local or Atlas)
-- Git
-
-### **Installation**
-
-```bash
-# Clone the repository
-git clone https://github.com/<your-org>/hotel-booking-platform.git
-cd hotel-booking-platform
-
-# Install workspace dependencies
-pnpm install
-
-# Create environment file
-cd apps/api
-cp .env.example .env
-
-# Configure environment variables (see below)
-# Start development server
-pnpm dev
-```
-
-### **Environment Configuration**
-
-Create a `.env` file in the root directory:
-
-```env
-# Server Configuration
-PORT=5001
-NODE_ENV=development
-
-# Database
-MONGODB_CONNECTION_STRING=mongodb+srv://username:password@cluster.mongodb.net/hotel-booking
-
-# Authentication
-JWT_SECRET_KEY=your-super-secure-jwt-secret-key-here
-
-# Frontend URL (for CORS)
-FRONTEND_URL=http://localhost:5174
-
-# Cloudinary (Image Storage)
-CLOUDINARY_CLOUD_NAME=your-cloud-name
-CLOUDINARY_API_KEY=your-api-key
-CLOUDINARY_API_SECRET=your-api-secret
-
-# Stripe (Payment Processing)
-STRIPE_API_KEY=sk_test_your-stripe-secret-key
-```
-
----
-
-## 📁 Project Structure
-
-```bash
+```text
 apps/api/
 ├── src/
-│   ├── index.ts                    # Server entry point & Express app setup
-│   ├── swagger.ts                  # API documentation configuration
-│   ├── middleware/
-│   │   └── auth.ts                 # JWT authentication middleware
-│   ├── models/
-│   │   ├── user.ts                 # User data model
-│   │   ├── hotel.ts                # Hotel data model
-│   │   ├── booking.ts              # Booking data model
-│   │   ├── review.ts               # Review data model
-│   │   └── analytics.ts            # Analytics data model
-│   ├── routes/
-│   │   ├── auth.ts                 # Authentication endpoints
-│   │   ├── users.ts                # User management endpoints
-│   │   ├── hotels.ts               # Hotel search & public endpoints
-│   │   ├── my-hotels.ts            # Hotel owner management
-│   │   ├── bookings.ts             # Booking management
-│   │   ├── my-bookings.ts          # User booking history
-│   │   ├── business-insights.ts    # Analytics & business insights
-│   │   └── health.ts               # Health check endpoints
-│   └── shared/
-│       └── types.ts               # Shared TypeScript types
-├── dist/                          # Compiled JavaScript output
-├── package.json                   # Dependencies & scripts
-├── tsconfig.json                  # TypeScript configuration
-└── README.md                      # This file
+│   ├── main.ts                     # bootstrap, global middleware, Swagger
+│   ├── app.module.ts               # root module composition
+│   ├── app.controller.ts           # GET / banner
+│   ├── config/
+│   │   ├── configuration.ts        # typed config factory
+│   │   ├── env.validation.ts       # required env fail-fast
+│   │   └── swagger.config.ts       # OpenAPI document setup
+│   ├── common/
+│   │   ├── decorators/             # @CurrentUser, @Roles
+│   │   ├── guards/                 # JwtAuthGuard, RolesGuard
+│   │   ├── filters/                # AllExceptionsFilter
+│   │   ├── types/                  # JwtPayload
+│   │   └── common.module.ts
+│   ├── database/
+│   │   ├── database.module.ts      # global Mongoose forRoot/forFeature
+│   │   ├── models.ts               # model name constants
+│   │   └── seeds/seed.ts           # demo data seed
+│   ├── integrations/
+│   │   ├── stripe/                 # StripeService
+│   │   ├── cloudinary/             # CloudinaryService
+│   │   └── llm/                    # LlmService (provider failover)
+│   └── modules/
+│       ├── auth/                   # login, Google OAuth, token validation, logout
+│       ├── users/                  # registration, profile, roles
+│       ├── hotels/                 # search, detail, visibility, booking/payment
+│       ├── my-hotels/              # owner CRUD + multipart image upload
+│       ├── bookings/               # booking management
+│       ├── reviews/                # hotel reviews
+│       ├── business-insights/      # dashboard, forecast, system stats
+│       ├── analytics/              # rollup snapshots
+│       ├── ai/                     # hotel description drafting
+│       └── health/                 # liveness + detailed health
+├── Dockerfile
+├── nest-cli.json
+├── tsconfig.json
+└── tsconfig.build.json
 ```
 
----
+Each feature module contains its controller, service, DTOs, and (where relevant) Mongoose schemas. Schemas export raw `Schema` objects; `DatabaseModule` registers them globally with `MongooseModule.forFeature`.
 
-## 🔧 Technology Stack
+## Environment
 
-### **Core Technologies**
+Copy `.env.example` to `.env` in `apps/api` and fill in the values.
 
-- **Node.js 18+**: JavaScript runtime environment
-- **Express.js 4.18+**: Web application framework
-- **TypeScript 5.0+**: Type-safe JavaScript development
-- **MongoDB 6.0+**: NoSQL database
-- **Mongoose 7.0+**: MongoDB object modeling
+### Required
 
-### **Authentication & Security**
+| Variable                    | Purpose                          |
+| --------------------------- | -------------------------------- |
+| `MONGODB_CONNECTION_STRING` | MongoDB connection URI           |
+| `JWT_SECRET_KEY`            | JWT signing secret               |
+| `CLOUDINARY_CLOUD_NAME`     | Cloudinary cloud name            |
+| `CLOUDINARY_API_KEY`        | Cloudinary API key               |
+| `CLOUDINARY_API_SECRET`     | Cloudinary API secret            |
+| `STRIPE_API_KEY`            | Stripe secret key (`sk_test_…`)  |
 
-- **JWT**: JSON Web Token authentication
-- **bcryptjs**: Password hashing and verification
-- **express-rate-limit**: API rate limiting
-- **helmet**: Security middleware
-- **cors**: Cross-origin resource sharing
+The app exits during startup if any required variable is missing (`config/env.validation.ts`).
 
-### **File & Media Handling**
+### Optional
 
-- **Multer**: File upload middleware
-- **Cloudinary**: Cloud image storage and management
+| Variable                  | Default                        | Purpose                                    |
+| ------------------------- | ------------------------------ | ------------------------------------------ |
+| `PORT`                    | `5001`                         | HTTP port                                  |
+| `NODE_ENV`                | `development`                  | Runtime mode                               |
+| `FRONTEND_URL`            | `http://localhost:5174`        | CORS + OAuth redirect target               |
+| `BACKEND_URL`             | `http://localhost:${PORT}`     | Public API origin for Google `redirect_uri`|
+| `GOOGLE_ID` / `GOOGLE_SECRET` | —                          | Google OAuth                               |
+| `AI_ASSIST_ENABLED`       | `false`                        | Enables the AI draft endpoint              |
+| `GROQ_API_KEY` / `GROQ_MODEL` | —                          | Groq provider                              |
+| `OPENAI_API_KEY` / `OPENAI_MODEL` | —                      | OpenAI provider                            |
+| `OPENROUTER_API_KEY` / `OPENROUTER_MODEL` | —                | OpenRouter provider                        |
 
-### **Payment Processing**
+Google OAuth callback locally: `http://localhost:5001/api/auth/callback/google`.
 
-- **Stripe**: Payment gateway integration
-- **Stripe Node.js SDK**: Official Stripe library
+## Scripts
 
-### **Development & Monitoring**
-
-- **Morgan**: HTTP request logging
-- **Swagger**: API documentation
-- **Nodemon**: Development server with auto-restart
-
----
-
-## 🔌 API Endpoints
-
-### **Authentication Routes** (`/api/auth`)
-
-| Method | Endpoint          | Description        | Auth Required |
-| ------ | ----------------- | ------------------ | ------------- |
-| `POST` | `/login`          | User login         | ❌            |
-| `POST` | `/logout`         | User logout        | ✅            |
-| `GET`  | `/validate-token` | Validate JWT token | ✅            |
-
-### **User Management** (`/api/users`)
-
-| Method | Endpoint    | Description              | Auth Required |
-| ------ | ----------- | ------------------------ | ------------- |
-| `POST` | `/register` | Create new user account  | ❌            |
-| `GET`  | `/me`       | Get current user profile | ✅            |
-
-### **Hotel Management** (`/api/hotels`)
-
-| Method | Endpoint  | Description                | Auth Required |
-| ------ | --------- | -------------------------- | ------------- |
-| `GET`  | `/`       | List all hotels            | ❌            |
-| `GET`  | `/:id`    | Get hotel by ID            | ❌            |
-| `GET`  | `/search` | Search hotels with filters | ❌            |
-
-### **Hotel Owner Routes** (`/api/my-hotels`)
-
-| Method   | Endpoint | Description        | Auth Required |
-| -------- | -------- | ------------------ | ------------- |
-| `POST`   | `/`      | Create new hotel   | ✅            |
-| `GET`    | `/`      | List user's hotels | ✅            |
-| `GET`    | `/:id`   | Get specific hotel | ✅            |
-| `PUT`    | `/:id`   | Update hotel       | ✅            |
-| `DELETE` | `/:id`   | Delete hotel       | ✅            |
-
-### **Booking Management** (`/api/bookings`)
-
-| Method | Endpoint      | Description        | Auth Required |
-| ------ | ------------- | ------------------ | ------------- |
-| `POST` | `/hotels/:id` | Create booking     | ✅            |
-| `GET`  | `/hotel/:id`  | Get hotel bookings | ✅            |
-
-### **User Bookings** (`/api/my-bookings`)
-
-| Method | Endpoint | Description                | Auth Required |
-| ------ | -------- | -------------------------- | ------------- |
-| `GET`  | `/`      | Get user's booking history | ✅            |
-
-### **Business Insights** (`/api/business-insights`)
-
-| Method | Endpoint       | Description              | Auth Required |
-| ------ | -------------- | ------------------------ | ------------- |
-| `GET`  | `/dashboard`   | Analytics dashboard data | ✅            |
-| `GET`  | `/forecast`    | Business forecasting     | ✅            |
-| `GET`  | `/performance` | Performance metrics      | ✅            |
-
-### **Health Check** (`/api/health`)
-
-| Method | Endpoint    | Description             | Auth Required |
-| ------ | ----------- | ----------------------- | ------------- |
-| `GET`  | `/`         | Basic health check      | ❌            |
-| `GET`  | `/detailed` | Detailed system metrics | ❌            |
-
----
-
-## 🔐 Authentication System
-
-### **Dual Authentication Strategy**
-
-This backend implements a **dual authentication system** to support both modern browsers and privacy-focused browsers (incognito, Tor):
-
-```typescript
-// Authentication middleware
-const verifyToken = (req: Request, res: Response, next: NextFunction) => {
-  // First, check Authorization header (for privacy browsers)
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.substring(7);
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
-      req.userId = decoded.userId;
-      return next();
-    } catch (error) {
-      // Continue to cookie check
-    }
-  }
-
-  // Fallback to cookie-based auth (for normal browsers)
-  const token = req.cookies.auth_token;
-  if (!token) {
-    return res.status(401).json({ message: "unauthorized" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY!);
-    req.userId = decoded.userId;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: "unauthorized" });
-  }
-};
-```
-
-### **Login Response**
-
-```typescript
-// Login endpoint returns both cookie and token
-res.cookie("auth_token", token, {
-  httpOnly: true,
-  secure: true,
-  sameSite: "none",
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  path: "/",
-});
-
-res.status(200).json({
-  userId: user._id,
-  token: token, // For privacy-focused browsers
-  message: "Login successful",
-});
-```
-
----
-
-## 🗄️ Database Models
-
-### **User Model**
-
-```typescript
-interface UserType {
-  _id: string;
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: "user" | "admin" | "hotel_owner";
-  phone?: string;
-  address?: Address;
-  totalBookings?: number;
-  totalSpent?: number;
-  lastLogin?: Date;
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-```
-
-### **Hotel Model**
-
-```typescript
-interface HotelType {
-  _id: string;
-  userId: string;
-  name: string;
-  city: string;
-  country: string;
-  description: string;
-  type: string[];
-  adultCount: number;
-  childCount: number;
-  facilities: string[];
-  pricePerNight: number;
-  starRating: number;
-  imageUrls: string[];
-  contact?: Contact;
-  policies?: Policies;
-  totalBookings?: number;
-  totalRevenue?: number;
-  averageRating?: number;
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-```
-
-### **Booking Model**
-
-```typescript
-interface BookingType {
-  _id: string;
-  userId: string;
-  hotelId: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  adultCount: number;
-  childCount: number;
-  checkIn: Date;
-  checkOut: Date;
-  totalCost: number;
-  status: "pending" | "confirmed" | "cancelled" | "completed";
-  paymentStatus: "pending" | "paid" | "failed";
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-```
-
----
-
-## 🔒 Security Features
-
-### **Rate Limiting**
-
-```typescript
-import rateLimit from "express-rate-limit";
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use(limiter);
-```
-
-### **CORS Configuration**
-
-```typescript
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-  }),
-);
-```
-
-### **Input Validation**
-
-```typescript
-import { body } from "express-validator";
-
-const validateHotel = [
-  body("name").notEmpty().withMessage("Name is required"),
-  body("city").notEmpty().withMessage("City is required"),
-  body("pricePerNight").isNumeric().withMessage("Price must be a number"),
-  body("facilities").isArray().withMessage("Facilities must be an array"),
-];
-```
-
----
-
-## 💳 Payment Integration
-
-### **Stripe Payment Flow**
-
-```typescript
-// Create payment intent
-export const createPaymentIntent = async (req: Request, res: Response) => {
-  try {
-    const { numberOfNights } = req.body;
-    const hotelId = req.params.hotelId;
-
-    const hotel = await Hotel.findById(hotelId);
-    if (!hotel) {
-      return res.status(404).json({ message: "Hotel not found" });
-    }
-
-    const totalCost = hotel.pricePerNight * numberOfNights;
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalCost * 100, // Convert to cents
-      currency: "usd",
-      metadata: {
-        hotelId,
-        userId: req.userId,
-      },
-    });
-
-    res.json({
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret,
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error creating payment intent" });
-  }
-};
-```
-
----
-
-## 🖼️ File Upload System
-
-### **Cloudinary Integration**
-
-```typescript
-// Image upload middleware
-const uploadImages = async (imageFiles: any[]) => {
-  const uploadPromises = imageFiles.map(async (image) => {
-    const b64 = Buffer.from(image.buffer).toString("base64");
-    let dataURI = "data:" + image.mimetype + ";base64," + b64;
-
-    const res = await cloudinary.v2.uploader.upload(dataURI, {
-      folder: "hotel-booking",
-      transformation: [
-        { width: 800, height: 600, crop: "fill" },
-        { quality: "auto" },
-      ],
-    });
-
-    return res.url;
-  });
-
-  return await Promise.all(uploadPromises);
-};
-```
-
----
-
-## 📊 Analytics Engine
-
-### **Business Insights API**
-
-```typescript
-// Analytics dashboard endpoint
-export const getAnalyticsDashboard = async (req: Request, res: Response) => {
-  try {
-    const userId = req.userId;
-
-    // Get user's hotels
-    const hotels = await Hotel.find({ userId });
-    const hotelIds = hotels.map((hotel) => hotel._id);
-
-    // Calculate metrics
-    const totalRevenue = await Booking.aggregate([
-      { $match: { hotelId: { $in: hotelIds } } },
-      { $group: { _id: null, total: { $sum: "$totalCost" } } },
-    ]);
-
-    const totalBookings = await Booking.countDocuments({
-      hotelId: { $in: hotelIds },
-    });
-
-    res.json({
-      totalRevenue: totalRevenue[0]?.total || 0,
-      totalBookings,
-      averageRating: 4.5,
-      occupancyRate: 75.2,
-      // More metrics...
-    });
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching analytics" });
-  }
-};
-```
-
----
-
-## 🚀 Deployment
-
-### **Coolify Deployment (VPS)**
-
-1. **Connect Repository**
-   - Add your GitHub repository to Coolify
-   - Set root directory: repo root (Dockerfile: `apps/api/Dockerfile`)
-
-2. **Build Configuration**
-
-   ```bash
-   Build Command: npm run build
-   Start Command: npm start
-   ```
-
-3. **Environment Variables**
-   - Set all required environment variables in Coolify
-   - Ensure `NODE_ENV=production`
-
-4. **Deploy**
-   - Coolify deploys from your VPS; trigger redeploy after pushing changes
-   - Monitor deployment logs for any issues
-
-### **Production Checklist**
-
-- [ ] Environment variables configured
-- [ ] MongoDB Atlas cluster set up
-- [ ] Cloudinary production account
-- [ ] Stripe production keys
-- [ ] CORS settings updated for production domain
-- [ ] Rate limiting configured
-- [ ] Error monitoring enabled
-
----
-
-## 🧪 Testing
-
-### **API Testing**
+Run from `apps/api` or filter from the repo root.
 
 ```bash
-# Test health endpoint (replace with your backend URL)
-curl https://your-backend-domain.com/api/health
-
-# Test authentication
-curl -X POST https://your-backend-domain.com/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
+pnpm --filter @hotel-booking/api dev        # nest start --watch
+pnpm --filter @hotel-booking/api build      # nest build -> dist/apps/api/src/main.js
+pnpm --filter @hotel-booking/api start      # node dist/apps/api/src/main.js
+pnpm --filter @hotel-booking/api typecheck  # tsc --noEmit
+pnpm --filter @hotel-booking/api lint       # eslint
+pnpm --filter @hotel-booking/api seed       # reset + seed demo data
 ```
 
-### **Load Testing**
+The build uses `rootDir: "../.."` so it can consume `@hotel-booking/types` source directly.
+
+## Request lifecycle
+
+1. `ConfigModule.forRoot` loads and validates environment variables.
+2. Global middleware: Helmet, compression, cookie parser, CORS, JSON body parser, Pino HTTP logging.
+3. `ValidationPipe` runs with `whitelist`, `transform`, and `enableImplicitConversion`.
+4. Route guards run (`JwtAuthGuard`, then `RolesGuard` when `@Roles` is present).
+5. The controller delegates to a feature service.
+6. `AllExceptionsFilter` normalises errors to the legacy `{ message }` shape, except controller-thrown payloads such as `{ error, message }` from business insights.
+
+Authentication reads `Authorization: Bearer <token>` first and falls back to the `session_id` cookie. Logout clears the same cookie.
+
+## Endpoints
+
+Base URL locally: `http://localhost:5001`
+
+### Auth — `/api/auth`
+
+| Method | Path               | Auth | Description                          |
+| ------ | ------------------ | ---- | ------------------------------------ |
+| GET    | `/google`          | —    | Start Google OAuth                   |
+| GET    | `/callback/google` | —    | OAuth callback, redirect with token  |
+| POST   | `/login`           | —    | Email/password login                 |
+| GET    | `/validate-token`  | JWT  | Validate token, return `{ userId }`  |
+| POST   | `/logout`          | —    | Clear session cookie                 |
+
+### Users — `/api/users`
+
+| Method | Path        | Auth  | Description                  |
+| ------ | ----------- | ----- | ---------------------------- |
+| POST   | `/register` | —     | Register a user              |
+| GET    | `/me`       | JWT   | Current profile              |
+| GET    | `/`         | Admin | List users                   |
+| PATCH  | `/:id/role` | Admin | Update a user role           |
+
+### Hotels — `/api/hotels`
+
+| Method | Path                                | Auth | Description                       |
+| ------ | ----------------------------------- | ---- | --------------------------------- |
+| GET    | `/`                                 | —    | List hotels                       |
+| GET    | `/search`                           | —    | Filtered, paginated search        |
+| GET    | `/:id`                              | —    | Hotel detail                      |
+| PATCH  | `/:id/active`                       | Admin| Toggle visibility                 |
+| POST   | `/:hotelId/bookings/payment-intent` | JWT  | Create Stripe PaymentIntent       |
+| POST   | `/:hotelId/bookings`                | JWT  | Confirm booking after payment     |
+
+Search query params: `destination`, `adultCount`, `childCount`, `facilities[]`, `types[]`, `stars[]`, `maxPrice`, `sortOption`, `page`.
+
+### My hotels — `/api/my-hotels`
+
+| Method | Path         | Auth | Description                       |
+| ------ | ------------ | ---- | --------------------------------- |
+| POST   | `/`          | JWT  | Create hotel with multipart images|
+| GET    | `/`          | JWT  | List owned hotels                 |
+| GET    | `/:id`       | JWT  | Get one owned hotel               |
+| PUT    | `/:hotelId`  | JWT  | Update owned hotel                |
+
+### My bookings — `/api/my-bookings`
+
+| Method | Path | Auth | Description                                  |
+| ------ | ---- | ---- | -------------------------------------------- |
+| GET    | `/`  | JWT  | Guest bookings with populated hotel details  |
+
+### Bookings — `/api/bookings`
+
+| Method | Path              | Auth | Description                         |
+| ------ | ----------------- | ---- | ----------------------------------- |
+| GET    | `/`               | JWT  | List bookings                       |
+| GET    | `/hotel/:hotelId` | JWT  | Bookings for a hotel                |
+| GET    | `/:id`            | JWT  | Booking by id                       |
+| PATCH  | `/:id/status`     | JWT  | Update status                       |
+| PATCH  | `/:id/payment`    | JWT  | Update payment status               |
+| POST   | `/:id/cancel`     | JWT  | Cancel booking                      |
+| DELETE | `/:id`            | JWT  | Delete booking and adjust totals    |
+
+### Reviews — `/api/reviews`
+
+| Method | Path | Auth  | Description          |
+| ------ | ---- | ----- | -------------------- |
+| GET    | `/`  | Admin | List all reviews     |
+| POST   | `/`  | JWT   | Create a hotel review|
+
+### Business insights — `/api/business-insights`
+
+| Method | Path                                          | Auth    | Description   |
+| ------ | --------------------------------------------- | ------- | ------------- |
+| GET    | `/dashboard` · `/dashboard/public`             | JWT / — | Metrics       |
+| GET    | `/forecast` · `/forecast/public`               | JWT / — | Forecast      |
+| GET    | `/system-stats` · `/system-stats/public`       | JWT / — | System stats  |
+
+### Analytics — `/api/business-insights`
+
+| Method | Path       | Auth  | Description                    |
+| ------ | ---------- | ----- | ------------------------------ |
+| POST   | `/rollups` | Admin | Persist an analytics snapshot  |
+
+### AI — `/api/ai`
+
+| Method | Path       | Auth | Description                    |
+| ------ | ---------- | ---- | ------------------------------ |
+| POST   | `/suggest` | JWT  | Draft a hotel description      |
+
+### Health — `/api/health`
+
+| Method | Path        | Auth | Description                                        |
+| ------ | ----------- | ---- | -------------------------------------------------- |
+| GET    | `/`         | —    | Liveness, timestamp, database status               |
+| GET    | `/detailed` | JWT  | Rounded memory, uptime, and database details       |
+
+Interactive documentation: `http://localhost:5001/api-docs`.
+
+## Seed data
 
 ```bash
-# Install artillery for load testing
-npm install -g artillery
-
-# Run load test
-artillery quick --count 20 --num 10 https://your-backend-domain.com/api/health
+pnpm --filter @hotel-booking/api seed
 ```
 
----
+This drops and reseeds `User`, `Hotel`, `Booking`, `Review`, and `Analytics` collections. Demo logins after seeding:
 
-## 🔧 Development Commands
+- `test@user.com` / `12345678` (admin)
+- `owner@hotel.com` / `12345678`
+- `guest@user.com` / `12345678`
+
+## Deployment
+
+The Dockerfile builds from the repository root so workspace packages are available:
 
 ```bash
-# Development with hot reload
-pnpm dev
-
-# Build for production
-pnpm build
-
-# Start production server
-pnpm start
-
-# Type checking
-pnpm typecheck
+docker build -f apps/api/Dockerfile -t hotel-booking-api .
 ```
 
----
-
-## 📈 Performance Optimization
-
-### **Database Optimization**
-
-- **Indexing**: Strategic indexes on frequently queried fields
-- **Aggregation**: Efficient data aggregation for analytics
-- **Pagination**: Implemented for large datasets
-- **Caching**: Redis integration ready for high-traffic scenarios
-
-### **API Optimization**
-
-- **Compression**: Gzip compression enabled
-- **Rate Limiting**: Prevents API abuse
-- **Request Validation**: Early validation to prevent unnecessary processing
-- **Error Handling**: Comprehensive error handling with proper HTTP status codes
-
----
-
-## 🔗 Integration Examples
-
-### **Frontend Integration**
-
-```typescript
-// Example: Fetch hotels with search
-const searchHotels = async (searchParams: SearchParams) => {
-  const queryParams = new URLSearchParams();
-  Object.entries(searchParams).forEach(([key, value]) => {
-    if (value) queryParams.append(key, value.toString());
-  });
-
-  const response = await fetch(
-    `${API_BASE_URL}/api/hotels/search?${queryParams}`,
-  );
-
-  if (!response.ok) {
-    throw new Error("Error fetching hotels");
-  }
-
-  return response.json();
-};
-```
-
-### **Mobile App Integration**
-
-```typescript
-// Example: React Native integration
-const apiClient = {
-  baseURL: "https://your-backend-domain.com/api",
-
-  async request(endpoint: string, options: RequestInit = {}) {
-    const response = await fetch(`${this.baseURL}${endpoint}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    return response.json();
-  },
-};
-```
-
----
-
-## 🎯 Key Features Summary
-
-### **✅ Production Ready**
-
-- **Scalable Architecture**: Modular design for easy scaling
-- **Security First**: Comprehensive security measures
-- **Error Handling**: Robust error handling and logging
-- **Performance Optimized**: Efficient database queries and caching
-
-### **✅ Developer Friendly**
-
-- **TypeScript**: Full type safety throughout
-- **Clear Documentation**: Comprehensive API documentation
-- **Modular Design**: Easy to extend and maintain
-- **Testing Ready**: Built with testing in mind
-
-### **✅ Business Ready**
-
-- **Payment Processing**: Complete Stripe integration
-- **Analytics**: Real-time business insights
-- **Multi-tenant**: Supports multiple hotel owners
-- **Audit Trail**: Complete booking and transaction history
-
----
-
-## 🚀 Happy Coding! 🎉
-
-This backend is designed to be **production-ready**, **developer-friendly**, and **business-focused**. Whether you're learning full-stack development, building a startup, or extending an existing platform, this backend provides a solid foundation.
-
-**Key Benefits:**
-
-- 🎓 **Learning Resource**: Complete MERN stack backend implementation
-- 🏢 **Business Ready**: Production-grade features and security
-- 🔧 **Extensible**: Easy to add new features and integrations
-- 📚 **Well Documented**: Comprehensive documentation and examples
-
-**Get Started Today!** 🚀
-
-This is an **open-source project** - feel free to use, enhance, and extend this project further!
-
-**Enjoy building and learning!** 🚀
-
-Thank you! 😊
+Runtime command: `node dist/apps/api/src/main.js`. The container health check calls `GET /api/health` on `PORT` (default `5001`). Provide all required environment variables in the hosting platform.

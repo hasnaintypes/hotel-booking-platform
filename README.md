@@ -1,15 +1,15 @@
-# Hotel Booking Management System — React, Express.js Full-Stack MERN Project
+# Hotel Booking Management System — React + NestJS Full-Stack TypeScript Project
 
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
-[![Express](https://img.shields.io/badge/Express-4.18-black)](https://expressjs.com/)
-[![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7-646CFF)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.5-38B2AC)](https://tailwindcss.com/)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
+[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-22+-green)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC)](https://tailwindcss.com/)
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF)](https://stripe.com/)
 
-A production-style **hotel booking platform** for learning full-stack TypeScript: guests search and book with **Stripe**, owners manage hotels with **Cloudinary** images, and everyone can explore a **Business Insights** dashboard. Built as a **MERN** monorepo (MongoDB · Express · React · Node) with a Vite SPA frontend.
+A production-style **hotel booking platform** for learning full-stack TypeScript: guests search and book with **Stripe**, owners manage hotels with **Cloudinary** images, and everyone can explore a **Business Insights** dashboard. Built as a **TypeScript** monorepo (MongoDB · NestJS · React) with a Vite SPA frontend.
 
 ![Screenshot 2025-09-04 at 12 02 23](https://github.com/user-attachments/assets/7b87581f-8a1a-4de4-99c3-ba5fab14f20d)
 ![Screenshot 2025-09-04 at 12 03 00](https://github.com/user-attachments/assets/76e284bb-4324-4798-8e87-0079aab65a57)
@@ -60,12 +60,12 @@ This repository is designed as a **teaching project**. By reading and running it
 
 | Topic                                     | Where it shows up                          |
 | ----------------------------------------- | ------------------------------------------ |
-| REST API design with Express + TypeScript | `apps/api/src/routes/`                     |
-| JWT auth + optional Google OAuth          | `routes/auth.ts`, `middleware/auth.ts`     |
-| Mongoose schemas & relations              | `models/`                                  |
+| REST API design with NestJS + TypeScript  | `apps/api/src/modules/`                    |
+| JWT auth + optional Google OAuth          | `modules/auth/`, `common/guards/`          |
+| Mongoose schemas + Nest DI                | `modules/*/schemas/`, `database/`          |
 | React SPA routing & layouts               | `app/App.tsx`, `shared/components/layout/` |
 | Feature modules + React Query             | `features/*/api.ts`, `features/*/context/` |
-| File uploads → Cloudinary                 | `routes/my-hotels.ts`                      |
+| File uploads → Cloudinary                 | `modules/my-hotels/`                       |
 | Card payments with Stripe PaymentIntents  | booking routes + `BookingForm`             |
 | Tailwind + shadcn/ui-style primitives     | `shared/components/ui/`                    |
 | Monorepo shared contracts                 | `packages/types/src/index.ts`              |
@@ -95,7 +95,7 @@ This repository is designed as a **teaching project**. By reading and running it
 - Interactive **Swagger** API docs (`/api-docs`)
 - **API status** health UI (`/api-status`)
 - **Business Insights** dashboard (`/business-insights`) with Recharts
-- Rate limiting, Helmet, compression, Morgan logging on the API
+- Rate limiting, Helmet, compression, and Pino logging on the API
 
 > **Note:** `Review` and `Analytics` Mongoose models exist for future work; live insights currently aggregate from `Hotel`, `User`, and `Booking`.
 
@@ -108,11 +108,11 @@ This repository is designed as a **teaching project**. By reading and running it
 | Layer         | Technology                                         | Role (beginner view)                        |
 | ------------- | -------------------------------------------------- | ------------------------------------------- |
 | Database      | **MongoDB** + **Mongoose**                         | Stores users, hotels, bookings as documents |
-| API           | **Node.js** + **Express**                          | HTTP server; routes = endpoints             |
-| UI            | **React 18** + **Vite**                            | SPA — fast HMR in development               |
+| API           | **Node.js** + **NestJS 11**                        | HTTP server; modules + controllers           |
+| UI            | **React 19** + **Vite 8**                          | SPA — fast HMR in development               |
 | Language      | **TypeScript**                                     | Types catch bugs before runtime             |
 | Styling       | **Tailwind CSS** + **Radix / shadcn-style UI**     | Utility CSS + accessible primitives         |
-| Data fetching | **React Query (v3)** + **Axios**                   | Cache server data; attach JWT               |
+| Data fetching | **React Query (v5)** + **Axios**                   | Cache server data; attach JWT               |
 | Auth          | **JWT** + **bcryptjs** + optional **Google OAuth** | Stateless login; hashed passwords           |
 | Payments      | **Stripe**                                         | PaymentIntents; confirm then create booking |
 | Media         | **Cloudinary** + **multer**                        | Image CDN after upload                      |
@@ -134,7 +134,7 @@ This repository is designed as a **teaching project**. By reading and running it
 Browser (React SPA :5174)
         │  HTTPS JSON + JWT Bearer
         ▼
-Express API (:5001)
+NestJS API (:5001)
         ├── MongoDB Atlas
         ├── Stripe
         ├── Cloudinary
@@ -145,7 +145,7 @@ Express API (:5001)
 
 1. React page calls a function in its feature's `api.ts`
 2. Axios (`shared/api/client.ts`) adds the Bearer token
-3. Express route (+ optional `verifyToken`) runs
+3. Nest controller (+ optional `JwtAuthGuard`) runs
 4. Mongoose reads/writes MongoDB
 5. JSON returns → React Query caches / invalidates
 
@@ -156,13 +156,15 @@ Express API (:5001)
 ```text
 hotel-booking-platform/
 ├── apps/
-│   ├── api/                   # Express API (@hotel-booking/api)
+│   ├── api/                   # NestJS API (@hotel-booking/api)
 │   │   ├── src/
-│   │   │   ├── index.ts       # boot, middleware, mounts
-│   │   │   ├── middleware/    # JWT verify / admin guard
-│   │   │   ├── models/        # User, Hotel, Booking, Review*, Analytics*
-│   │   │   ├── routes/        # REST handlers
-│   │   │   └── swagger.ts
+│   │   │   ├── main.ts        # bootstrap, middleware, Swagger
+│   │   │   ├── app.module.ts  # root module wiring
+│   │   │   ├── config/        # typed config, env validation, Swagger
+│   │   │   ├── common/        # guards, decorators, exception filter
+│   │   │   ├── database/      # global Mongoose wiring + seed
+│   │   │   ├── integrations/  # Stripe, Cloudinary, LLM providers
+│   │   │   └── modules/       # auth, users, hotels, bookings, reviews…
 │   │   ├── Dockerfile
 │   │   └── .env.example
 │   └── web/                   # Vite React SPA (@hotel-booking/web)
@@ -204,7 +206,7 @@ hotel-booking-platform/
 
 | Package      | Required to start?  | Notes                                                                                            |
 | ------------ | ------------------- | ------------------------------------------------------------------------------------------------ |
-| **Backend**  | **Yes**             | App **exits** if required vars are missing (`index.ts` fail-fast). Copy `.env.example` → `.env`. |
+| **Backend**  | **Yes**             | App **exits** if required vars are missing (`config/env.validation.ts` fail-fast). Copy `.env.example` → `.env`. |
 | **Frontend** | **Mostly optional** | SPA boots without a file, but set `.env` so API + Stripe point to the right places.              |
 
 Never commit real `.env` files (they are gitignored). Examples are safe templates.
@@ -390,31 +392,32 @@ export const fetchMyHotels = async () => {
 
 ## Backend walkthrough
 
-### Boot sequence (`src/index.ts`)
+### Boot sequence (`src/main.ts` + `src/app.module.ts`)
 
-1. Load `dotenv`
-2. **Fail fast** if required env vars missing
-3. Configure Cloudinary
-4. Connect MongoDB
-5. Apply middleware (Helmet, rate limit, compression, Morgan, CORS, cookies, JSON)
-6. Mount routes
-7. Listen on `PORT` (default **5001**)
+1. `ConfigModule.forRoot` loads `.env`, validates required variables, and exposes typed config
+2. `NestFactory.create(AppModule)` builds the dependency graph (global Mongoose, JWT, throttler, feature modules)
+3. Global middleware runs: Helmet, compression, cookie parser, CORS allowlist, JSON body parsing, Pino HTTP logging
+4. Global `ValidationPipe` validates DTOs and strips unknown fields
+5. `AllExceptionsFilter` keeps the legacy `{ message }` error shape
+6. Swagger is mounted at `/api-docs`; the app listens on `PORT` (default **5001**)
 
-### Middleware highlights
+### Request pipeline highlights
 
 - **`helmet`** — security headers
-- **`express-rate-limit`** — general `/api/*` + stricter payment path
-- **`cors`** — allows `FRONTEND_URL`, localhost Vite ports, `*.vercel.app`, `*.netlify.app`
-- **`verifyToken`** — reads JWT from `Authorization: Bearer` or cookie `session_id`
+- **`@nestjs/throttler`** — global rate limit; stricter limit on the payment-intent route
+- **CORS** — allows `FRONTEND_URL`, localhost Vite ports, `*.vercel.app`, `*.netlify.app`
+- **`JwtAuthGuard`** — reads Bearer token first, then the `session_id` cookie
+- **`RolesGuard` + `@Roles(...)`** — role checks for admin/owner routes
+- **`ValidationPipe`** — `whitelist`, `transform`, implicit conversion
 
 ### Data models
 
-| Model              | File                | Idea                                        |
-| ------------------ | ------------------- | ------------------------------------------- |
-| User               | `models/user.ts`    | email, hashed password, profile, totals     |
-| Hotel              | `models/hotel.ts`   | owner `userId`, pricing, images, policies   |
-| Booking            | `models/booking.ts` | separate collection (not embedded in Hotel) |
-| Review / Analytics | schemas only        | future REST                                 |
+| Model              | File                                            | Idea                                        |
+| ------------------ | ----------------------------------------------- | ------------------------------------------- |
+| User               | `modules/users/schemas/user.schema.ts`          | email, hashed password, profile, totals     |
+| Hotel              | `modules/hotels/schemas/hotel.schema.ts`        | owner `userId`, pricing, images, policies   |
+| Booking            | `modules/bookings/schemas/booking.schema.ts`    | separate collection (not embedded in Hotel) |
+| Review / Analytics | `modules/reviews|analytics/schemas/*.schema.ts` | reviews + rollup snapshots                  |
 
 ---
 
@@ -589,7 +592,7 @@ import { HotelType } from "@hotel-booking/types";
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ---
 
@@ -656,7 +659,7 @@ pnpm --filter @hotel-booking/web build
 
 ## Keywords
 
-`MERN` · `MongoDB` · `Express` · `React` · `Node.js` · `TypeScript` · `Vite` · `Tailwind CSS` · `React Query` · `Axios` · `JWT` · `OAuth` · `bcrypt` · `Stripe PaymentIntent` · `Cloudinary` · `multer` · `Mongoose` · `Swagger` · `Helmet` · `rate limiting` · `Recharts` · `Vercel` · `Coolify` · `Docker` · `hotel booking` · `full-stack` · `open source`
+`MERN` · `MongoDB` · `NestJS` · `React` · `Node.js` · `TypeScript` · `Vite` · `Tailwind CSS` · `React Query` · `Axios` · `JWT` · `OAuth` · `bcrypt` · `Stripe PaymentIntent` · `Cloudinary` · `multer` · `Mongoose` · `Swagger` · `Helmet` · `rate limiting` · `Pino` · `class-validator` · `Recharts` · `Vercel` · `Coolify` · `Docker` · `hotel booking` · `full-stack` · `open source`
 
 ---
 
@@ -666,6 +669,6 @@ This project is a complete, production-flavored **hotel booking** codebase you c
 
 ---
 
-## Happy Coding! 🎉
+## Happy Coding
 
 This is an **open-source project** — feel free to use, enhance, and extend this project further!
