@@ -59,17 +59,18 @@ This backend serves as the **core API engine** for a comprehensive hotel booking
 ```bash
 # Clone the repository
 git clone https://github.com/<your-org>/hotel-booking-platform.git
-cd hotel-booking-backend
+cd hotel-booking-platform
 
-# Install dependencies
-npm install
+# Install workspace dependencies
+pnpm install
 
 # Create environment file
+cd apps/api
 cp .env.example .env
 
 # Configure environment variables (see below)
 # Start development server
-npm run dev
+pnpm dev
 ```
 
 ### **Environment Configuration**
@@ -104,7 +105,7 @@ STRIPE_API_KEY=sk_test_your-stripe-secret-key
 ## 📁 Project Structure
 
 ```bash
-hotel-booking-backend/
+apps/api/
 ├── src/
 │   ├── index.ts                    # Server entry point & Express app setup
 │   ├── swagger.ts                  # API documentation configuration
@@ -527,7 +528,7 @@ export const getAnalyticsDashboard = async (req: Request, res: Response) => {
 
 1. **Connect Repository**
    - Add your GitHub repository to Coolify
-   - Set root directory: `hotel-booking-backend`
+   - Set root directory: repo root (Dockerfile: `apps/api/Dockerfile`)
 
 2. **Build Configuration**
 
@@ -586,19 +587,16 @@ artillery quick --count 20 --num 10 https://your-backend-domain.com/api/health
 
 ```bash
 # Development with hot reload
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
 # Start production server
-npm start
+pnpm start
 
 # Type checking
-npm run type-check
-
-# Lint code
-npm run lint
+pnpm typecheck
 ```
 
 ---

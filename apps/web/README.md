@@ -58,17 +58,18 @@ This frontend serves as the **user interface** for a comprehensive hotel booking
 ```bash
 # Clone the repository
 git clone https://github.com/<your-org>/hotel-booking-platform.git
-cd hotel-booking-frontend
+cd hotel-booking-platform
 
-# Install dependencies
-npm install
+# Install workspace dependencies
+pnpm install
 
 # Create environment file
+cd apps/web
 cp .env.example .env
 
 # Configure environment variables (see below)
 # Start development server
-npm run dev
+pnpm dev
 ```
 
 ### **Environment Configuration**
@@ -91,7 +92,7 @@ VITE_GOOGLE_ANALYTICS_ID=GA_MEASUREMENT_ID
 ## 📁 Project Structure
 
 ```bash
-hotel-booking-frontend/
+apps/web/
 ├── public/
 │   └── vite.svg                # App icon and favicon
 ├── src/
@@ -602,7 +603,7 @@ const createPaymentIntent = async (hotelId: string, numberOfNights: string) => {
 2. **Build Configuration**
 
    ```bash
-   Build Command: npm run build
+   Build Command: pnpm build
    Publish Directory: dist
    ```
 
@@ -654,22 +655,22 @@ test("renders search bar", () => {
 
 ```bash
 # Development with hot reload
-npm run dev
+pnpm dev
 
 # Build for production
-npm run build
+pnpm build
 
 # Preview production build
-npm run preview
+pnpm preview
 
 # Type checking
-npm run type-check
+pnpm typecheck
 
 # Lint code
-npm run lint
+pnpm lint
 
-# Format code
-npm run format
+# Format code (repo root)
+pnpm format
 ```
 
 ---

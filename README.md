@@ -60,7 +60,7 @@ This repository is designed as a **teaching project**. By reading and running it
 
 | Topic                                     | Where it shows up                          |
 | ----------------------------------------- | ------------------------------------------ |
-| REST API design with Express + TypeScript | `hotel-booking-backend/src/routes/`        |
+| REST API design with Express + TypeScript | `apps/api/src/routes/`                     |
 | JWT auth + optional Google OAuth          | `routes/auth.ts`, `middleware/auth.ts`     |
 | Mongoose schemas & relations              | `models/`                                  |
 | React SPA routing & layouts               | `App.tsx`, `layouts/`                      |
@@ -68,8 +68,8 @@ This repository is designed as a **teaching project**. By reading and running it
 | File uploads → Cloudinary                 | `routes/my-hotels.ts`                      |
 | Card payments with Stripe PaymentIntents  | booking routes + `BookingForm`             |
 | Tailwind + shadcn/ui-style primitives     | `components/ui/`                           |
-| Monorepo shared contracts                 | `shared/types.ts`                          |
-| Docker / Coolify + Vercel deploy          | backend Dockerfile, frontend `vercel.json` |
+| Monorepo shared contracts                 | `packages/types/src/index.ts`              |
+| Docker / Coolify + Vercel deploy          | `apps/api/Dockerfile`, `apps/web/vercel.json` |
 
 ---
 
@@ -154,40 +154,48 @@ Express API (:5001)
 ## Monorepo structure
 
 ```text
-hotel-booking-1/   (or your clone folder)
-├── hotel-booking-backend/     # Express API
-│   ├── src/
-│   │   ├── index.ts           # boot, middleware, mounts
-│   │   ├── middleware/auth.ts # JWT verify
-│   │   ├── models/            # User, Hotel, Booking, Review*, Analytics*
-│   │   ├── routes/            # REST handlers
-│   │   └── swagger.ts
-│   ├── Dockerfile
-│   ├── .env.example
-│   └── .env.local.example
-├── hotel-booking-frontend/    # Vite React SPA
-│   ├── src/
-│   │   ├── main.tsx           # providers
-│   │   ├── App.tsx            # routes
-│   │   ├── api-client.ts      # named API helpers
-│   │   ├── lib/api-client.ts  # Axios + base URL
-│   │   ├── contexts/          # App + Search
-│   │   ├── pages/             # screens
-│   │   ├── components/        # UI building blocks
-│   │   ├── forms/             # booking + hotel forms
-│   │   └── layouts/
-│   ├── vercel.json
-│   └── .env.local.example
-├── shared/types.ts            # shared TypeScript contracts
-└── README.md                  # this file
+hotel-booking-platform/
+├── apps/
+│   ├── api/                   # Express API (@hotel-booking/api)
+│   │   ├── src/
+│   │   │   ├── index.ts       # boot, middleware, mounts
+│   │   │   ├── middleware/    # JWT verify / admin guard
+│   │   │   ├── models/        # User, Hotel, Booking, Review*, Analytics*
+│   │   │   ├── routes/        # REST handlers
+│   │   │   └── swagger.ts
+│   │   ├── Dockerfile
+│   │   └── .env.example
+│   └── web/                   # Vite React SPA (@hotel-booking/web)
+│       ├── src/
+│       │   ├── main.tsx       # providers
+│       │   ├── App.tsx        # routes
+│       │   ├── api-client.ts  # named API helpers
+│       │   ├── lib/api-client.ts
+│       │   ├── contexts/
+│       │   ├── pages/
+│       │   ├── components/
+│       │   ├── forms/
+│       │   └── layouts/
+│       ├── vercel.json
+│       └── .env.example
+├── packages/
+│   └── types/                 # @hotel-booking/types (shared contracts)
+│       └── src/index.ts
+├── .github/workflows/ci.yml
+├── docker-compose.yml         # local MongoDB
+├── package.json               # workspace scripts
+├── pnpm-workspace.yaml
+├── turbo.json
+├── tsconfig.base.json
+└── README.md
 ```
 
 ---
 
 ## Prerequisites
 
-- **Node.js** 18+ and npm
-- **MongoDB** — local or free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster
+- **Node.js** 22+ and [pnpm](https://pnpm.io/) 10 (`corepack enable`)
+- **MongoDB** — local (`docker compose up -d mongo`) or free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster
 - (Recommended) **Stripe** test keys, **Cloudinary** free account
 - (Optional) **Google Cloud** OAuth client for “Continue with Google”
 
@@ -200,21 +208,19 @@ hotel-booking-1/   (or your clone folder)
 | Package      | Required to start?  | Notes                                                                                            |
 | ------------ | ------------------- | ------------------------------------------------------------------------------------------------ |
 | **Backend**  | **Yes**             | App **exits** if required vars are missing (`index.ts` fail-fast). Copy `.env.example` → `.env`. |
-| **Frontend** | **Mostly optional** | SPA boots without a file, but set `.env.local` so API + Stripe point to the right places.        |
+| **Frontend** | **Mostly optional** | SPA boots without a file, but set `.env` so API + Stripe point to the right places.              |
 
-Never commit real `.env` / `.env.local` files (they are gitignored). Examples are safe templates.
+Never commit real `.env` files (they are gitignored). Examples are safe templates.
 
 ---
 
-### Backend — `hotel-booking-backend/.env`
+### Backend — `apps/api/.env`
 
 Copy:
 
 ```bash
-cd hotel-booking-backend
+cd apps/api
 cp .env.example .env
-# optional local overrides:
-cp .env.local.example .env.local
 ```
 
 #### Required (server will not start without these)
@@ -249,13 +255,13 @@ Production example: `{BACKEND_URL}/api/auth/callback/google`
 
 ---
 
-### Frontend — `hotel-booking-frontend/.env.local`
+### Frontend — `apps/web/.env`
 
 Copy:
 
 ```bash
-cd hotel-booking-frontend
-cp .env.local.example .env.local
+cd apps/web
+cp .env.example .env
 ```
 
 | Variable              | Required?           | Purpose                                                       |
@@ -265,7 +271,7 @@ cp .env.local.example .env.local
 
 > Vite only exposes variables prefixed with `VITE_` to the browser. Never put secret keys (`sk_…`, Mongo URI, JWT secret) in frontend env.
 
-If `VITE_API_BASE_URL` is unset, `getApiBaseUrl()` falls back by host (localhost → `:5001`, production defaults documented in walkthrough).
+If `VITE_API_BASE_URL` is unset, `getApiBaseUrl()` falls back to `http://localhost:5001`. Set `VITE_API_BASE_URL` in deployed environments.
 
 ---
 
@@ -283,15 +289,18 @@ You can explore UI/API docs without Google OAuth. You need Stripe keys for real 
 
 ## How to run locally
 
-Use **two terminals**.
+Install once from the repo root, then use **two terminals** (or `pnpm dev` for both).
+
+```bash
+pnpm install
+```
 
 ### 1) Backend
 
 ```bash
-cd hotel-booking-backend
-npm install
+cd apps/api
 cp .env.example .env   # then edit values
-npm run dev            # → http://localhost:5001
+pnpm dev               # → http://localhost:5001
 ```
 
 Smoke checks:
@@ -302,8 +311,7 @@ Smoke checks:
 ### Demo data seed (Mongoose — wipes local DB)
 
 ```bash
-cd hotel-booking-backend
-npm run seed   # destroys User/Hotel/Booking/Review/Analytics then reseeds
+pnpm --filter @hotel-booking/api seed   # destroys User/Hotel/Booking/Review/Analytics then reseeds
 ```
 
 Login after seed: `test@user.com` / `12345678` (**admin** — opens `/admin`). Also: `owner@hotel.com`, `guest@user.com` (same password). This stack uses **MongoDB + Mongoose**, not Prisma.
@@ -313,17 +321,19 @@ Optional AI assist (draft-and-approve only): set `AI_ASSIST_ENABLED=true` in bac
 ### 2) Frontend
 
 ```bash
-cd hotel-booking-frontend
-npm install
-cp .env.local.example .env.local   # edit VITE_* as needed
-npm run dev                        # → http://localhost:5174
+cd apps/web
+cp .env.example .env   # edit VITE_* as needed
+pnpm dev               # → http://localhost:5174
 ```
 
 ### Build verification
 
+From the repository root:
+
 ```bash
-cd hotel-booking-backend && npm run build
-cd hotel-booking-frontend && npm run build && npm run lint
+pnpm typecheck
+pnpm lint
+pnpm build
 ```
 
 ---
@@ -568,12 +578,12 @@ queryClient.refetchQueries("validateToken");
 
 ## Shared types
 
-`shared/types.ts` exports `UserType`, `HotelType`, `BookingType`, search/payment response shapes.
+`@hotel-booking/types` (`packages/types/src/index.ts`) exports `UserType`, `HotelType`, `BookingType`, search/payment response shapes.
 
-**Why it matters:** frontend and backend stay aligned. Docker backend build copies `shared/` into the image.
+**Why it matters:** frontend and backend stay aligned. Both apps consume the workspace package.
 
 ```ts
-import { HotelType } from "../../shared/types";
+import { HotelType } from "@hotel-booking/types";
 ```
 
 ---
@@ -584,30 +594,28 @@ import { HotelType } from "../../shared/types";
 
 ### Backend Deployment (Coolify on VPS)
 
-1. Build from **repo root** context so `shared/` is included (see `hotel-booking-backend/Dockerfile`).
-2. Set **all required** backend env vars in Coolify (same names as `.env.example`).
+1. Build from the **repo root** context (see `apps/api/Dockerfile`).
+2. Set **all required** backend env vars in Coolify (same names as `apps/api/.env.example`).
 3. Set `FRONTEND_URL` to your Vercel URL; set `BACKEND_URL` to the public API origin.
 4. Expose `PORT` as configured in Coolify; health check: `GET /api/health`.
 5. Redeploy when `main` changes.
 
 ```bash
-cd hotel-booking-backend
-npm run build
+pnpm --filter @hotel-booking/api build
 ```
 
 ---
 
 ### Frontend Deployment (Netlify/Vercel)
 
-- Config: `hotel-booking-frontend/vercel.json` (SPA rewrite → `index.html`)
-- Build: `npm run build` → `dist/`
+- Config: `apps/web/vercel.json` (SPA rewrite → `index.html`); set the Vercel project root to `apps/web`.
+- Build: `pnpm --filter @hotel-booking/web build` → `apps/web/dist/`
 - Env in host dashboard:
   - `VITE_API_BASE_URL` = production API origin
   - `VITE_STRIPE_PUB_KEY` = live or test publishable key
 
 ```bash
-cd hotel-booking-frontend
-npm run build
+pnpm --filter @hotel-booking/web build
 ```
 
 ### Production checklist
