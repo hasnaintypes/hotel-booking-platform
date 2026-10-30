@@ -63,11 +63,11 @@ This repository is designed as a **teaching project**. By reading and running it
 | REST API design with Express + TypeScript | `apps/api/src/routes/`                     |
 | JWT auth + optional Google OAuth          | `routes/auth.ts`, `middleware/auth.ts`     |
 | Mongoose schemas & relations              | `models/`                                  |
-| React SPA routing & layouts               | `App.tsx`, `layouts/`                      |
-| Global state with Context + React Query   | `contexts/`, `api-client.ts`               |
+| React SPA routing & layouts               | `app/App.tsx`, `shared/components/layout/` |
+| Feature modules + React Query             | `features/*/api.ts`, `features/*/context/` |
 | File uploads → Cloudinary                 | `routes/my-hotels.ts`                      |
 | Card payments with Stripe PaymentIntents  | booking routes + `BookingForm`             |
-| Tailwind + shadcn/ui-style primitives     | `components/ui/`                           |
+| Tailwind + shadcn/ui-style primitives     | `shared/components/ui/`                    |
 | Monorepo shared contracts                 | `packages/types/src/index.ts`              |
 | Docker / Coolify + Vercel deploy          | `apps/api/Dockerfile`, `apps/web/vercel.json` |
 
@@ -143,8 +143,8 @@ Express API (:5001)
 
 **Typical request path**
 
-1. React page calls a function in `api-client.ts`
-2. Axios (`lib/api-client.ts`) adds the Bearer token
+1. React page calls a function in its feature's `api.ts`
+2. Axios (`shared/api/client.ts`) adds the Bearer token
 3. Express route (+ optional `verifyToken`) runs
 4. Mongoose reads/writes MongoDB
 5. JSON returns → React Query caches / invalidates
@@ -168,14 +168,11 @@ hotel-booking-platform/
 │   └── web/                   # Vite React SPA (@hotel-booking/web)
 │       ├── src/
 │       │   ├── main.tsx       # providers
-│       │   ├── App.tsx        # routes
-│       │   ├── api-client.ts  # named API helpers
-│       │   ├── lib/api-client.ts
-│       │   ├── contexts/
-│       │   ├── pages/
-│       │   ├── components/
-│       │   ├── forms/
-│       │   └── layouts/
+│       │   ├── app/           # router + query client
+│       │   ├── features/      # auth, hotels, bookings, admin, analytics…
+│       │   ├── shared/        # api, ui, layout, hooks, lib
+│       │   ├── config/
+│       │   └── styles/
 │       ├── vercel.json
 │       └── .env.example
 ├── packages/
@@ -370,15 +367,19 @@ Layouts: `Layout` (chrome) · `AuthLayout` (centered auth).
 
 ### API client layers
 
-| File                | Job                                                               |
-| ------------------- | ----------------------------------------------------------------- |
-| `lib/api-client.ts` | Axios instance, base URL, Bearer interceptor, 401 cleanup         |
-| `api-client.ts`     | Named helpers: `signIn`, `searchHotels`, `createPaymentIntent`, … |
+| File                          | Job                                                        |
+| ----------------------------- | ---------------------------------------------------------- |
+| `shared/api/client.ts`        | Axios instance, base URL, Bearer interceptor, 401 cleanup  |
+| `features/auth/api.ts`        | `signIn`, `register`, `validateToken`, `signOut`           |
+| `features/hotels/api.ts`      | `searchHotels`, `fetchHotels`, `fetchHotelById`            |
+| `features/bookings/api.ts`    | `createPaymentIntent`, `createRoomBooking`, `cancelBooking`|
+| `features/admin/api.ts`       | admin users/bookings/reviews + hotel visibility            |
+| `features/analytics/api.ts`   | business-insights + rollups                                |
 
 Example pattern you can reuse in other projects:
 
 ```ts
-// Conceptual — see real helpers in api-client.ts
+// Conceptual — see real helpers in features/*/api.ts
 export const fetchMyHotels = async () => {
   const response = await apiClient.get("/api/my-hotels");
   return response.data;

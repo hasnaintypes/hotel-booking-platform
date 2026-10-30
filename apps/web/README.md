@@ -93,95 +93,81 @@ VITE_GOOGLE_ANALYTICS_ID=GA_MEASUREMENT_ID
 
 ```bash
 apps/web/
-├── public/
-│   └── vite.svg                # App icon and favicon
 ├── src/
-│   ├── api-client.ts           # Centralized API client functions
-│   ├── main.tsx                # Application entry point
-│   ├── App.tsx                 # Main app component with routing
-│   ├── index.css               # Global styles and Tailwind imports
-│   ├── vite-env.d.ts           # Vite environment types
-│   ├── components/             # Reusable UI components
-│   │   ├── ui/                 # Shadcn UI components
-│   │   │   ├── button.tsx      # Button component
-│   │   │   ├── card.tsx        # Card component
-│   │   │   ├── dialog.tsx      # Modal dialog component
-│   │   │   ├── input.tsx       # Input field component
-│   │   │   ├── label.tsx       # Label component
-│   │   │   ├── separator.tsx   # Divider component
-│   │   │   ├── textarea.tsx    # Textarea component
-│   │   │   ├── toast.tsx       # Toast notification component
-│   │   │   └── toaster.tsx     # Toast container component
-│   │   ├── AdvancedSearch.tsx  # Advanced search component
-│   │   ├── BookingDetailsSummary.tsx # Booking summary component
-│   │   ├── BookingLogModal.tsx  # Booking details modal
-│   │   ├── FacilitiesFilter.tsx # Facilities filter component
-│   │   ├── Footer.tsx          # Site footer component
-│   │   ├── Header.tsx          # Navigation header component
-│   │   ├── Hero.tsx            # Landing page hero section
-│   │   ├── HotelTypesFilter.tsx # Hotel types filter
-│   │   ├── IconTest.tsx        # Icon testing component
-│   │   ├── LastestDestinationCard.tsx # Featured destinations
-│   │   ├── LoadingSpinner.tsx  # Loading indicator component
-│   │   ├── Pagination.tsx      # Pagination component
-│   │   ├── PriceFilter.tsx     # Price range filter
-│   │   ├── ScrollToTop.tsx     # Scroll to top button
-│   │   ├── SearchBar.tsx        # Search bar component
-│   │   ├── SearchResultsCard.tsx # Hotel search result card
-│   │   └── SignOutButton.tsx    # Sign out button component
+│   ├── main.tsx                  # Entry point + providers
+│   ├── vite-env.d.ts
+│   ├── app/
+│   │   └── App.tsx               # Router + route composition
 │   ├── config/
-│   │   └── hotel-options-config.ts # Hotel options configuration
-│   ├── contexts/
-│   │   ├── AppContext.tsx       # Global app context
-│   │   └── SearchContext.tsx   # Search state context
-│   ├── forms/                  # Form components
-│   │   ├── BookingForm/
-│   │   │   └── BookingForm.tsx # Hotel booking form
-│   │   ├── GuestInfoForm/
-│   │   │   └── GuestInfoForm.tsx # Guest information form
-│   │   └── ManageHotelForm/
-│   │       ├── ContactSection.tsx # Hotel contact section
-│   │       ├── DetailsSection.tsx # Hotel details section
-│   │       ├── FacilitiesSection.tsx # Hotel facilities section
-│   │       ├── GuestsSection.tsx # Guest capacity section
-│   │       ├── ImagesSection.tsx # Hotel images section
-│   │       ├── ManageHotelForm.tsx # Main hotel form
-│   │       ├── PoliciesSection.tsx # Hotel policies section
-│   │       └── TypeSection.tsx  # Hotel type section
-│   ├── hooks/
-│   │   ├── (toasts via AppContext + sonner)
-│   │   ├── useAppContext.ts    # App context hook
-│   │   ├── useLoadingHooks.ts  # Loading state hooks
-│   │   └── useSearchContext.ts # Search context hook
-│   ├── layouts/
-│   │   ├── AuthLayout.tsx      # Authentication layout
-│   │   └── Layout.tsx          # Main app layout
-│   ├── lib/
-│   │   └── utils.ts            # Utility functions
-│   └── pages/                  # Route-level page components
-│       ├── AddHotel.tsx        # Add new hotel page
-│       ├── AnalyticsDashboard.tsx # Business insights dashboard
-│       ├── ApiDocs.tsx         # API documentation page
-│       ├── ApiStatus.tsx       # API health status page
-│       ├── Booking.tsx         # Booking confirmation page
-│       ├── Detail.tsx          # Hotel details page
-│       ├── EditHotel.tsx       # Edit hotel page
-│       ├── Home.tsx            # Landing page
-│       ├── MyBookings.tsx      # User bookings page
-│       ├── MyHotels.tsx        # Hotel management page
-│       ├── Register.tsx        # User registration page
-│       ├── Search.tsx          # Hotel search results page
-│       └── SignIn.tsx          # User sign-in page
-├── index.html                  # HTML template with SEO metadata
-├── package.json                # Dependencies and scripts
-├── postcss.config.js           # PostCSS configuration
-├── tailwind.config.js          # Tailwind CSS configuration
-├── tsconfig.json               # TypeScript configuration
-├── tsconfig.node.json          # Node.js TypeScript config
-├── vite.config.ts              # Vite build configuration
-├── netlify.toml                # Netlify deployment configuration
-└── README.md                   # This file
+│   │   └── hotel-options.ts      # Hotel types/facilities config
+│   ├── features/                 # Feature-sliced modules
+│   │   ├── auth/
+│   │   │   ├── api.ts            # Auth endpoints
+│   │   │   ├── types.ts          # Register/SignIn DTOs
+│   │   │   ├── context/AuthContext.tsx
+│   │   │   ├── hooks/useAuth.ts
+│   │   │   ├── components/       # UsernameMenu, SignOutButton
+│   │   │   └── pages/            # SignInPage, RegisterPage, AuthCallbackPage
+│   │   ├── hotels/
+│   │   │   ├── api.ts
+│   │   │   ├── context/SearchContext.tsx
+│   │   │   ├── hooks/            # useHotelPlaces, useSearchContext
+│   │   │   ├── lib/              # select-option-maps
+│   │   │   ├── components/       # Hero, SearchBar, filters, cards
+│   │   │   └── pages/            # HomePage, SearchPage, HotelDetailPage
+│   │   ├── hotel-management/
+│   │   │   ├── api.ts
+│   │   │   ├── components/       # ManageHotelForm, BookingLogModal
+│   │   │   └── pages/            # MyHotelsPage, AddHotelPage, EditHotelPage
+│   │   ├── bookings/
+│   │   │   ├── api.ts
+│   │   │   ├── types.ts          # BookingFormData
+│   │   │   ├── lib/booking-utils.ts
+│   │   │   ├── components/       # BookingForm, GuestInfoForm, summary, cancel
+│   │   │   └── pages/            # BookingPage, MyBookingsPage
+│   │   ├── reviews/
+│   │   │   ├── api.ts
+│   │   │   └── components/WriteReviewForm.tsx
+│   │   ├── admin/
+│   │   │   ├── api.ts
+│   │   │   ├── components/       # AdminRoute, AdminLayout
+│   │   │   └── pages/            # Admin*Page
+│   │   ├── analytics/
+│   │   │   ├── api.ts
+│   │   │   ├── types.ts
+│   │   │   ├── lib/prefetch.ts
+│   │   │   ├── components/       # insight cards
+│   │   │   └── pages/AnalyticsDashboardPage.tsx
+│   │   └── status/
+│   │       └── pages/            # ApiStatusPage, ApiDocsPage
+│   ├── shared/                   # Cross-feature building blocks
+│   │   ├── api/                  # axios client, query client, AI endpoint
+│   │   ├── components/
+│   │   │   ├── ui/               # shadcn primitives
+│   │   │   ├── layout/           # Header, Footer, nav, layouts
+│   │   │   ├── feedback/         # LoadingSpinner
+│   │   │   └── navigation/       # Pagination
+│   │   ├── context/AppContext.tsx
+│   │   ├── hooks/                # useAppContext, useLoadingHooks
+│   │   └── lib/                  # utils, query invalidation, caches
+│   └── styles/
+│       └── index.css             # Tailwind 4 entry + config link
+├── components.json               # shadcn generator config
+├── index.html
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
 ```
+
+### Architecture conventions
+
+- **Feature-first**: each domain owns its API, types, hooks, components, and pages.
+- **Layering**: `features/*` may import `shared/*`; `shared/*` never imports a feature.
+- **Naming**: kebab-case folders, `PascalCase.tsx` components, `useCamelCase.ts` hooks, `*Page.tsx` routes.
+- **Imports**: cross-module imports use the `@/` alias; intra-feature imports stay relative.
 
 ---
 
@@ -189,21 +175,22 @@ apps/web/
 
 ### **Core Technologies**
 
-- **React 18.2.0**: Modern UI library with hooks and concurrent features
-- **TypeScript 5.0.2**: Type-safe JavaScript development
-- **Vite 4.4.0**: Fast build tool and development server
+- **React 19.3.1**: Modern UI library with hooks and concurrent features
+- **TypeScript 6.0.3**: Type-safe JavaScript development
+- **Vite 8.3.5**: Fast build tool and development server
 - **React Router DOM**: Client-side routing and navigation
 
 ### **Styling & UI**
 
-- **Tailwind CSS 3.3.5**: Utility-first CSS framework
+- **Tailwind CSS 4.3.3**: Utility-first CSS framework
 - **Shadcn UI**: Modern, accessible component library
 - **Lucide React**: Beautiful, customizable icons
 - **PostCSS**: CSS processing and optimization
 
 ### **State Management & Data**
 
-- **React Query**: Server state management and caching
+- **TanStack Query 5**: Server state management and caching
+- **TanStack Table 9**: Headless table rendering
 - **React Context**: Global state management
 - **React Hook Form**: Form handling and validation
 
@@ -279,7 +266,7 @@ Comprehensive analytics dashboard with charts and metrics.
 - Revenue charts and trends visualization
 - Booking analytics and performance metrics
 - Forecasting data and business insights
-- Interactive charts using Recharts library
+- Interactive charts using Recharts 3
 - Real-time data updates
 
 ### **BookingLogModal Component**
@@ -427,7 +414,7 @@ The project uses Shadcn UI for consistent, accessible components:
 
 ```typescript
 // Example: Button component usage
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 
 <Button variant="default" size="lg">
   Book Now
@@ -683,8 +670,8 @@ pnpm format
 // Lazy loading for route components
 import { lazy, Suspense } from "react";
 
-const AnalyticsDashboard = lazy(() => import("./pages/AnalyticsDashboard"));
-const MyHotels = lazy(() => import("./pages/MyHotels"));
+const AnalyticsDashboard = lazy(() => import("@/features/analytics/pages/AnalyticsDashboardPage"));
+const MyHotels = lazy(() => import("@/features/hotel-management/pages/MyHotelsPage"));
 
 // Suspense wrapper
 <Suspense fallback={<LoadingSpinner />}>
