@@ -27,9 +27,7 @@ dist-ssr
 .env
 .env.e2e
 node_modules
-.cursorignore
 
 # Documentation
 
 HETZNER_VPS_MIGRATION_GUIDE.md
-SUBDOMAIN_ARNOBMAHMUD_SETUP.md

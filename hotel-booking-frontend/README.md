@@ -2,10 +2,6 @@
 
 A modern, responsive frontend application for the Hotel Booking Management System. Built with React 18, TypeScript, Vite, and Tailwind CSS, featuring advanced search, booking management, and seamless user experience across all devices.
 
-- **Frontend-Live-Demo:** [https://hotel-mern-booking.vercel.app/](https://hotel-mern-booking.vercel.app/)
-- **Backend-Live-Demo:** [https://hotel-booking-backend.arnobmahmud.com](https://hotel-booking-backend.arnobmahmud.com)
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
 [![Express](https://img.shields.io/badge/Express-4.18-black)](https://expressjs.com/)
 [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
@@ -14,7 +10,6 @@ A modern, responsive frontend application for the Hotel Booking Management Syste
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.5-38B2AC)](https://tailwindcss.com/)
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF)](https://stripe.com/)
-[![launch with diploi badge](https://diploi.com/launch.svg)](https://diploi.com/launch/arnobt78/Hotel-Booking-Management-System--React-MERN-FullStack)
 
 ---
 
@@ -62,7 +57,7 @@ This frontend serves as the **user interface** for a comprehensive hotel booking
 
 ```bash
 # Clone the repository
-git clone https://github.com/arnobt78/MERN-Hotel-Booking--React-FullStack.git
+git clone https://github.com/<your-org>/hotel-booking-platform.git
 cd hotel-booking-frontend
 
 # Install dependencies
@@ -220,7 +215,6 @@ hotel-booking-frontend/
 
 - **ESLint**: Code linting and quality
 - **Prettier**: Code formatting
-- **Playwright**: End-to-end testing (in e2e-tests directory)
 
 ---
 
@@ -654,18 +648,6 @@ test("renders search bar", () => {
 });
 ```
 
-### **E2E Testing**
-
-```typescript
-// Example: E2E test with Playwright
-test("user can search for hotels", async ({ page }) => {
-  await page.goto("/");
-  await page.fill('[data-testid="destination-input"]', "London");
-  await page.click('[data-testid="search-button"]');
-  await expect(page.locator('[data-testid="hotel-card"]')).toHaveCount(5);
-});
-```
-
 ---
 
 ## 🔧 Development Commands
@@ -818,8 +800,6 @@ This frontend is designed to be **user-friendly**, **developer-friendly**, and *
 **Get Started Today!** 🚀
 
 This is an **open-source project** - feel free to use, enhance, and extend this project further!
-
-If you have any questions or want to share your work, reach out via GitHub or my portfolio at [https://www.arnobmahmud.com/](https://www.arnobmahmud.com/).
 
 **Enjoy building and learning!** 🚀
 

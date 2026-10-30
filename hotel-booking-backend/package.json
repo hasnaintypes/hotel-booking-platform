@@ -10,7 +10,6 @@
     "seed": "ts-node src/scripts/seed.ts",
     "e2e": "cross-env DOTENV_CONFIG_PATH=.env.e2e nodemon"
   },
-  "author": "Arnob Mahmud",
   "license": "ISC",
   "dependencies": {
     "@types/compression": "^1.8.1",

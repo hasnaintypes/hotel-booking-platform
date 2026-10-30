@@ -1,6 +1,5 @@
 # Hotel Booking Management System — React, Express.js Full-Stack MERN Project
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
 [![Express](https://img.shields.io/badge/Express-4.18-black)](https://expressjs.com/)
 [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
@@ -9,13 +8,8 @@
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.5-38B2AC)](https://tailwindcss.com/)
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF)](https://stripe.com/)
-[![launch with diploi badge](https://diploi.com/launch.svg)](https://diploi.com/launch/arnobt78/Hotel-Booking-Management-System--React-MERN-FullStack)
 
 A production-style **hotel booking platform** for learning full-stack TypeScript: guests search and book with **Stripe**, owners manage hotels with **Cloudinary** images, and everyone can explore a **Business Insights** dashboard. Built as a **MERN** monorepo (MongoDB · Express · React · Node) with a Vite SPA frontend.
-
-- **Frontend (live):** [https://hotel-mern-booking.vercel.app/](https://hotel-mern-booking.vercel.app/)
-- **Backend (live):** [https://hotel-booking-backend.arnobmahmud.com](https://hotel-booking-backend.arnobmahmud.com)
-- **Security:** please report vulnerabilities privately — see [SECURITY.md](./SECURITY.md)
 
 ![Screenshot 2025-09-04 at 12 02 23](https://github.com/user-attachments/assets/7b87581f-8a1a-4de4-99c3-ba5fab14f20d)
 ![Screenshot 2025-09-04 at 12 03 00](https://github.com/user-attachments/assets/76e284bb-4324-4798-8e87-0079aab65a57)
@@ -51,14 +45,11 @@ A production-style **hotel booking platform** for learning full-stack TypeScript
 - [Booking & Stripe flow](#booking--stripe-flow)
 - [Components & reuse guide](#components--reuse-guide)
 - [Shared types](#shared-types)
-- [Testing (Playwright)](#testing-playwright)
 - [Deployment](#-deployment)
 - [Learning path (suggested)](#learning-path-suggested)
 - [Troubleshooting](#troubleshooting)
-- [Related docs](#related-docs)
 - [Keywords](#keywords)
 - [Conclusion](#conclusion)
-- [License](#license)
 - [Happy Coding!](#happy-coding-)
 
 ---
@@ -126,7 +117,6 @@ This repository is designed as a **teaching project**. By reading and running it
 | Payments      | **Stripe**                                         | PaymentIntents; confirm then create booking |
 | Media         | **Cloudinary** + **multer**                        | Image CDN after upload                      |
 | Charts        | **Recharts**                                       | Business insights graphs                    |
-| E2E           | **Playwright**                                     | Browser tests in `e2e-tests/`               |
 
 ### Keyword cheat-sheet
 
@@ -159,8 +149,6 @@ Express API (:5001)
 4. Mongoose reads/writes MongoDB
 5. JSON returns → React Query caches / invalidates
 
-Deeper A–Z notes: [`docs/PROJECT_WALKTHROUGH.md`](./docs/PROJECT_WALKTHROUGH.md)
-
 ---
 
 ## Monorepo structure
@@ -191,10 +179,6 @@ hotel-booking-1/   (or your clone folder)
 │   ├── vercel.json
 │   └── .env.local.example
 ├── shared/types.ts            # shared TypeScript contracts
-├── e2e-tests/                 # Playwright
-├── data/                      # fixtures (test users/hotel)
-├── docs/                      # guides + walkthrough
-├── SECURITY.md                # private vulnerability reports
 └── README.md                  # this file
 ```
 
@@ -594,39 +578,7 @@ import { HotelType } from "../../shared/types";
 
 ---
 
-## Testing (Playwright)
-
-```bash
-# Terminals: backend + frontend already running
-cd e2e-tests
-npm install
-npx playwright test
-```
-
-| Spec                          | Covers             |
-| ----------------------------- | ------------------ |
-| `tests/auth.spec.ts`          | Sign-in / register |
-| `tests/search-hotels.spec.ts` | Search             |
-| `tests/manage-hotels.spec.ts` | Add hotel          |
-
-Fixtures: `data/test-users.json`, `data/test-hotel.json`. Target UI: `http://localhost:5174`.
-
----
-
 ## 🚀 Deployment
-
-### Optional: Launch with Diploi
-
-Spin up a cloud environment from this public repo with no local install:
-
-[![launch with diploi button](https://diploi.com/launch-big.svg)](https://diploi.com/launch/arnobt78/Hotel-Booking-Management-System--React-MERN-FullStack)
-
-1. Click the button to create a Diploi deployment.
-2. When it finishes, open the preview URL from the Diploi dashboard.
-
-More info: [https://diploi.com/](https://diploi.com/)
-
-> Diploi is optional for trying the project. Production demos for this repo use Coolify + Vercel below.
 
 ---
 
@@ -676,7 +628,6 @@ npm run build
 4. Add a hotel (watch Cloudinary URLs appear)
 5. Complete one Stripe **test** booking
 6. Read React Query invalidation on login/logout
-7. Skim `docs/PROJECT_WALKTHROUGH.md` for A–Z
 
 ---
 
@@ -694,21 +645,9 @@ npm run build
 
 ---
 
-## Related docs
-
-| File                                                                                                   | Topic                                                 |
-| ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
-| [docs/PROJECT_WALKTHROUGH.md](./docs/PROJECT_WALKTHROUGH.md)                                           | Architecture A–Z                                      |
-| [SECURITY.md](./SECURITY.md)                                                                           | Private vulnerability reporting                       |
-| [docs/AUTH_UI_IMPLEMENTATION_GUIDE.md](./docs/AUTH_UI_IMPLEMENTATION_GUIDE.md)                         | Auth UI patterns                                      |
-| [docs/DROPDOWN_TEST_CREDENTIALS_DOCS.md](./docs/DROPDOWN_TEST_CREDENTIALS_DOCS.md)                     | Test credential dropdown                              |
-| [docs/CLERK_AUTH_COMPLETE_IMPLEMENTATION_GUIDE.md](./docs/CLERK_AUTH_COMPLETE_IMPLEMENTATION_GUIDE.md) | Clerk guide (portable; **not** this app’s live stack) |
-
----
-
 ## Keywords
 
-`MERN` · `MongoDB` · `Express` · `React` · `Node.js` · `TypeScript` · `Vite` · `Tailwind CSS` · `React Query` · `Axios` · `JWT` · `OAuth` · `bcrypt` · `Stripe PaymentIntent` · `Cloudinary` · `multer` · `Mongoose` · `Swagger` · `Helmet` · `rate limiting` · `Recharts` · `Playwright` · `Vercel` · `Coolify` · `Docker` · `hotel booking` · `full-stack` · `open source`
+`MERN` · `MongoDB` · `Express` · `React` · `Node.js` · `TypeScript` · `Vite` · `Tailwind CSS` · `React Query` · `Axios` · `JWT` · `OAuth` · `bcrypt` · `Stripe PaymentIntent` · `Cloudinary` · `multer` · `Mongoose` · `Swagger` · `Helmet` · `rate limiting` · `Recharts` · `Vercel` · `Coolify` · `Docker` · `hotel booking` · `full-stack` · `open source`
 
 ---
 
@@ -716,18 +655,8 @@ npm run build
 
 This project is a complete, production-flavored **hotel booking** codebase you can study end-to-end: typed API, JWT auth, media uploads, payments, analytics UI, and real deploy paths. Start with the env templates, run both apps locally, then follow one user journey (search → book) while reading the matching route and page files. Reuse the API-client, auth interceptor, form sections, and UI primitives in your own TypeScript React projects.
 
-Questions or want to share what you built? Reach out via GitHub or [https://www.arnobmahmud.com](https://www.arnobmahmud.com).
-
----
-
-## License
-
-This project is licensed under the [MIT License](https://opensource.org/licenses/MIT). Feel free to use, modify, and distribute the code as per the terms of the license.
-
 ---
 
 ## Happy Coding! 🎉
 
 This is an **open-source project** — feel free to use, enhance, and extend this project further!
-
-If you have any questions or want to share your work, reach out via GitHub or my portfolio at [https://www.arnobmahmud.com](https://www.arnobmahmud.com).

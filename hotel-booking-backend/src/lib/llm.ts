@@ -1,7 +1,6 @@
 /**
  * Multi-provider LLM chain for hotel copy assist.
- * Follows docs/LLM_MODEL_SELECTION.md failover rules:
- * retry next model on 408/429/5xx/empty/network — never use deprecated Groq llama models.
+ * Failover rules: retry next model on 408/429/5xx/empty/network — never use deprecated Groq llama models.
  */
 
 export type SuggestKind = "hotel_description" | "insights_copy";
