@@ -1,9 +1,9 @@
 # Hotel Booking Management System Frontend - React, TypeScript MERN Project
 
-A modern, responsive frontend application for the Hotel Booking Management System. Built with React 18, TypeScript, Vite, and Tailwind CSS, featuring advanced search, booking management, and seamless user experience across all devices.
+A modern, responsive frontend application for the Hotel Booking Management System. Built with React 19, TypeScript, Vite 8, and Tailwind CSS 4, featuring advanced search, booking management, and seamless user experience across all devices.
 
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
-[![Express](https://img.shields.io/badge/Express-4.18-black)](https://expressjs.com/)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
 [![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)

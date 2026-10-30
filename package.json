@@ -18,5 +18,11 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "pnpm": {
+    "overrides": {
+      "multer": "^2.5.0",
+      "js-yaml": "^5.4.1"
+    }
   }
 }
