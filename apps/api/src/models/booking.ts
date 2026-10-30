@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
 
-export interface IBooking extends Document {
+export interface IBooking extends Omit<Document, "_id"> {
   _id: string;
   userId: string;
   hotelId: string;

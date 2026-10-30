@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
 
-export interface IReview extends Document {
+export interface IReview extends Omit<Document, "_id"> {
   _id: string;
   userId: string;
   hotelId: string;

@@ -124,7 +124,7 @@ router.post(
   verifyToken,
   async (req: Request, res: Response) => {
     const { numberOfNights } = req.body;
-    const hotelId = req.params.hotelId;
+    const hotelId = String(req.params.hotelId);
 
     const hotel = await Hotel.findById(hotelId);
     if (!hotel) {
@@ -138,7 +138,7 @@ router.post(
       currency: "gbp",
       metadata: {
         hotelId,
-        userId: req.userId,
+        userId: String(req.userId),
       },
     });
 

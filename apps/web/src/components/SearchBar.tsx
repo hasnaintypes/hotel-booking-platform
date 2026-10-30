@@ -198,7 +198,7 @@ const SearchBar = () => {
           <div className="sm:col-span-1">
             <DatePicker
               selected={checkIn}
-              onChange={(date) => setCheckIn(date as Date)}
+              onChange={(date: Date | null) => setCheckIn(date as Date)}
               selectsStart
               startDate={checkIn}
               endDate={checkOut}
@@ -212,7 +212,7 @@ const SearchBar = () => {
           <div className="sm:col-span-1">
             <DatePicker
               selected={checkOut}
-              onChange={(date) => setCheckOut(date as Date)}
+              onChange={(date: Date | null) => setCheckOut(date as Date)}
               selectsStart
               startDate={checkIn}
               endDate={checkOut}

@@ -1,13 +1,10 @@
+import { Building2, Mail, Phone, MapPin } from "lucide-react";
 import {
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  Facebook,
-  Twitter,
-  Instagram,
-  Linkedin,
-} from "lucide-react";
+  FaFacebookF as Facebook,
+  FaTwitter as Twitter,
+  FaInstagram as Instagram,
+  FaLinkedinIn as Linkedin,
+} from "react-icons/fa";
 import PageContainer from "./PageContainer";
 
 const Footer = () => {

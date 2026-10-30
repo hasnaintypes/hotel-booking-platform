@@ -190,7 +190,9 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                   <DatePicker
                     required
                     selected={checkIn}
-                    onChange={(date) => setValue("checkIn", date as Date)}
+                    onChange={(date: Date | null) =>
+                      setValue("checkIn", date as Date)
+                    }
                     selectsStart
                     startDate={checkIn}
                     endDate={checkOut}
@@ -206,7 +208,9 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                   <DatePicker
                     required
                     selected={checkOut}
-                    onChange={(date) => setValue("checkOut", date as Date)}
+                    onChange={(date: Date | null) =>
+                      setValue("checkOut", date as Date)
+                    }
                     selectsStart
                     startDate={checkIn}
                     endDate={checkOut}

@@ -1,6 +1,6 @@
 import mongoose, { Document } from "mongoose";
 
-export interface IAnalytics extends Document {
+export interface IAnalytics extends Omit<Document, "_id"> {
   _id: string;
   date: Date;
   metrics: {

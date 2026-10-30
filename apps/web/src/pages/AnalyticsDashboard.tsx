@@ -892,7 +892,7 @@ const AnalyticsDashboard = () => {
                       dataKey="revenue"
                       position="top"
                       className="text-xs fill-gray-700"
-                      formatter={(v) =>
+                      formatter={(v: number | string) =>
                         typeof v === "number" ? `$${Math.round(v)}` : v
                       }
                     />
