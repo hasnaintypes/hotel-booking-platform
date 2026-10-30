@@ -1,13 +1,13 @@
 import { useState } from "react";
+import { flexRender, type RowData } from "@tanstack/react-table";
 import {
-  flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  useReactTable,
-  type ColumnDef,
-  type FilterFn,
-} from "@tanstack/react-table";
+  useLegacyTable,
+  type LegacyColumnDef,
+  type LegacyRow,
+} from "@tanstack/react-table/legacy";
 import { Input } from "./input";
 import {
   Table,
@@ -20,7 +20,11 @@ import {
 import Pagination from "../Pagination";
 
 /** Global case-insensitive substring match across row values */
-const globalFilterFn: FilterFn<unknown> = (row, _columnId, filterValue) => {
+const globalFilterFn = <TData extends RowData,>(
+  row: LegacyRow<TData>,
+  _columnId: string,
+  filterValue: unknown,
+) => {
   const q = String(filterValue ?? "")
     .toLowerCase()
     .trim();
@@ -32,8 +36,8 @@ const globalFilterFn: FilterFn<unknown> = (row, _columnId, filterValue) => {
   });
 };
 
-type DataTableProps<TData> = {
-  columns: ColumnDef<TData, unknown>[];
+type DataTableProps<TData extends RowData> = {
+  columns: LegacyColumnDef<TData, unknown>[];
   data: TData[];
   searchPlaceholder?: string;
   /** Optional slot to the right of the search input (e.g. filter Select) */
@@ -45,7 +49,7 @@ type DataTableProps<TData> = {
  * Reusable TanStack table with search + client pagination.
  * Use for admin / booking list UIs — keep column cell renderers for mutations.
  */
-export function DataTable<TData>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   searchPlaceholder = "Search…",
@@ -54,16 +58,16 @@ export function DataTable<TData>({
 }: DataTableProps<TData>) {
   const [globalFilter, setGlobalFilter] = useState("");
 
-  const table = useReactTable<TData>({
+  const table = useLegacyTable<TData>({
     data,
     columns,
     state: { globalFilter },
     onGlobalFilterChange: setGlobalFilter,
-    globalFilterFn: globalFilterFn as FilterFn<TData>,
+    globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: { pagination: { pageSize } },
+    initialState: { pagination: { pageIndex: 0, pageSize } },
   });
 
   const pageCount = table.getPageCount();
