@@ -239,7 +239,7 @@ const Detail = () => {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:underline"
                   >
-                    www.arnobmahmud.com
+                    {hotel.contact.website}
                   </a>
                 </span>
               </div>

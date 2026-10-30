@@ -7,20 +7,8 @@ const getBaseURL = () => {
     return import.meta.env.VITE_API_BASE_URL;
   }
 
-  if (
-    window.location.hostname === "mern-booking-hotel.netlify.app" ||
-    window.location.hostname.includes("vercel.app")
-  ) {
-    return "https://hotel-booking-backend.arnobmahmud.com";
-  }
-
   // Must match hotel-booking-backend PORT (default 5001) when VITE_API_BASE_URL is unset.
-  if (window.location.hostname === "localhost") {
-    return "http://localhost:5001";
-  }
-
-  // Default to production (VPS backend)
-  return "https://hotel-booking-backend.arnobmahmud.com";
+  return "http://localhost:5001";
 };
 
 export const getApiBaseUrl = getBaseURL;
