@@ -39,13 +39,7 @@ import { Input } from "@hotel-booking/ui";
 import { Button } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { Checkbox } from "@hotel-booking/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import FilterSectionLabel from "@/features/hotels/components/FilterSectionLabel";
 
@@ -110,18 +104,17 @@ const STAR_RATING_OPTIONS: {
   },
 ];
 
-const HOTEL_TYPE_OPTIONS: { value: string; label: string; icon: LucideIcon }[] =
-  [
-    { value: "any", label: "Any Type", icon: Layers },
-    { value: "Hotel", label: "Hotel", icon: Building2 },
-    { value: "Resort", label: "Resort", icon: Palmtree },
-    { value: "Motel", label: "Motel", icon: BedDouble },
-    { value: "Hostel", label: "Hostel", icon: Bed },
-    { value: "Apartment", label: "Apartment", icon: Building },
-    { value: "Villa", label: "Villa", icon: Home },
-    { value: "Cottage", label: "Cottage", icon: House },
-    { value: "B&B", label: "B&B", icon: Coffee },
-  ];
+const HOTEL_TYPE_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
+  { value: "any", label: "Any Type", icon: Layers },
+  { value: "Hotel", label: "Hotel", icon: Building2 },
+  { value: "Resort", label: "Resort", icon: Palmtree },
+  { value: "Motel", label: "Motel", icon: BedDouble },
+  { value: "Hostel", label: "Hostel", icon: Bed },
+  { value: "Apartment", label: "Apartment", icon: Building },
+  { value: "Villa", label: "Villa", icon: Home },
+  { value: "Cottage", label: "Cottage", icon: House },
+  { value: "B&B", label: "B&B", icon: Coffee },
+];
 
 const RADIUS_OPTIONS: { value: string; label: string; icon: LucideIcon }[] = [
   { value: "10", label: "10 km", icon: CircleDot },
@@ -136,10 +129,7 @@ const inputFocusClass =
 const dateInputFocusClass =
   "pr-10 h-11 text-gray-700 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-0 focus-visible:border-primary-500";
 
-const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
-  onSearch,
-  isExpanded = false,
-}) => {
+const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, isExpanded = false }) => {
   const navigate = useNavigate();
   const search = useSearchContext();
   // Shared RQ + soft LS cache — invalidates on hotel CRUD via invalidateHotelQueries
@@ -206,9 +196,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       return undefined;
     }
     const match = GUEST_OPTIONS.find(
-      (o) =>
-        o.adults === searchData.adultCount &&
-        o.children === searchData.childCount,
+      (o) => o.adults === searchData.adultCount && o.children === searchData.childCount,
     );
     return match?.value;
   }, [searchData.adultCount, searchData.childCount]);
@@ -277,9 +265,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
   const buildAndNavigate = (destination: string) => {
     // Local calendar defaults — never leave null ISO; checkout at least check-in + 1 day
     const today = startOfLocalDay(new Date());
-    const checkIn = searchData.checkIn
-      ? startOfLocalDay(searchData.checkIn)
-      : today;
+    const checkIn = searchData.checkIn ? startOfLocalDay(searchData.checkIn) : today;
     const checkOutCandidate = searchData.checkOut
       ? startOfLocalDay(searchData.checkOut)
       : addLocalDays(checkIn, 1);
@@ -291,13 +277,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     const adultCount = searchData.adultCount ?? 1;
     const childCount = searchData.childCount ?? 0;
 
-    search.saveSearchValues(
-      destination,
-      checkIn,
-      resolvedCheckOut,
-      adultCount,
-      childCount,
-    );
+    search.saveSearchValues(destination, checkIn, resolvedCheckOut, adultCount, childCount);
     setShowDropdown(false);
     setFilteredPlaces([]);
 
@@ -307,19 +287,13 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     searchParams.append("checkOut", resolvedCheckOut.toISOString());
     searchParams.append("adultCount", adultCount.toString());
     searchParams.append("childCount", childCount.toString());
-    if (searchData.minPrice)
-      searchParams.append("minPrice", searchData.minPrice);
-    if (searchData.maxPrice)
-      searchParams.append("maxPrice", searchData.maxPrice);
-    if (searchData.starRating)
-      searchParams.append("starRating", searchData.starRating);
-    if (searchData.hotelType)
-      searchParams.append("hotelType", searchData.hotelType);
+    if (searchData.minPrice) searchParams.append("minPrice", searchData.minPrice);
+    if (searchData.maxPrice) searchParams.append("maxPrice", searchData.maxPrice);
+    if (searchData.starRating) searchParams.append("starRating", searchData.starRating);
+    if (searchData.hotelType) searchParams.append("hotelType", searchData.hotelType);
     if (searchData.sortBy) searchParams.append("sortBy", searchData.sortBy);
     if (searchData.radius) searchParams.append("radius", searchData.radius);
-    searchData.facilities.forEach((facility) =>
-      searchParams.append("facilities", facility),
-    );
+    searchData.facilities.forEach((facility) => searchParams.append("facilities", facility));
 
     navigate(`/search?${searchParams.toString()}`);
     onSearch({
@@ -349,11 +323,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       {/* Basic Search */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
         <div className="space-y-2">
-          <FilterSectionLabel
-            icon={MapPin}
-            title="Destination"
-            className="mb-0"
-          />
+          <FilterSectionLabel icon={MapPin} title="Destination" className="mb-0" />
           <div className="relative">
             <Input
               type="text"
@@ -391,44 +361,26 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         </div>
 
         <div className="space-y-2">
-          <FilterSectionLabel
-            icon={Calendar}
-            title="Check-in"
-            className="mb-0"
-          />
+          <FilterSectionLabel icon={Calendar} title="Check-in" className="mb-0" />
           <div className="relative">
             <Input
               type="date"
               className={dateInputFocusClass}
               value={formatDateInputValue(searchData.checkIn)}
-              onChange={(e) =>
-                handleInputChange(
-                  "checkIn",
-                  parseDateInputValue(e.target.value),
-                )
-              }
+              onChange={(e) => handleInputChange("checkIn", parseDateInputValue(e.target.value))}
             />
             <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 opacity-70 pointer-events-none" />
           </div>
         </div>
 
         <div className="space-y-2">
-          <FilterSectionLabel
-            icon={Calendar}
-            title="Check-out"
-            className="mb-0"
-          />
+          <FilterSectionLabel icon={Calendar} title="Check-out" className="mb-0" />
           <div className="relative">
             <Input
               type="date"
               className={dateInputFocusClass}
               value={formatDateInputValue(searchData.checkOut)}
-              onChange={(e) =>
-                handleInputChange(
-                  "checkOut",
-                  parseDateInputValue(e.target.value),
-                )
-              }
+              onChange={(e) => handleInputChange("checkOut", parseDateInputValue(e.target.value))}
             />
             <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 opacity-70 pointer-events-none" />
           </div>
@@ -507,9 +459,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   placeholder="Min"
                   className="text-gray-700"
                   value={searchData.minPrice}
-                  onChange={(e) =>
-                    handleInputChange("minPrice", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("minPrice", e.target.value)}
                 />
                 <span className="flex items-center text-gray-500">-</span>
                 <Input
@@ -517,9 +467,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                   placeholder="Max"
                   className="text-gray-700"
                   value={searchData.maxPrice}
-                  onChange={(e) =>
-                    handleInputChange("maxPrice", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange("maxPrice", e.target.value)}
                 />
               </div>
             </div>
@@ -528,9 +476,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               <FilterSectionLabel icon={Star} title="Star Rating" />
               <Select
                 value={searchData.starRating || "any"}
-                onValueChange={(v) =>
-                  handleInputChange("starRating", v === "any" ? "" : v)
-                }
+                onValueChange={(v) => handleInputChange("starRating", v === "any" ? "" : v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Any Rating" />
@@ -538,10 +484,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <SelectContent>
                   {STAR_RATING_OPTIONS.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      <SelectOptionLabel
-                        icon={Star}
-                        iconClassName={o.iconClassName}
-                      >
+                      <SelectOptionLabel icon={Star} iconClassName={o.iconClassName}>
                         {o.label}
                       </SelectOptionLabel>
                     </SelectItem>
@@ -554,9 +497,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
               <FilterSectionLabel icon={Building2} title="Hotel Type" />
               <Select
                 value={searchData.hotelType || "any"}
-                onValueChange={(v) =>
-                  handleInputChange("hotelType", v === "any" ? "" : v)
-                }
+                onValueChange={(v) => handleInputChange("hotelType", v === "any" ? "" : v)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Any Type" />
@@ -564,9 +505,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <SelectContent>
                   {HOTEL_TYPE_OPTIONS.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      <SelectOptionLabel icon={o.icon}>
-                        {o.label}
-                      </SelectOptionLabel>
+                      <SelectOptionLabel icon={o.icon}>{o.label}</SelectOptionLabel>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -608,9 +547,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <SelectContent>
                   {SEARCH_SORT_OPTIONS.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      <SelectOptionLabel icon={o.icon}>
-                        {o.label}
-                      </SelectOptionLabel>
+                      <SelectOptionLabel icon={o.icon}>{o.label}</SelectOptionLabel>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -629,9 +566,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
                 <SelectContent>
                   {RADIUS_OPTIONS.map((o) => (
                     <SelectItem key={o.value} value={o.value}>
-                      <SelectOptionLabel icon={o.icon}>
-                        {o.label}
-                      </SelectOptionLabel>
+                      <SelectOptionLabel icon={o.icon}>{o.label}</SelectOptionLabel>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -651,9 +586,7 @@ const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
         <div className="flex flex-wrap gap-2">
           {places.length === 0 ? (
             <p className="text-sm text-gray-500">
-              {isLoadingPlaces
-                ? "Loading destinations…"
-                : "No destinations yet"}
+              {isLoadingPlaces ? "Loading destinations…" : "No destinations yet"}
             </p>
           ) : (
             places.map((destination) => (

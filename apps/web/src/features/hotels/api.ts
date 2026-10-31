@@ -15,9 +15,7 @@ export type SearchParams = {
   sortOption?: string;
 };
 
-export const searchHotels = async (
-  searchParams: SearchParams,
-): Promise<HotelSearchResponse> => {
+export const searchHotels = async (searchParams: SearchParams): Promise<HotelSearchResponse> => {
   const queryParams = new URLSearchParams();
 
   // Only add destination if it's not empty
@@ -33,9 +31,7 @@ export const searchHotels = async (
   queryParams.append("maxPrice", searchParams.maxPrice || "");
   queryParams.append("sortOption", searchParams.sortOption || "");
 
-  searchParams.facilities?.forEach((facility) =>
-    queryParams.append("facilities", facility),
-  );
+  searchParams.facilities?.forEach((facility) => queryParams.append("facilities", facility));
 
   searchParams.types?.forEach((type) => queryParams.append("types", type));
   searchParams.stars?.forEach((star) => queryParams.append("stars", star));

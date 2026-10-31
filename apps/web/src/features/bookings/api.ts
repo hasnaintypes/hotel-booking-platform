@@ -10,18 +10,14 @@ export const createPaymentIntent = async (
   hotelId: string,
   numberOfNights: string,
 ): Promise<PaymentIntentResponse> => {
-  const response = await axiosInstance.post(
-    `/api/hotels/${hotelId}/bookings/payment-intent`,
-    { numberOfNights },
-  );
+  const response = await axiosInstance.post(`/api/hotels/${hotelId}/bookings/payment-intent`, {
+    numberOfNights,
+  });
   return response.data;
 };
 
 export const createRoomBooking = async (formData: BookingFormData) => {
-  const response = await axiosInstance.post(
-    `/api/hotels/${formData.hotelId}/bookings`,
-    formData,
-  );
+  const response = await axiosInstance.post(`/api/hotels/${formData.hotelId}/bookings`, formData);
   return response.data;
 };
 
@@ -39,9 +35,6 @@ export const cancelBooking = async (
   refundAmount: number;
   refundSkipped?: string;
 }> => {
-  const response = await axiosInstance.post(
-    `/api/bookings/${bookingId}/cancel`,
-    payload || {},
-  );
+  const response = await axiosInstance.post(`/api/bookings/${bookingId}/cancel`, payload || {});
   return response.data;
 };

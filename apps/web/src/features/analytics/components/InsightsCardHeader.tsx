@@ -23,20 +23,13 @@ export function InsightsCardHeader({
   return (
     <div className={cn("flex items-stretch gap-3 mb-4", className)}>
       <div
-        className={cn(
-          "flex shrink-0 items-center justify-center rounded-xl px-3",
-          iconClassName,
-        )}
+        className={cn("flex shrink-0 items-center justify-center rounded-xl px-3", iconClassName)}
       >
         <Icon className="h-5 w-5" aria-hidden />
       </div>
       <div className="min-w-0 flex flex-col justify-center">
-        <h3 className="text-md md:text-lg font-medium text-gray-700 leading-tight">
-          {title}
-        </h3>
-        {subtitle ? (
-          <p className="text-sm font-normal text-gray-500 ">{subtitle}</p>
-        ) : null}
+        <h3 className="text-md md:text-lg font-medium text-gray-700 leading-tight">{title}</h3>
+        {subtitle ? <p className="text-sm font-normal text-gray-500 ">{subtitle}</p> : null}
       </div>
     </div>
   );

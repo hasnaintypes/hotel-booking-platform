@@ -26,11 +26,7 @@ export function parseDateInputValue(value: string): Date | null {
   const [y, m, d] = value.split("-").map((part) => parseInt(part, 10));
   if (!y || !m || !d) return null;
   const date = new Date(y, m - 1, d);
-  if (
-    date.getFullYear() !== y ||
-    date.getMonth() !== m - 1 ||
-    date.getDate() !== d
-  ) {
+  if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) {
     return null;
   }
   return date;

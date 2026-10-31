@@ -10,8 +10,7 @@ export const queryClient = new QueryClient({
     queries: {
       // Retry transient GET failures only; auth/validation errors are terminal.
       retry: (failureCount, error: unknown) => {
-        const status = (error as { response?: { status?: number } })?.response
-          ?.status;
+        const status = (error as { response?: { status?: number } })?.response?.status;
         if (status && status >= 400 && status < 500) return false;
         return failureCount < 2;
       },

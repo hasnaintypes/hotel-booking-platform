@@ -1,15 +1,7 @@
-import {
-  ExternalLink,
-  FileText,
-  Code,
-  Database,
-  Shield,
-  Zap,
-} from "lucide-react";
+import { ExternalLink, FileText, Code, Database, Shield, Zap } from "lucide-react";
 
 const ApiDocs = () => {
-  const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const apiEndpoints = [
     {
@@ -151,26 +143,20 @@ const ApiDocs = () => {
     <div>
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">
-          API Documentation
-        </h1>
+        <h1 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">API Documentation</h1>
         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-          Comprehensive documentation for the Hotel Booking API. Explore
-          endpoints, understand authentication, and integrate with our services.
+          Comprehensive documentation for the Hotel Booking API. Explore endpoints, understand
+          authentication, and integrate with our services.
         </p>
       </div>
 
       {/* API Base URL */}
       <div className="bg-white rounded-xl shadow-xl border p-6 pb-6">
-        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">
-          Base URL
-        </h2>
+        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">Base URL</h2>
         <div className="bg-gray-100 rounded-xl p-4">
           <code className="text-lg font-mono text-gray-700">{apiBaseUrl}</code>
         </div>
-        <p className="text-gray-600 mt-2">
-          All API endpoints are relative to this base URL.
-        </p>
+        <p className="text-gray-600 mt-2">All API endpoints are relative to this base URL.</p>
       </div>
 
       {/* Swagger UI Link */}
@@ -181,9 +167,8 @@ const ApiDocs = () => {
               Interactive API Documentation
             </h3>
             <p className="text-blue-700">
-              Explore our interactive Swagger UI documentation for detailed
-              endpoint specifications, request/response schemas, and testing
-              capabilities.
+              Explore our interactive Swagger UI documentation for detailed endpoint specifications,
+              request/response schemas, and testing capabilities.
             </p>
           </div>
           <a
@@ -201,16 +186,11 @@ const ApiDocs = () => {
       {/* Endpoints by Category */}
       <div className="space-y-8">
         {apiEndpoints.map((category) => (
-          <div
-            key={category.category}
-            className="bg-white rounded-xl shadow-xl border"
-          >
+          <div key={category.category} className="bg-white rounded-xl shadow-xl border">
             <div className="border-b border-gray-200 px-6 py-4">
               <div className="flex items-center">
                 <div className="text-blue-600 mr-3">{category.icon}</div>
-                <h3 className="text-xl font-medium text-gray-700">
-                  {category.category}
-                </h3>
+                <h3 className="text-xl font-medium text-gray-700">{category.category}</h3>
               </div>
             </div>
             <div className="divide-y divide-gray-200">
@@ -229,9 +209,7 @@ const ApiDocs = () => {
                         {endpoint.path}
                       </code>
                     </div>
-                    <span className="text-gray-600 text-sm">
-                      {endpoint.description}
-                    </span>
+                    <span className="text-gray-600 text-sm">{endpoint.description}</span>
                   </div>
                 </div>
               ))}
@@ -242,18 +220,14 @@ const ApiDocs = () => {
 
       {/* Authentication Section */}
       <div className="bg-white rounded-xl shadow-xl border p-6 mt-8">
-        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">
-          Authentication
-        </h2>
+        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">Authentication</h2>
         <div className="prose max-w-none">
           <p className="text-gray-600 mb-4">
-            The API uses JWT (JSON Web Tokens) for authentication. Most
-            endpoints require authentication via HTTP-only cookies.
+            The API uses JWT (JSON Web Tokens) for authentication. Most endpoints require
+            authentication via HTTP-only cookies.
           </p>
           <div className="bg-gray-100 rounded-xl p-4">
-            <h4 className="font-medium text-gray-700 mb-2">
-              Authentication Flow:
-            </h4>
+            <h4 className="font-medium text-gray-700 mb-2">Authentication Flow:</h4>
             <ol className="list-decimal list-inside text-gray-700 space-y-1">
               <li>Register or login to receive a JWT token</li>
               <li>Token is automatically stored in HTTP-only cookies</li>
@@ -266,31 +240,24 @@ const ApiDocs = () => {
 
       {/* Rate Limiting */}
       <div className="bg-white rounded-xl shadow-xl border p-6 mt-8">
-        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">
-          Rate Limiting
-        </h2>
+        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">Rate Limiting</h2>
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
           <p className="text-yellow-800">
-            <span className="font-medium text-gray-700">Rate Limit:</span> 100
-            requests per 15 minutes per IP address
+            <span className="font-medium text-gray-700">Rate Limit:</span> 100 requests per 15
+            minutes per IP address
           </p>
           <p className="text-yellow-700 text-sm mt-1">
-            Exceeding this limit will result in a 429 Too Many Requests
-            response.
+            Exceeding this limit will result in a 429 Too Many Requests response.
           </p>
         </div>
       </div>
 
       {/* Error Handling */}
       <div className="bg-white rounded-xl shadow-xl border p-6 mt-8">
-        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">
-          Error Handling
-        </h2>
+        <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">Error Handling</h2>
         <div className="space-y-4">
           <div>
-            <h4 className="font-medium text-gray-700">
-              Standard Error Response:
-            </h4>
+            <h4 className="font-medium text-gray-700">Standard Error Response:</h4>
             <pre className="bg-gray-100 rounded-xl p-4 text-sm overflow-x-auto">
               {`{
   "error": "Error message",
@@ -300,37 +267,28 @@ const ApiDocs = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-gray-700">
-                Common Status Codes:
-              </h4>
+              <h4 className="font-medium text-gray-700">Common Status Codes:</h4>
               <ul className="text-gray-600 space-y-1">
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">200</code> -
-                  Success
+                  <code className="bg-gray-100 px-1 rounded">200</code> - Success
                 </li>
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">400</code> - Bad
-                  Request
+                  <code className="bg-gray-100 px-1 rounded">400</code> - Bad Request
                 </li>
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">401</code> -
-                  Unauthorized
+                  <code className="bg-gray-100 px-1 rounded">401</code> - Unauthorized
                 </li>
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">403</code> -
-                  Forbidden
+                  <code className="bg-gray-100 px-1 rounded">403</code> - Forbidden
                 </li>
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">404</code> - Not
-                  Found
+                  <code className="bg-gray-100 px-1 rounded">404</code> - Not Found
                 </li>
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">429</code> - Too
-                  Many Requests
+                  <code className="bg-gray-100 px-1 rounded">429</code> - Too Many Requests
                 </li>
                 <li>
-                  <code className="bg-gray-100 px-1 rounded">500</code> - Server
-                  Error
+                  <code className="bg-gray-100 px-1 rounded">500</code> - Server Error
                 </li>
               </ul>
             </div>

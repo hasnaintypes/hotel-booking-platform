@@ -60,13 +60,7 @@ type Props = {
   showBack?: boolean;
 };
 
-const ManageHotelForm = ({
-  onSave,
-  isLoading,
-  hotel,
-  onCancel,
-  showBack = false,
-}: Props) => {
+const ManageHotelForm = ({ onSave, isLoading, hotel, onCancel, showBack = false }: Props) => {
   const formMethods = useForm<HotelFormData>();
   const { handleSubmit, reset } = formMethods;
 
@@ -122,26 +116,14 @@ const ManageHotelForm = ({
 
     // Add policies
     if (formDataJson.policies) {
-      formData.append(
-        "policies.checkInTime",
-        formDataJson.policies.checkInTime || ""
-      );
-      formData.append(
-        "policies.checkOutTime",
-        formDataJson.policies.checkOutTime || ""
-      );
+      formData.append("policies.checkInTime", formDataJson.policies.checkInTime || "");
+      formData.append("policies.checkOutTime", formDataJson.policies.checkOutTime || "");
       formData.append(
         "policies.cancellationPolicy",
-        formDataJson.policies.cancellationPolicy || ""
+        formDataJson.policies.cancellationPolicy || "",
       );
-      formData.append(
-        "policies.petPolicy",
-        formDataJson.policies.petPolicy || ""
-      );
-      formData.append(
-        "policies.smokingPolicy",
-        formDataJson.policies.smokingPolicy || ""
-      );
+      formData.append("policies.petPolicy", formDataJson.policies.petPolicy || "");
+      formData.append("policies.smokingPolicy", formDataJson.policies.smokingPolicy || "");
     }
 
     if (formDataJson.imageUrls) {
@@ -176,12 +158,7 @@ const ManageHotelForm = ({
             </Button>
           )}
           {onCancel && (
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={isLoading}
-              onClick={onCancel}
-            >
+            <Button type="button" variant="secondary" disabled={isLoading} onClick={onCancel}>
               Cancel
             </Button>
           )}

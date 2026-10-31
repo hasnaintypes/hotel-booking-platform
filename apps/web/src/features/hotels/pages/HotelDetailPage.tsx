@@ -31,9 +31,7 @@ const Detail = () => {
     enabled: !!hotelId,
   });
 
-  const { data: reviews, isLoading: isReviewsLoading } = useQuery<
-    ReviewType[]
-  >({
+  const { data: reviews, isLoading: isReviewsLoading } = useQuery<ReviewType[]>({
     queryKey: hotelKeys.reviews(hotelId || ""),
     queryFn: () => reviewsApi.fetchHotelReviews(hotelId || ""),
     enabled: !!hotelId,
@@ -45,10 +43,7 @@ const Detail = () => {
         <div className="h-10 w-2/3 bg-gray-200 rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-[300px] bg-gray-100 rounded-xl animate-pulse"
-            />
+            <div key={i} className="h-[300px] bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
         <div className="h-40 bg-gray-100 rounded-xl animate-pulse" />
@@ -57,11 +52,7 @@ const Detail = () => {
   }
 
   if (!hotel) {
-    return (
-      <div className="text-center text-lg text-gray-500 py-8">
-        No hotel found.
-      </div>
-    );
+    return <div className="text-center text-lg text-gray-500 py-8">No hotel found.</div>;
   }
 
   return (
@@ -112,9 +103,7 @@ const Detail = () => {
               <Badge variant="outline">{hotel.totalBookings} bookings</Badge>
             )}
             {hotel.totalRevenue && hotel.totalRevenue > 0 && (
-              <Badge variant="outline">
-                £{hotel.totalRevenue.toLocaleString()} revenue
-              </Badge>
+              <Badge variant="outline">£{hotel.totalRevenue.toLocaleString()} revenue</Badge>
             )}
             {/* Rating Badge */}
             <Badge variant="outline" className="text-gray-600">
@@ -124,9 +113,7 @@ const Detail = () => {
                   }`
                 : "No guest reviews yet"}
             </Badge>
-            {hotel.isFeatured && (
-              <Badge className="bg-yellow-100 text-yellow-800">Featured</Badge>
-            )}
+            {hotel.isFeatured && <Badge className="bg-yellow-100 text-yellow-800">Featured</Badge>}
           </div>
         )}
 
@@ -163,30 +150,22 @@ const Detail = () => {
         <div className="flex items-center justify-between mt-4 p-4 bg-gray-50 rounded-xl">
           <div className="flex items-center gap-6">
             <div className="text-center">
-              <p className="text-sm md:text-lg font-medium text-gray-700">
-                £{hotel.pricePerNight}
-              </p>
+              <p className="text-sm md:text-lg font-medium text-gray-700">£{hotel.pricePerNight}</p>
               <p className="text-sm text-gray-600">per night</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-center">
-                <p className="text-lg font-medium text-gray-700">
-                  {hotel.adultCount}
-                </p>
+                <p className="text-lg font-medium text-gray-700">{hotel.adultCount}</p>
                 <p className="text-sm text-gray-600">Adults</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-medium text-gray-700">
-                  {hotel.childCount}
-                </p>
+                <p className="text-lg font-medium text-gray-700">{hotel.childCount}</p>
                 <p className="text-sm text-gray-600">Children</p>
               </div>
             </div>
           </div>
           <div className="text-center">
-            <p className="text-lg font-medium text-gray-700">
-              {hotel.starRating}
-            </p>
+            <p className="text-lg font-medium text-gray-700">{hotel.starRating}</p>
             <p className="text-sm text-gray-600">Star Rating</p>
           </div>
         </div>
@@ -195,9 +174,7 @@ const Detail = () => {
         {hotel.description && (
           <div className="mt-6">
             <h3 className="text-xl font-medium mb-3">About This Hotel</h3>
-            <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-              {hotel.description}
-            </p>
+            <p className="text-gray-700 leading-relaxed whitespace-pre-line">{hotel.description}</p>
           </div>
         )}
       </div>
@@ -211,8 +188,7 @@ const Detail = () => {
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-gray-600" />
                 <span>
-                  <span className="font-medium text-gray-700">Phone:</span>{" "}
-                  {hotel.contact.phone}
+                  <span className="font-medium text-gray-700">Phone:</span> {hotel.contact.phone}
                 </span>
               </div>
             )}
@@ -220,8 +196,7 @@ const Detail = () => {
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-gray-600" />
                 <span>
-                  <span className="font-medium text-gray-700">Email:</span>{" "}
-                  {hotel.contact.email}
+                  <span className="font-medium text-gray-700">Email:</span> {hotel.contact.email}
                 </span>
               </div>
             )}
@@ -299,20 +274,12 @@ const Detail = () => {
               <div className="w-4 h-4 text-green-600">
                 {facility === "Free WiFi" && <Wifi className="w-4 h-4" />}
                 {facility === "Parking" && <Car className="w-4 h-4" />}
-                {facility === "Airport Shuttle" && (
-                  <Plane className="w-4 h-4" />
-                )}
+                {facility === "Airport Shuttle" && <Plane className="w-4 h-4" />}
                 {facility === "Outdoor Pool" && <Waves className="w-4 h-4" />}
                 {facility === "Spa" && <Sparkles className="w-4 h-4" />}
-                {facility === "Fitness Center" && (
-                  <Dumbbell className="w-4 h-4" />
-                )}
-                {facility === "Family Rooms" && (
-                  <Building2 className="w-4 h-4" />
-                )}
-                {facility === "Non-Smoking Rooms" && (
-                  <Building2 className="w-4 h-4" />
-                )}
+                {facility === "Fitness Center" && <Dumbbell className="w-4 h-4" />}
+                {facility === "Family Rooms" && <Building2 className="w-4 h-4" />}
+                {facility === "Non-Smoking Rooms" && <Building2 className="w-4 h-4" />}
                 {![
                   "Free WiFi",
                   "Parking",
@@ -336,28 +303,19 @@ const Detail = () => {
         {isReviewsLoading ? (
           <div className="space-y-3">
             {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-16 bg-gray-100 rounded-xl animate-pulse"
-              />
+              <div key={i} className="h-16 bg-gray-100 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : !reviews || reviews.length === 0 ? (
           <p className="text-gray-500 text-sm">
-            No reviews yet. Guests can leave a review from My Bookings after
-            their stay.
+            No reviews yet. Guests can leave a review from My Bookings after their stay.
           </p>
         ) : (
           <ul className="space-y-4">
             {reviews.map((review) => (
-              <li
-                key={review._id}
-                className="border-b border-gray-100 pb-3 last:border-0"
-              >
+              <li key={review._id} className="border-b border-gray-100 pb-3 last:border-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-gray-700">
-                    {review.rating.toFixed(1)}★
-                  </span>
+                  <span className="font-medium text-gray-700">{review.rating.toFixed(1)}★</span>
                   {review.isVerified && (
                     <Badge variant="outline" className="text-xs">
                       Verified stay
@@ -369,9 +327,7 @@ const Detail = () => {
                     </span>
                   )}
                 </div>
-                <p className="text-gray-700 text-sm whitespace-pre-line">
-                  {review.comment}
-                </p>
+                <p className="text-gray-700 text-sm whitespace-pre-line">{review.comment}</p>
               </li>
             ))}
           </ul>
@@ -380,10 +336,7 @@ const Detail = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr]">
         <div className="h-fit">
-          <GuestInfoForm
-            pricePerNight={hotel.pricePerNight}
-            hotelId={hotel._id}
-          />
+          <GuestInfoForm pricePerNight={hotel.pricePerNight} hotelId={hotel._id} />
         </div>
       </div>
     </div>

@@ -5,12 +5,7 @@ import type { BookingType, HotelWithBookingsType } from "@hotel-booking/types";
 import { Badge } from "@hotel-booking/ui";
 import { Button } from "@hotel-booking/ui";
 import { SafeImage } from "@hotel-booking/ui";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@hotel-booking/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Link } from "react-router-dom";
 import {
   Calendar,
@@ -64,8 +59,8 @@ const MyBookings = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              To view your bookings, please sign in with your test credentials
-              or your personal account.
+              To view your bookings, please sign in with your test credentials or your personal
+              account.
             </p>
             <div className="flex flex-col gap-2 text-sm mb-4">
               <div className="flex items-center gap-2">
@@ -123,9 +118,7 @@ const MyBookings = () => {
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
           <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-gray-600 mb-2">
-            No Bookings Found
-          </h3>
+          <h3 className="text-xl font-medium text-gray-600 mb-2">No Bookings Found</h3>
           <p className="text-gray-500">You haven't made any bookings yet.</p>
         </div>
       </div>
@@ -133,10 +126,7 @@ const MyBookings = () => {
   }
 
   // Calculate booking statistics
-  const totalBookings = hotels.reduce(
-    (total, hotel) => total + hotel.bookings.length,
-    0,
-  );
+  const totalBookings = hotels.reduce((total, hotel) => total + hotel.bookings.length, 0);
 
   // Count unique hotels by hotel ID
   const uniqueHotelIds = new Set(hotels.map((hotel) => hotel._id));
@@ -151,10 +141,7 @@ const MyBookings = () => {
         const checkOutDate = new Date(booking.checkOut);
         const nights = Math.max(
           1,
-          Math.ceil(
-            (checkOutDate.getTime() - checkInDate.getTime()) /
-              (1000 * 60 * 60 * 24),
-          ),
+          Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
         );
         return hotelTotal + hotel.pricePerNight * nights;
       }, 0)
@@ -214,30 +201,22 @@ const MyBookings = () => {
     <div className="space-y-8">
       {/* Header Section */}{" "}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl p-8 text-white">
-        <h1 className="text-lg md:text-2xl font-medium mb-2">
-          My Bookings History
-        </h1>
+        <h1 className="text-lg md:text-2xl font-medium mb-2">My Bookings History</h1>
         <p className="text-blue-100 text-lg">
           Track all your hotel reservations and booking details
         </p>
         <div className="flex items-center gap-6 mt-4">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
-            <span className="text-blue-100">
-              {totalBookings} Total Bookings
-            </span>
+            <span className="text-blue-100">{totalBookings} Total Bookings</span>
           </div>
           <div className="flex items-center gap-2">
             <MapPin className="w-5 h-5" />
-            <span className="text-blue-100">
-              {differentHotels} Different Hotels
-            </span>
+            <span className="text-blue-100">{differentHotels} Different Hotels</span>
           </div>
           <div className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            <span className="text-blue-100">
-              £{totalSpent.toFixed(2)} Total Spent
-            </span>
+            <span className="text-blue-100">£{totalSpent.toFixed(2)} Total Spent</span>
           </div>
         </div>
       </div>
@@ -289,14 +268,11 @@ const MyBookings = () => {
                 {hotel.bookings.map((booking: BookingType) => {
                   const checkInDate = new Date(booking.checkIn);
                   const checkOutDate = new Date(booking.checkOut);
-                  const createdAt = new Date(
-                    booking.createdAt || booking.checkIn,
-                  );
+                  const createdAt = new Date(booking.createdAt || booking.checkIn);
                   const nights = Math.max(
                     1,
                     Math.ceil(
-                      (checkOutDate.getTime() - checkInDate.getTime()) /
-                        (1000 * 60 * 60 * 24),
+                      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
                     ),
                   );
                   const totalPrice = hotel.pricePerNight * nights;
@@ -327,14 +303,10 @@ const MyBookings = () => {
                         </div>
                         <div className="flex gap-2">
                           <Badge
-                            className={`${getStatusColor(
-                              booking.status || "pending",
-                            )} border`}
+                            className={`${getStatusColor(booking.status || "pending")} border`}
                           >
                             {getStatusIcon(booking.status || "pending")}
-                            <span className="ml-1">
-                              {booking.status || "pending"}
-                            </span>
+                            <span className="ml-1">{booking.status || "pending"}</span>
                           </Badge>
                           <Badge
                             className={`${getPaymentStatusColor(
@@ -344,10 +316,7 @@ const MyBookings = () => {
                             {booking.paymentStatus || "pending"}
                           </Badge>
                           {booking.paymentMethod && (
-                            <Badge
-                              variant="outline"
-                              className="border-gray-300"
-                            >
+                            <Badge variant="outline" className="border-gray-300">
                               {booking.paymentMethod}
                             </Badge>
                           )}
@@ -360,9 +329,7 @@ const MyBookings = () => {
                         <div className="bg-white rounded-xl p-4 border border-gray-200">
                           <div className="flex items-center gap-2 mb-2">
                             <Calendar className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium text-gray-700">
-                              Stay Dates
-                            </span>
+                            <span className="font-medium text-gray-700">Stay Dates</span>
                           </div>
                           <div className="text-sm text-gray-600">
                             <div className="mb-1">
@@ -380,22 +347,14 @@ const MyBookings = () => {
                         <div className="bg-white rounded-xl p-4 border border-gray-200">
                           <div className="flex items-center gap-2 mb-2">
                             <Users className="w-4 h-4 text-green-600" />
-                            <span className="font-medium text-gray-700">
-                              Guests
-                            </span>
+                            <span className="font-medium text-gray-700">Guests</span>
                           </div>
                           <div className="text-sm text-gray-600">
                             <div className="mb-1">
-                              <span className="font-medium">
-                                {booking.adultCount}
-                              </span>{" "}
-                              Adults
+                              <span className="font-medium">{booking.adultCount}</span> Adults
                             </div>
                             <div>
-                              <span className="font-medium">
-                                {booking.childCount}
-                              </span>{" "}
-                              Children
+                              <span className="font-medium">{booking.childCount}</span> Children
                             </div>
                           </div>
                         </div>
@@ -404,9 +363,7 @@ const MyBookings = () => {
                         <div className="bg-white rounded-xl p-4 border border-gray-200">
                           <div className="flex items-center gap-2 mb-2">
                             <Phone className="w-4 h-4 text-purple-600" />
-                            <span className="font-medium text-gray-700">
-                              Contact
-                            </span>
+                            <span className="font-medium text-gray-700">Contact</span>
                           </div>
                           <div className="text-sm text-gray-600">
                             <div className="mb-1">{booking.email}</div>
@@ -419,14 +376,11 @@ const MyBookings = () => {
                           <div className="bg-white rounded-xl p-4 border border-gray-200">
                             <div className="flex items-center gap-2 mb-2">
                               <CreditCard className="w-4 h-4 text-orange-600" />
-                              <span className="font-medium text-gray-700">
-                                Pricing
-                              </span>
+                              <span className="font-medium text-gray-700">Pricing</span>
                             </div>
                             <div className="text-sm text-gray-600">
                               <div className="mb-1">
-                                <span className="font-medium">{nights}</span>{" "}
-                                Nights
+                                <span className="font-medium">{nights}</span> Nights
                               </div>
                               <div className="text-lg font-medium text-green-600">
                                 £{totalPrice}
@@ -445,8 +399,7 @@ const MyBookings = () => {
                       </div>
 
                       {/* Special Requests & Cancellation */}
-                      {(booking.specialRequests ||
-                        booking.cancellationReason) && (
+                      {(booking.specialRequests || booking.cancellationReason) && (
                         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                           {booking.specialRequests && (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
@@ -454,9 +407,7 @@ const MyBookings = () => {
                                 <Package className="w-4 h-4" />
                                 Special Requests
                               </h4>
-                              <p className="text-blue-700 text-sm">
-                                {booking.specialRequests}
-                              </p>
+                              <p className="text-blue-700 text-sm">{booking.specialRequests}</p>
                             </div>
                           )}
                           {booking.cancellationReason && (
@@ -465,9 +416,7 @@ const MyBookings = () => {
                                 <Building className="w-4 h-4" />
                                 Cancellation Reason
                               </h4>
-                              <p className="text-red-700 text-sm">
-                                {booking.cancellationReason}
-                              </p>
+                              <p className="text-red-700 text-sm">{booking.cancellationReason}</p>
                             </div>
                           )}
                         </div>
@@ -482,10 +431,7 @@ const MyBookings = () => {
                           booking.status !== "cancelled" &&
                           booking.status !== "refunded")) && (
                         <div className="mt-4">
-                          <WriteReviewForm
-                            hotelId={hotel._id}
-                            bookingId={booking._id}
-                          />
+                          <WriteReviewForm hotelId={hotel._id} bookingId={booking._id} />
                         </div>
                       )}
                     </div>

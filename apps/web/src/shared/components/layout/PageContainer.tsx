@@ -9,19 +9,9 @@ type PageContainerProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
 };
 
-const PageContainer = ({
-  children,
-  className,
-  ...props
-}: PageContainerProps) => {
+const PageContainer = ({ children, className, ...props }: PageContainerProps) => {
   return (
-    <div
-      className={cn(
-        "max-w-9xl mx-auto w-full px-2 sm:px-4 xl:px-8",
-        className,
-      )}
-      {...props}
-    >
+    <div className={cn("max-w-9xl mx-auto w-full px-2 sm:px-4 xl:px-8", className)} {...props}>
       {children}
     </div>
   );

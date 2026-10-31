@@ -7,26 +7,11 @@ import type { RegisterFormData } from "@/features/auth/types";
 import { welcomeNewToast } from "@/shared/lib/toast-messages";
 import { StaggerItem } from "@hotel-booking/ui";
 import { useNavigate, Link } from "react-router-dom";
-import {
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  User,
-  Sparkles,
-  CheckCircle,
-  Sparkle,
-} from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Sparkles, CheckCircle, Sparkle } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@hotel-booking/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Label } from "@hotel-booking/ui";
 import { Separator } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
@@ -46,7 +31,8 @@ const Register = () => {
     formState: { errors },
   } = useForm<RegisterFormData>();
 
-  const mutation = useMutation({ mutationFn: authApi.register,
+  const mutation = useMutation({
+    mutationFn: authApi.register,
     onSuccess: async () => {
       showToast(welcomeNewToast());
       await queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
@@ -91,12 +77,9 @@ const Register = () => {
                 {!import.meta.env.PROD && (
                   <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                     <p className="text-sm text-yellow-800">
-                      <span className="font-medium text-gray-700">
-                        Development Note:
-                      </span>{" "}
-                      Authentication state persists between sessions. If you're
-                      seeing a logged-in state unexpectedly, use the "Clear
-                      Auth" button in the header.
+                      <span className="font-medium text-gray-700">Development Note:</span>{" "}
+                      Authentication state persists between sessions. If you're seeing a logged-in
+                      state unexpectedly, use the "Clear Auth" button in the header.
                     </p>
                   </div>
                 )}
@@ -105,15 +88,9 @@ const Register = () => {
 
             <CardContent className="space-y-6">
               <form className="space-y-6" onSubmit={onSubmit}>
-                <StaggerItem
-                  index={2}
-                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
+                <StaggerItem index={2} className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="firstName"
-                      className="text-sm font-medium text-gray-700"
-                    >
+                    <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
                       First Name
                     </Label>
                     <div className="relative">
@@ -132,10 +109,7 @@ const Register = () => {
                     </div>
                     {errors.firstName && (
                       <div className="flex items-center mt-1">
-                        <Badge
-                          variant="outline"
-                          className="text-red-500 border-red-200 bg-red-50"
-                        >
+                        <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                           <Sparkles className="w-4 h-4 mr-1" />
                           {errors.firstName.message}
                         </Badge>
@@ -144,10 +118,7 @@ const Register = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label
-                      htmlFor="lastName"
-                      className="text-sm font-medium text-gray-700"
-                    >
+                    <Label htmlFor="lastName" className="text-sm font-medium text-gray-700">
                       Last Name
                     </Label>
                     <div className="relative">
@@ -166,10 +137,7 @@ const Register = () => {
                     </div>
                     {errors.lastName && (
                       <div className="flex items-center mt-1">
-                        <Badge
-                          variant="outline"
-                          className="text-red-500 border-red-200 bg-red-50"
-                        >
+                        <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                           <Sparkles className="w-4 h-4 mr-1" />
                           {errors.lastName.message}
                         </Badge>
@@ -179,10 +147,7 @@ const Register = () => {
                 </StaggerItem>
 
                 <StaggerItem index={3} className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                     Email Address
                   </Label>
                   <div className="relative">
@@ -199,10 +164,7 @@ const Register = () => {
                   </div>
                   {errors.email && (
                     <div className="flex items-center mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-red-500 border-red-200 bg-red-50"
-                      >
+                      <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                         <Sparkles className="w-4 h-4 mr-1" />
                         {errors.email.message}
                       </Badge>
@@ -211,10 +173,7 @@ const Register = () => {
                 </StaggerItem>
 
                 <StaggerItem index={4} className="space-y-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                     Password
                   </Label>
                   <div className="relative">
@@ -250,10 +209,7 @@ const Register = () => {
                   </div>
                   {errors.password && (
                     <div className="flex items-center mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-red-500 border-red-200 bg-red-50"
-                      >
+                      <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                         <Sparkles className="w-4 h-4 mr-1" />
                         {errors.password.message}
                       </Badge>
@@ -262,10 +218,7 @@ const Register = () => {
                 </StaggerItem>
 
                 <StaggerItem index={5} className="space-y-2">
-                  <Label
-                    htmlFor="confirmPassword"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700">
                     Confirm Password
                   </Label>
                   <div className="relative">
@@ -292,9 +245,7 @@ const Register = () => {
                       variant="ghost"
                       size="icon"
                       className="absolute inset-y-0 right-0 pr-3 h-full"
-                      onClick={() =>
-                        setShowConfirmPassword(!showConfirmPassword)
-                      }
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
@@ -305,28 +256,23 @@ const Register = () => {
                   </div>
                   {errors.confirmPassword && (
                     <div className="flex items-center mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-red-500 border-red-200 bg-red-50"
-                      >
+                      <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                         <Sparkles className="w-4 h-4 mr-1" />
                         {errors.confirmPassword.message}
                       </Badge>
                     </div>
                   )}
-                  {password &&
-                    !errors.confirmPassword &&
-                    watch("confirmPassword") === password && (
-                      <div className="flex items-center mt-1">
-                        <Badge
-                          variant="outline"
-                          className="text-green-500 border-green-200 bg-green-50"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Passwords match
-                        </Badge>
-                      </div>
-                    )}
+                  {password && !errors.confirmPassword && watch("confirmPassword") === password && (
+                    <div className="flex items-center mt-1">
+                      <Badge
+                        variant="outline"
+                        className="text-green-500 border-green-200 bg-green-50"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Passwords match
+                      </Badge>
+                    </div>
+                  )}
                 </StaggerItem>
 
                 <StaggerItem index={6}>

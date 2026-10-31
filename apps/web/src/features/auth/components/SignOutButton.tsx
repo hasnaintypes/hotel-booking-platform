@@ -51,8 +51,7 @@ const SignOutButton = () => {
       queryClient.removeQueries({ queryKey: authKeys.currentUser() });
       showToast({
         title: "Auth State Cleared",
-        description:
-          "Authentication state has been cleared. You can sign in again.",
+        description: "Authentication state has been cleared. You can sign in again.",
         type: "SUCCESS",
       });
       navigate("/sign-in");
@@ -72,8 +71,7 @@ const SignOutButton = () => {
     queryClient.clear();
     showToast({
       title: "Storage Cleared",
-      description:
-        "All browser storage and cached queries were cleared. Sign in again when ready.",
+      description: "All browser storage and cached queries were cleared. Sign in again when ready.",
       type: "SUCCESS",
     });
     navigate("/sign-in");
@@ -115,9 +113,7 @@ const SignOutButton = () => {
       <DropdownMenuContent className="w-56 bg-white" align="end">
         <DropdownMenuLabel>
           <p className="font-medium text-gray-700">{displayName}</p>
-          {userEmail && (
-            <p className="text-xs text-gray-500 truncate">{userEmail}</p>
-          )}
+          {userEmail && <p className="text-xs text-gray-500 truncate">{userEmail}</p>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-primary-600">
@@ -129,17 +125,11 @@ const SignOutButton = () => {
         {!import.meta.env.PROD && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleClearAuth}
-              className="text-red-600"
-            >
+            <DropdownMenuItem onClick={handleClearAuth} className="text-red-600">
               <Trash2 className="w-4 h-4 " />
               Clear Auth State
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={clearAllStorage}
-              className="text-orange-600"
-            >
+            <DropdownMenuItem onClick={clearAllStorage} className="text-orange-600">
               <RefreshCw className="w-4 h-4 " />
               Clear All Storage
             </DropdownMenuItem>

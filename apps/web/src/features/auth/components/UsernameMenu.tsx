@@ -10,14 +10,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import * as authApi from "@/features/auth/api";
 import { authKeys } from "@/shared/lib/query-keys";
-import {
-  Plus,
-  LogOut,
-  Building2,
-  Shield,
-  FileText,
-  Activity,
-} from "lucide-react";
+import { Plus, LogOut, Building2, Shield, FileText, Activity } from "lucide-react";
 import { useToast } from "@/shared/context/ToastContext";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { goodbyeToast, getStoredDisplayName } from "@/shared/lib/toast-messages";
@@ -85,53 +78,33 @@ const UsernameMenu = () => {
         </div>
         <Separator className="my-2 bg-gray-200" />
         {currentUser?.role === "admin" && (
-          <DropdownMenuItem
-            onClick={handleMenuClick}
-            asChild
-            className={menuItemClass}
-          >
+          <DropdownMenuItem onClick={handleMenuClick} asChild className={menuItemClass}>
             <a href={getAdminUrl()} className={linkRowClass}>
               <Shield className="h-4 w-4" />
               Admin Panel
             </a>
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem
-          onClick={handleMenuClick}
-          asChild
-          className={menuItemClass}
-        >
+        <DropdownMenuItem onClick={handleMenuClick} asChild className={menuItemClass}>
           <Link to="/add-hotel" className={linkRowClass}>
             <Plus className="h-4 w-4" />
             Add Hotel
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={handleMenuClick}
-          asChild
-          className={menuItemClass}
-        >
+        <DropdownMenuItem onClick={handleMenuClick} asChild className={menuItemClass}>
           <Link to="/my-hotels" className={linkRowClass}>
             <Building2 className="h-4 w-4" />
             My Hotels
           </Link>
         </DropdownMenuItem>
         {/* API links moved from MainNav — logged-in profile only */}
-        <DropdownMenuItem
-          onClick={handleMenuClick}
-          asChild
-          className={menuItemClass}
-        >
+        <DropdownMenuItem onClick={handleMenuClick} asChild className={menuItemClass}>
           <Link to="/api-docs" className={linkRowClass}>
             <FileText className="h-4 w-4" />
             API Documentation
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={handleMenuClick}
-          asChild
-          className={menuItemClass}
-        >
+        <DropdownMenuItem onClick={handleMenuClick} asChild className={menuItemClass}>
           <Link to="/api-status" className={linkRowClass}>
             <Activity className="h-4 w-4" />
             API Status

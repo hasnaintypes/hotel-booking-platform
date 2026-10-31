@@ -25,9 +25,7 @@ const Hero = ({ onSearch }: { onSearch: (searchData: unknown) => void }) => {
           <StaggerItem index={0} className="inline-block mb-6">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-6 py-2 backdrop-blur-sm">
               <Star className="w-5 h-5 shrink-0 text-yellow-400" />
-              <span className="text-white/90 font-medium">
-                Trusted by 10,000+ travelers
-              </span>
+              <span className="text-white/90 font-medium">Trusted by 10,000+ travelers</span>
             </div>
           </StaggerItem>
 

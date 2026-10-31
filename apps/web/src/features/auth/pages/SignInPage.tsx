@@ -11,20 +11,8 @@ import { Mail, Lock, Eye, EyeOff, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Label } from "@hotel-booking/ui";
 import { Separator } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
@@ -42,13 +30,7 @@ const testAccounts = {
 const testAccountAvatar = (email: string) =>
   `https://robohash.org/${encodeURIComponent(email)}.png?set=set1&size=32x32`;
 
-function TestAccountOptionLabel({
-  name,
-  email,
-}: {
-  name: string;
-  email: string;
-}) {
+function TestAccountOptionLabel({ name, email }: { name: string; email: string }) {
   return (
     <span className="inline-flex min-w-0 items-center gap-2">
       <img
@@ -97,7 +79,8 @@ const SignIn = () => {
     }
   };
 
-  const mutation = useMutation({ mutationFn: authApi.signIn,
+  const mutation = useMutation({
+    mutationFn: authApi.signIn,
     onSuccess: async () => {
       showToast(welcomeBackToast());
       await queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
@@ -141,12 +124,9 @@ const SignIn = () => {
                 {!import.meta.env.PROD && (
                   <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                     <p className="text-sm text-yellow-800">
-                      <span className="font-medium text-gray-700">
-                        Development Note:
-                      </span>{" "}
-                      Authentication state persists between sessions. If you're
-                      seeing a logged-in state unexpectedly, use the "Clear
-                      Auth" button in the header.
+                      <span className="font-medium text-gray-700">Development Note:</span>{" "}
+                      Authentication state persists between sessions. If you're seeing a logged-in
+                      state unexpectedly, use the "Clear Auth" button in the header.
                     </p>
                   </div>
                 )}
@@ -156,10 +136,7 @@ const SignIn = () => {
             <CardContent className="space-y-6">
               <form className="space-y-6" onSubmit={onSubmit}>
                 <StaggerItem index={2} className="space-y-2">
-                  <Label
-                    htmlFor="test-account"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="test-account" className="text-sm font-medium text-gray-700">
                     Test Accounts To Login With
                   </Label>
                   <Select
@@ -168,21 +145,10 @@ const SignIn = () => {
                     onValueChange={handleRoleSelect}
                   >
                     <SelectTrigger className="border border-gray-300 bg-white/80 text-gray-700 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-2 [&>span]:truncate">
-                      {selectedRole &&
-                      testAccounts[
-                        selectedRole as keyof typeof testAccounts
-                      ] ? (
+                      {selectedRole && testAccounts[selectedRole as keyof typeof testAccounts] ? (
                         <TestAccountOptionLabel
-                          name={
-                            testAccounts[
-                              selectedRole as keyof typeof testAccounts
-                            ].name
-                          }
-                          email={
-                            testAccounts[
-                              selectedRole as keyof typeof testAccounts
-                            ].email
-                          }
+                          name={testAccounts[selectedRole as keyof typeof testAccounts].name}
+                          email={testAccounts[selectedRole as keyof typeof testAccounts].email}
                         />
                       ) : (
                         <SelectValue placeholder="Select Role Based Test Account" />
@@ -214,10 +180,7 @@ const SignIn = () => {
                 </StaggerItem>
 
                 <StaggerItem index={3} className="space-y-2">
-                  <Label
-                    htmlFor="email"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                     Email Address
                   </Label>
                   <div className="relative">
@@ -234,10 +197,7 @@ const SignIn = () => {
                   </div>
                   {errors.email && (
                     <div className="flex items-center mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-red-500 border-red-200 bg-red-50"
-                      >
+                      <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                         <Sparkles className="w-4 h-4 mr-1" />
                         {errors.email.message}
                       </Badge>
@@ -246,10 +206,7 @@ const SignIn = () => {
                 </StaggerItem>
 
                 <StaggerItem index={4} className="space-y-2">
-                  <Label
-                    htmlFor="password"
-                    className="text-sm font-medium text-gray-700"
-                  >
+                  <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                     Password
                   </Label>
                   <div className="relative">
@@ -285,10 +242,7 @@ const SignIn = () => {
                   </div>
                   {errors.password && (
                     <div className="flex items-center mt-1">
-                      <Badge
-                        variant="outline"
-                        className="text-red-500 border-red-200 bg-red-50"
-                      >
+                      <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">
                         <Sparkles className="w-4 h-4 mr-1" />
                         {errors.password.message}
                       </Badge>
@@ -334,11 +288,7 @@ const SignIn = () => {
                       window.location.href = `${baseUrl}/api/auth/google`;
                     }}
                   >
-                    <svg
-                      className="w-5 h-5"
-                      viewBox="0 0 24 24"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path
                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                         fill="#4285F4"

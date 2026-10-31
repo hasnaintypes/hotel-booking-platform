@@ -17,10 +17,7 @@ export function extractHotelPlaces(hotels: HotelPlaceSource[]): string[] {
     new Set(
       hotels
         .map((hotel) => hotel.city || hotel.place)
-        .filter(
-          (place): place is string =>
-            typeof place === "string" && place.length > 0,
-        ),
+        .filter((place): place is string => typeof place === "string" && place.length > 0),
     ),
   );
 }

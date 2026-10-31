@@ -21,25 +21,24 @@ const EditHotel = () => {
   const { mutate, isPending: isLoading } = useMutation({
     mutationFn: hotelManagementApi.updateMyHotelById,
     onSuccess: async () => {
-    await invalidateHotelQueries(queryClient);
-    showToast({
-      title: "Hotel Updated Successfully",
-      description:
-        "Your hotel details have been updated successfully! Redirecting to My Hotels...",
-      type: "SUCCESS",
-    });
-    setTimeout(() => {
-      navigate("/my-hotels");
-    }, 1500);
-  },
-  onError: () => {
-    showToast({
-      title: "Failed to Update Hotel",
-      description:
-        "There was an error updating your hotel. Please try again.",
-      type: "ERROR",
-    });
-  },
+      await invalidateHotelQueries(queryClient);
+      showToast({
+        title: "Hotel Updated Successfully",
+        description:
+          "Your hotel details have been updated successfully! Redirecting to My Hotels...",
+        type: "SUCCESS",
+      });
+      setTimeout(() => {
+        navigate("/my-hotels");
+      }, 1500);
+    },
+    onError: () => {
+      showToast({
+        title: "Failed to Update Hotel",
+        description: "There was an error updating your hotel. Please try again.",
+        type: "ERROR",
+      });
+    },
   });
 
   const handleSave = (hotelFormData: FormData) => {

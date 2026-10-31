@@ -28,10 +28,7 @@ const CancelBookingButton = ({ booking, className }: Props) => {
     onSuccess: async (data) => {
       await invalidateBookingQueries(queryClient);
       const skipNote = data.refundSkipped ? ` ${data.refundSkipped}` : "";
-      const refundNote =
-        data.refundAmount > 0
-          ? ` Refunded £${data.refundAmount.toFixed(2)}.`
-          : "";
+      const refundNote = data.refundAmount > 0 ? ` Refunded £${data.refundAmount.toFixed(2)}.` : "";
       showToast({
         title: "Booking cancelled",
         description: `${refundNote}${skipNote}`.trim() || "Status updated.",
@@ -42,8 +39,8 @@ const CancelBookingButton = ({ booking, className }: Props) => {
     },
     onError: (err: unknown) => {
       const message =
-        (err as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Could not cancel booking";
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
+        "Could not cancel booking";
       showToast({
         title: "Cancel failed",
         description: message,
@@ -77,8 +74,8 @@ const CancelBookingButton = ({ booking, className }: Props) => {
       className={`mt-3 space-y-3 rounded-xl border border-red-200 bg-red-50 p-4 ${className || ""}`}
     >
       <p className="text-sm text-red-800">
-        Cancel this upcoming stay? Paid bookings receive a full Stripe refund
-        when a payment intent is on file.
+        Cancel this upcoming stay? Paid bookings receive a full Stripe refund when a payment intent
+        is on file.
       </p>
       <label className="block text-sm font-medium text-gray-700">
         Reason (optional)

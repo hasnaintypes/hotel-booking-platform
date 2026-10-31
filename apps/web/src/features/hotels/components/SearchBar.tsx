@@ -100,13 +100,7 @@ const SearchBar = () => {
       return;
     }
 
-    search.saveSearchValues(
-      destination.trim(),
-      checkIn,
-      checkOut,
-      adultCount,
-      childCount,
-    );
+    search.saveSearchValues(destination.trim(), checkIn, checkOut, adultCount, childCount);
 
     // Close dropdown before navigation
     setShowDropdown(false);
@@ -151,10 +145,7 @@ const SearchBar = () => {
           autoComplete="off"
         >
           <div className="flex flex-row items-center flex-1 relative sm:col-span-2 lg:col-span-1">
-            <MdTravelExplore
-              size={20}
-              className=" text-gray-500 absolute left-3 z-10"
-            />
+            <MdTravelExplore size={20} className=" text-gray-500 absolute left-3 z-10" />
             <Input
               placeholder="Where are you going?"
               className="pl-10"
@@ -225,32 +216,24 @@ const SearchBar = () => {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground whitespace-nowrap">
-                Adults:
-              </label>
+              <label className="text-sm text-muted-foreground whitespace-nowrap">Adults:</label>
               <Input
                 type="number"
                 min={1}
                 max={20}
                 value={adultCount}
-                onChange={(event) =>
-                  setAdultCount(parseInt(event.target.value))
-                }
+                onChange={(event) => setAdultCount(parseInt(event.target.value))}
                 className="w-16"
               />
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-muted-foreground whitespace-nowrap">
-                Children:
-              </label>
+              <label className="text-sm text-muted-foreground whitespace-nowrap">Children:</label>
               <Input
                 type="number"
                 min={0}
                 max={20}
                 value={childCount}
-                onChange={(event) =>
-                  setChildCount(parseInt(event.target.value))
-                }
+                onChange={(event) => setChildCount(parseInt(event.target.value))}
                 className="w-16"
               />
             </div>

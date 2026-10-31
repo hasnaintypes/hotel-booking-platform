@@ -13,10 +13,7 @@ const StarRatingFilter = ({ selectedStars, onChange }: Props) => {
       <FilterSectionLabel icon={Star} title="Property Rating" />
       <div className="space-y-2">
         {["5", "4", "3", "2", "1"].map((star) => (
-          <label
-            key={star}
-            className="flex items-center space-x-2 cursor-pointer text-gray-700"
-          >
+          <label key={star} className="flex items-center space-x-2 cursor-pointer text-gray-700">
             <Checkbox
               checked={selectedStars.includes(star)}
               onCheckedChange={(checked) => {
