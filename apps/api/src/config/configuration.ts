@@ -7,6 +7,7 @@ export const configuration = () => {
     nodeEnv: process.env.NODE_ENV || "development",
     port,
     frontendUrl: stripTrailingSlash(process.env.FRONTEND_URL) || "http://localhost:5174",
+    adminUrl: stripTrailingSlash(process.env.ADMIN_URL) || "http://localhost:5175",
     backendUrl: stripTrailingSlash(process.env.BACKEND_URL) || `http://localhost:${port}`,
     mongodb: {
       uri: process.env.MONGODB_CONNECTION_STRING,

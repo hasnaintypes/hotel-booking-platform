@@ -249,6 +249,7 @@ cp .env.example .env
 | `PORT`          | API port                                    | `5001` (macOS often blocks `5000` via AirPlay)    |
 | `NODE_ENV`      | `development` / `production`                | `development`                                     |
 | `FRONTEND_URL`  | CORS + OAuth redirects                      | `http://localhost:5174`                           |
+| `ADMIN_URL`     | CORS allow-list for the admin SPA           | `http://localhost:5175`                           |
 | `BACKEND_URL`   | Public API origin for Google `redirect_uri` | local: omit (defaults to `http://localhost:PORT`) |
 | `GOOGLE_ID`     | Google OAuth client id                      | Google Cloud Console → Credentials                |
 | `GOOGLE_SECRET` | Google OAuth client secret                  | same                                              |
@@ -440,7 +441,7 @@ export const fetchMyHotels = async () => {
 
 - **`helmet`** — security headers
 - **`@nestjs/throttler`** — global rate limit; stricter limit on the payment-intent route
-- **CORS** — allows `FRONTEND_URL`, localhost Vite ports, `*.vercel.app`, `*.netlify.app`
+- **CORS** — allows exactly `FRONTEND_URL`, `ADMIN_URL`, `BACKEND_URL`, and localhost Vite ports
 - **`JwtAuthGuard`** — accepts the `session_id` cookie, or a Bearer header when one is present
 - **`OriginGuard`** — blocks unsafe cookie-auth requests from untrusted origins
 - **`RolesGuard` + `@Roles(...)`** — role checks for admin/owner routes
@@ -634,7 +635,7 @@ import { HotelType } from "@hotel-booking/types";
 
 1. Build from the **repo root** context (see `apps/api/Dockerfile`).
 2. Set **all required** backend env vars in Coolify (same names as `apps/api/.env.example`).
-3. Set `FRONTEND_URL` to your Vercel URL; set `BACKEND_URL` to the public API origin.
+3. Set `FRONTEND_URL` to the web URL, `ADMIN_URL` to the admin URL, and `BACKEND_URL` to the public API origin.
 4. Expose `PORT` as configured in Coolify; health check: `GET /api/health`.
 5. Redeploy when `main` changes.
 

@@ -86,7 +86,8 @@ The app exits during startup if any required variable is missing (`config/env.va
 | ------------------------- | ------------------------------ | ------------------------------------------ |
 | `PORT`                    | `5001`                         | HTTP port                                  |
 | `NODE_ENV`                | `development`                  | Runtime mode                               |
-| `FRONTEND_URL`            | `http://localhost:5174`        | CORS + OAuth redirect target               |
+| `FRONTEND_URL`            | `http://localhost:5174`        | Web origin for CORS + OAuth redirects      |
+| `ADMIN_URL`               | `http://localhost:5175`        | Admin origin for the CORS/origin allow-list |
 | `BACKEND_URL`             | `http://localhost:${PORT}`     | Public API origin for Google `redirect_uri`|
 | `GOOGLE_ID` / `GOOGLE_SECRET` | —                          | Google OAuth                               |
 | `AI_ASSIST_ENABLED`       | `false`                        | Enables the AI draft endpoint              |
