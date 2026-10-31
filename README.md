@@ -11,7 +11,7 @@ A full-stack hotel marketplace. Guests search hotels and pay for stays with Stri
 - **Guests:** search by destination, guests, price, stars, type and facilities; hotel detail pages; email/password or Google sign-in; Stripe card checkout (GBP); my bookings, cancellation with automatic refund; reviews tied to their bookings.
 - **Hotel owners:** create and edit hotels with up to 6 images (Cloudinary); per-hotel booking log; activate/deactivate listings.
 - **Admins** (`apps/admin`): dashboard, hotels, users and roles, bookings, reviews, activity.
-- **Insights:** business dashboard, forecast and system stats; optional LLM-drafted copy (draft-only, off by default).
+- **Insights (admin only):** business dashboard, forecast and system stats; optional LLM-drafted copy (draft-only, off by default).
 - **Platform:** httpOnly cookie sessions with origin (CSRF) checks, rate limiting, Helmet, Pino logging, Swagger docs at `/api-docs`.
 
 ## Architecture

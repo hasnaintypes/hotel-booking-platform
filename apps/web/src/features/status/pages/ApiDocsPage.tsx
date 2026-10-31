@@ -108,17 +108,17 @@ const ApiDocs = () => {
         {
           method: "GET",
           path: "/api/business-insights/dashboard",
-          description: "Analytics dashboard",
+          description: "Analytics dashboard (admin only)",
         },
         {
           method: "GET",
           path: "/api/business-insights/forecast",
-          description: "Booking forecasts",
+          description: "Booking forecasts (admin only)",
         },
         {
           method: "GET",
           path: "/api/business-insights/system-stats",
-          description: "System statistics",
+          description: "System statistics (admin only)",
         },
       ],
     },

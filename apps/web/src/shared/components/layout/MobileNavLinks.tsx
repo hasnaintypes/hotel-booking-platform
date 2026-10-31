@@ -1,13 +1,10 @@
 import { Link } from "react-router-dom";
 import { Button } from "@hotel-booking/ui";
-import { Building2, Calendar, BarChart3, LogIn, Hotel } from "lucide-react";
+import { Building2, Calendar, LogIn, Hotel } from "lucide-react";
 import UsernameMenu from "@/features/auth/components/UsernameMenu";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { getHotelsSearchUrl } from "@/shared/lib/nav-utils";
-import { prefetchBusinessInsightsQueries } from "@/features/analytics/lib/prefetch";
-import { queryClient } from "@hotel-booking/api-client";
 import {
-  prefetchAnalyticsRoute,
   prefetchMyBookingsRoute,
   prefetchMyHotelsRoute,
   prefetchSearchRoute,
@@ -39,21 +36,6 @@ const MobileNavLinks = () => {
       >
         <Calendar className="h-4 w-4" />
         My Bookings
-      </Link>
-      <Link
-        to="/business-insights"
-        className={linkClass}
-        onMouseEnter={() => {
-          prefetchAnalyticsRoute();
-          prefetchBusinessInsightsQueries(queryClient);
-        }}
-        onFocus={() => {
-          prefetchAnalyticsRoute();
-          prefetchBusinessInsightsQueries(queryClient);
-        }}
-      >
-        <BarChart3 className="h-4 w-4" />
-        Business Insights
       </Link>
       <Link
         to="/my-hotels"
