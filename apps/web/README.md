@@ -317,38 +317,19 @@ Modal for viewing detailed booking information.
 
 ## 🔐 Authentication & State Management
 
-### **Dual Authentication System**
+### **Cookie Session Authentication**
 
-The frontend implements a **dual authentication system** to support both modern browsers and privacy-focused browsers:
+The API owns the JWT in an httpOnly `session_id` cookie. The SPA stores only a non-sensitive `auth_session=1` hint plus display fields:
 
 ```typescript
-// API Client with dual authentication
-const getRequestOptions = (method: string = "GET", body?: any) => {
-  const options: RequestInit = {
-    method,
-    credentials: "include", // Try cookies first
-    headers: getAuthHeaders(),
-  };
+// The shared Axios instance sends the cookie on every request.
+const apiClient = axios.create({
+  baseURL: getApiBaseUrl(),
+  withCredentials: true,
+});
 
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-
-  return options;
-};
-
-const getAuthHeaders = () => {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  // If we have a stored token, use Authorization header
-  if (authToken) {
-    headers["Authorization"] = `Bearer ${authToken}`;
-  }
-
-  return headers;
-};
+// UI state subscribes to the shared hint.
+const hasSession = useSyncExternalStore(authSession.subscribe, authSession.get);
 ```
 
 ### **Context Management**
@@ -360,7 +341,7 @@ Auth and server state live in React Query; React Context is reserved for low-fre
 const { data, isLoading, isError } = useQuery({
   queryKey: authKeys.currentUser(),
   queryFn: fetchCurrentUser,
-  enabled: hasStoredToken,
+  enabled: hasSession,
 });
 
 // ToastContext exposes a stable showToast callback.

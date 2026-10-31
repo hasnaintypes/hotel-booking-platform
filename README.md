@@ -120,7 +120,7 @@ This repository is designed as a **teaching project**. By reading and running it
 
 ### Keyword cheat-sheet
 
-- **JWT (JSON Web Token):** signed string proving “this user is logged in.” Frontend stores it in `localStorage.session_id` and sends `Authorization: Bearer …`.
+- **JWT (JSON Web Token):** signed string proving “this user is logged in.” The API sets it in the httpOnly `session_id` cookie; the browser stores only a non-sensitive `auth_session` hint.
 - **CORS:** browser rule; API must allow your frontend origin (`FRONTEND_URL`, Vercel, etc.).
 - **PaymentIntent:** Stripe object that represents a payment attempt; booking is created only if status is `succeeded`.
 - **React Query key:** typed key-factory identity for a cached request (e.g. `authKeys.currentUser()`). Invalidate after login/logout.
@@ -132,7 +132,7 @@ This repository is designed as a **teaching project**. By reading and running it
 
 ```text
 Browser (web SPA :5174)        Browser (admin SPA :5175)
-        │  HTTPS JSON + JWT Bearer        │
+        │  HTTPS JSON + session cookie    │
         └───────────────┬─────────────────┘
                         ▼
 NestJS API (:5001)
@@ -145,7 +145,7 @@ NestJS API (:5001)
 **Typical request path**
 
 1. React page calls a function in its feature's `api.ts`
-2. Axios (`packages/api-client`) adds the Bearer token
+2. Axios (`packages/api-client`) sends the httpOnly session cookie (`withCredentials: true`)
 3. Nest controller (+ optional `JwtAuthGuard`) runs
 4. Mongoose reads/writes MongoDB
 5. JSON returns → React Query caches / invalidates
@@ -395,8 +395,8 @@ QueryClientProvider
 | `/business-insights`                 | AnalyticsDashboard | Charts                         |
 | `/api-docs`, `/api-status`           | Docs / health UI   | Public                         |
 | `/register`, `/sign-in`              | Auth forms         | `AuthLayout`                   |
-| `/auth/callback`                     | OAuth return       | Writes token to `localStorage` |
-| `/my-bookings`, `/my-hotels`         | Lists              | API still needs JWT            |
+| `/auth/callback`                     | OAuth return       | Marks the cookie session hint  |
+| `/my-bookings`, `/my-hotels`         | Lists              | API still needs the session    |
 | `/hotel/:hotelId/booking`            | Booking            | UI requires login              |
 | `/add-hotel`, `/edit-hotel/:hotelId` | Owner forms        | UI requires login              |
 
@@ -406,7 +406,7 @@ Layouts: `Layout` (chrome) · `AuthLayout` (centered auth).
 
 | File                          | Job                                                        |
 | ----------------------------- | ---------------------------------------------------------- |
-| `packages/api-client`         | Axios instance, base URL, Bearer interceptor, 401 cleanup  |
+| `packages/api-client`         | Axios instance, base URL, cookie credentials, 401 cleanup  |
 | `features/auth/api.ts`        | `signIn`, `register`, `fetchCurrentUser`, `signOut`        |
 | `features/hotels/api.ts`      | `searchHotels`, `fetchHotels`, `fetchHotelById`            |
 | `features/bookings/api.ts`    | `createPaymentIntent`, `createRoomBooking`, `cancelBooking`|
@@ -441,7 +441,8 @@ export const fetchMyHotels = async () => {
 - **`helmet`** — security headers
 - **`@nestjs/throttler`** — global rate limit; stricter limit on the payment-intent route
 - **CORS** — allows `FRONTEND_URL`, localhost Vite ports, `*.vercel.app`, `*.netlify.app`
-- **`JwtAuthGuard`** — reads Bearer token first, then the `session_id` cookie
+- **`JwtAuthGuard`** — accepts the `session_id` cookie, or a Bearer header when one is present
+- **`OriginGuard`** — blocks unsafe cookie-auth requests from untrusted origins
 - **`RolesGuard` + `@Roles(...)`** — role checks for admin/owner routes
 - **`ValidationPipe`** — `whitelist`, `transform`, implicit conversion
 
@@ -539,21 +540,21 @@ Interactive docs: **`/api-docs`** (Swagger UI).
 ### Email / password
 
 1. `POST /api/auth/login` with `{ email, password }`
-2. Backend verifies with **bcrypt**, returns JWT
-3. Frontend stores `localStorage.session_id` (+ user fields)
-4. Axios sends Bearer token on later calls
+2. Backend verifies with **bcrypt** and sets the JWT in the httpOnly `session_id` cookie
+3. Frontend sets the `auth_session` hint and stores display fields only
+4. Axios sends the cookie on later calls (`withCredentials: true`)
 5. `GET /api/users/me` (`authKeys.currentUser()`) drives `isLoggedIn` and role
 
 ### Google OAuth
 
 1. Browser goes to `{API}/api/auth/google`
 2. Google → `{BACKEND}/api/auth/callback/google`
-3. Backend creates/finds user, redirects to `{FRONTEND}/auth/callback?token=…`
-4. `AuthCallback` saves token and invalidates React Query
+3. Backend creates/finds user, sets the session cookie, redirects to `{FRONTEND}/auth/callback?authenticated=1&userId=…`
+4. `AuthCallback` marks the session hint and invalidates React Query
 
 ### Logout
 
-`POST /api/auth/logout` + clear `localStorage` + drop the `authKeys.currentUser()` query.
+`POST /api/auth/logout` clears the cookie; the SPA clears the hint/display fields and drops the `authKeys.currentUser()` query.
 
 ---
 
@@ -592,20 +593,17 @@ Amount ≈ `pricePerNight × nights × 100` (pence). Use Stripe **test cards** i
 - **ToastContext** — stable Sonner notification API shared across features.
 - **SearchContext** — persist search criteria in `sessionStorage` so detail/booking keep dates/guests.
 
-### Example: attaching JWT (portable)
+### Example: sending the session cookie (portable)
 
 ```ts
 // lib/api-client.ts (simplified idea)
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem("session_id");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+const apiClient = axios.create({
+  baseURL: apiBaseUrl,
+  withCredentials: true, // send the httpOnly session cookie
 });
 ```
 
-Use the same pattern in any Axios/React project.
+Use the same pattern in any Axios/React project; never store the JWT in `localStorage`.
 
 ### Example: invalidate after auth
 
@@ -672,7 +670,7 @@ pnpm --filter @hotel-booking/web build
 ## Learning path (suggested)
 
 1. Run backend health + open Swagger
-2. Register a user, call `/api/users/me` with Bearer token
+2. Register a user, call `/api/users/me` with the session cookie
 3. Trace `Search` page → `GET /api/hotels/search`
 4. Add a hotel (watch Cloudinary URLs appear)
 5. Complete one Stripe **test** booking

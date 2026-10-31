@@ -120,7 +120,7 @@ The build uses `rootDir: "../.."` so it can consume `@hotel-booking/types` sourc
 5. The controller delegates to a feature service.
 6. `AllExceptionsFilter` normalises errors to the legacy `{ message }` shape, except controller-thrown payloads such as `{ error, message }` from business insights.
 
-Authentication reads `Authorization: Bearer <token>` first and falls back to the `session_id` cookie. Logout clears the same cookie.
+Authentication reads `Authorization: Bearer <token>` first and falls back to the httpOnly `session_id` cookie; browser clients use only the cookie. Login, registration and OAuth set the cookie, and logout clears it. Unsafe cookie-auth requests are checked against the CORS origin allow-list.
 
 ## Endpoints
 
@@ -131,8 +131,8 @@ Base URL locally: `http://localhost:5001`
 | Method | Path               | Auth | Description                          |
 | ------ | ------------------ | ---- | ------------------------------------ |
 | GET    | `/google`          | —    | Start Google OAuth                   |
-| GET    | `/callback/google` | —    | OAuth callback, redirect with token  |
-| POST   | `/login`           | —    | Email/password login                 |
+| GET    | `/callback/google` | —    | OAuth callback, sets session cookie  |
+| POST   | `/login`           | —    | Email/password login, sets cookie    |
 | GET    | `/validate-token`  | JWT  | Validate token, return `{ userId }`  |
 | POST   | `/logout`          | —    | Clear session cookie                 |
 
