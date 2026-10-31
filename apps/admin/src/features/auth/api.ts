@@ -1,6 +1,6 @@
-import apiClient from "@hotel-booking/api-client";
+import apiClient, { authSession } from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
-import { authToken } from "./auth-storage";
+import { clearUserDetails } from "./auth-storage";
 
 export type SignInPayload = {
   email: string;
@@ -8,7 +8,6 @@ export type SignInPayload = {
 };
 
 type SignInResponse = {
-  token: string;
   userId?: string;
   user?: Pick<UserType, "email" | "firstName" | "lastName" | "role">;
 };
@@ -20,9 +19,9 @@ export const fetchCurrentUser = async (): Promise<UserType> => {
 
 export const signIn = async (payload: SignInPayload): Promise<SignInResponse> => {
   const response = await apiClient.post<SignInResponse>("/api/auth/login", payload);
-  const { token, userId, user } = response.data;
+  const { userId, user } = response.data;
 
-  authToken.set(token);
+  authSession.set();
   if (userId) localStorage.setItem("user_id", userId);
   if (user?.email) localStorage.setItem("user_email", user.email);
   const name = [user?.firstName, user?.lastName].filter(Boolean).join(" ");
@@ -37,6 +36,7 @@ export const signOut = async () => {
   try {
     await apiClient.post("/api/auth/logout");
   } finally {
-    authToken.clear();
+    authSession.clear();
+    clearUserDetails();
   }
 };

@@ -1,10 +1,11 @@
 import { createContext, useEffect, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { authSession } from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
 import { getErrorStatus } from "@/shared/lib/api-error";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchCurrentUser } from "../api";
-import { authToken } from "../auth-storage";
+import { clearUserDetails } from "../auth-storage";
 
 export type AuthContextValue = {
   isLoggedIn: boolean;
@@ -18,24 +19,27 @@ export type AuthContextValue = {
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const token = useSyncExternalStore(authToken.subscribe, authToken.get);
+  const hasSession = useSyncExternalStore(authSession.subscribe, authSession.get, () => false);
   const { data, isLoading, isError, error, refetch } = useQuery<UserType>({
     queryKey: adminKeys.currentUser,
     queryFn: fetchCurrentUser,
-    enabled: Boolean(token),
+    enabled: hasSession,
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
 
   useEffect(() => {
-    if (isError && getErrorStatus(error) === 401) authToken.clear();
+    if (isError && getErrorStatus(error) === 401) {
+      authSession.clear();
+      clearUserDetails();
+    }
   }, [isError, error]);
 
   return (
     <AuthContext.Provider
       value={{
-        isLoggedIn: Boolean(token) && !isError,
+        isLoggedIn: hasSession && !isError,
         user: data,
         isLoading,
         isError,
