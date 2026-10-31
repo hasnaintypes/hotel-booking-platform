@@ -1,5 +1,5 @@
 /**
- * Typed auth toast payloads for AppContext.showToast.
+ * Typed auth toast payloads for ToastContext's showToast.
  * Display name prefers localStorage user_name, then email.
  */
 
