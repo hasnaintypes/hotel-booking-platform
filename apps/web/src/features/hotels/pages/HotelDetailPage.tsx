@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
-import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useQuery } from "@tanstack/react-query";
+import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelsApi from "@/features/hotels/api";
 import * as reviewsApi from "@/features/reviews/api";
 import { AiFillStar } from "react-icons/ai";
@@ -24,24 +25,19 @@ import {
 const Detail = () => {
   const { hotelId } = useParams();
 
-  const { data: hotel, isLoading: isHotelLoading } = useQueryWithLoading(
-    "fetchHotelById",
-    () => hotelsApi.fetchHotelById(hotelId || ""),
-    {
-      enabled: !!hotelId,
-      loadingMessage: "Loading hotel details...",
-    },
-  );
+  const { data: hotel, isLoading: isHotelLoading } = useQuery({
+    queryKey: hotelKeys.detail(hotelId || ""),
+    queryFn: () => hotelsApi.fetchHotelById(hotelId || ""),
+    enabled: !!hotelId,
+  });
 
-  const { data: reviews, isLoading: isReviewsLoading } = useQueryWithLoading<
+  const { data: reviews, isLoading: isReviewsLoading } = useQuery<
     ReviewType[]
-  >(
-    ["fetchHotelReviews", hotelId],
-    () => reviewsApi.fetchHotelReviews(hotelId || ""),
-    {
-      enabled: !!hotelId,
-    },
-  );
+  >({
+    queryKey: hotelKeys.reviews(hotelId || ""),
+    queryFn: () => reviewsApi.fetchHotelReviews(hotelId || ""),
+    enabled: !!hotelId,
+  });
 
   if (isHotelLoading) {
     return (

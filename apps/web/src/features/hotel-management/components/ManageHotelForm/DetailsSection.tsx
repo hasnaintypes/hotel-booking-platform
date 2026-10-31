@@ -13,7 +13,7 @@ import {
 } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import { Star } from "lucide-react";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import useAuth from "@/features/auth/hooks/useAuth";
 
 const DetailsSection = () => {
@@ -24,7 +24,7 @@ const DetailsSection = () => {
     setValue,
     formState: { errors },
   } = useFormContext<HotelFormData>();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const { isLoggedIn } = useAuth();
   const [draft, setDraft] = useState<string | null>(null);
   const [provider, setProvider] = useState<string | null>(null);

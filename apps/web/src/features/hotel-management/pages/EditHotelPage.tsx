@@ -2,17 +2,18 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams, useNavigate } from "react-router-dom";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 import ManageHotelForm from "@/features/hotel-management/components/ManageHotelForm/ManageHotelForm";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import { invalidateHotelQueries } from "@/shared/lib/query-invalidation";
+import { hotelKeys } from "@/shared/lib/query-keys";
 
 const EditHotel = () => {
   const { hotelId } = useParams();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const { data: hotel } = useQuery({
-    queryKey: ["fetchMyHotelById"],
+    queryKey: hotelKeys.mineDetail(hotelId || ""),
     queryFn: () => hotelManagementApi.fetchMyHotelById(hotelId || ""),
     enabled: !!hotelId,
   });

@@ -6,7 +6,7 @@ import useSearchContext from "@/features/hotels/hooks/useSearchContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as bookingsApi from "@/features/bookings/api";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import type { BookingFormData } from "@/features/bookings/types";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
@@ -39,7 +39,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const { hotelId } = useParams();
   const navigate = useNavigate();
 
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const queryClient = useQueryClient();
 
   // Use local state for form fields to prevent losing data

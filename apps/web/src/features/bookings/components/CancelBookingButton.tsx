@@ -5,7 +5,7 @@ import { invalidateBookingQueries } from "@/shared/lib/query-invalidation";
 import { isBookingCancellable } from "@/features/bookings/lib/booking-utils";
 import type { BookingType } from "@hotel-booking/types";
 import { Button } from "@hotel-booking/ui";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 
 type Props = {
   booking: BookingType;
@@ -16,7 +16,7 @@ type Props = {
 /** Cancel upcoming booking (guest or owner) — Stripe refund when paid */
 const CancelBookingButton = ({ booking, className }: Props) => {
   const queryClient = useQueryClient();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
 

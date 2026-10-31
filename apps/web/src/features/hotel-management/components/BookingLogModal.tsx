@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useQuery } from "@tanstack/react-query";
+import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 import { BookingType } from "@hotel-booking/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@hotel-booking/ui";
@@ -51,14 +52,11 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
 
-  const { data: bookings, isLoading } = useQueryWithLoading(
-    "fetchHotelBookings",
-    () => hotelManagementApi.fetchHotelBookings(hotelId),
-    {
-      enabled: isOpen && !!hotelId,
-      loadingMessage: "Loading booking data...",
-    },
-  );
+  const { data: bookings, isLoading } = useQuery({
+    queryKey: hotelKeys.bookings(hotelId),
+    queryFn: () => hotelManagementApi.fetchHotelBookings(hotelId),
+    enabled: isOpen && !!hotelId,
+  });
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {

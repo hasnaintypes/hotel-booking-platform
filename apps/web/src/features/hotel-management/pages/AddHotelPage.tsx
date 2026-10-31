@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import ManageHotelForm from "@/features/hotel-management/components/ManageHotelForm/ManageHotelForm";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 import { invalidateHotelQueries } from "@/shared/lib/query-invalidation";
 
 const AddHotel = () => {
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 

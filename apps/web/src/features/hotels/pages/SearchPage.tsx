@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router-dom";
 import useSearchContext from "@/features/hotels/hooks/useSearchContext";
-import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelsApi from "@/features/hotels/api";
 import { useEffect, useState } from "react";
 import SearchResultsCard from "@/features/hotels/components/SearchResultsCard";
@@ -10,13 +11,7 @@ import HotelTypesFilter from "@/features/hotels/components/HotelTypesFilter";
 import FacilitiesFilter from "@/features/hotels/components/FacilitiesFilter";
 import PriceFilter from "@/features/hotels/components/PriceFilter";
 import SearchBar from "@/features/hotels/components/SearchBar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import { SEARCH_PAGE_SORT_OPTIONS } from "@/features/hotels/lib/select-option-maps";
 
@@ -24,16 +19,19 @@ const Search = () => {
   const [urlSearchParams] = useSearchParams();
   const search = useSearchContext();
   const [page, setPage] = useState<number>(1);
+  const urlQueryString = urlSearchParams.toString();
+  const { saveSearchValues } = search;
 
   // Sync URL params to search context when navigating with query string (e.g. Hotels nav link)
   useEffect(() => {
-    const destination = urlSearchParams.get("destination");
-    const checkIn = urlSearchParams.get("checkIn");
-    const checkOut = urlSearchParams.get("checkOut");
-    const adultCount = urlSearchParams.get("adultCount");
-    const childCount = urlSearchParams.get("childCount");
+    const params = new URLSearchParams(urlQueryString);
+    const destination = params.get("destination");
+    const checkIn = params.get("checkIn");
+    const checkOut = params.get("checkOut");
+    const adultCount = params.get("adultCount");
+    const childCount = params.get("childCount");
     if (checkIn && checkOut) {
-      search.saveSearchValues(
+      saveSearchValues(
         destination || "",
         new Date(checkIn),
         new Date(checkOut),
@@ -41,7 +39,7 @@ const Search = () => {
         parseInt(childCount || "1", 10),
       );
     }
-  }, [urlSearchParams.toString()]);
+  }, [urlQueryString, saveSearchValues]);
   const [selectedStars, setSelectedStars] = useState<string[]>([]);
   const [selectedHotelTypes, setSelectedHotelTypes] = useState<string[]>([]);
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
@@ -62,13 +60,11 @@ const Search = () => {
     sortOption,
   };
 
-  const { data: hotelData, isLoading: isSearchLoading } = useQueryWithLoading(
-    ["searchHotels", searchParams],
-    () => hotelsApi.searchHotels(searchParams),
-    {
-      loadingMessage: "Searching for perfect hotels...",
-    },
-  );
+  const { data: hotelData, isLoading: isSearchLoading } = useQuery({
+    queryKey: hotelKeys.search(searchParams),
+    queryFn: () => hotelsApi.searchHotels(searchParams),
+    placeholderData: keepPreviousData,
+  });
 
   const handleStarsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const starRating = event.target.value;
@@ -80,9 +76,7 @@ const Search = () => {
     );
   };
 
-  const handleHotelTypeChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleHotelTypeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const hotelType = event.target.value;
 
     setSelectedHotelTypes((prevHotelTypes) =>
@@ -106,9 +100,7 @@ const Search = () => {
     <div className="space-y-6">
       {/* Search Bar */}
       <div className="bg-white rounded-xl shadow-xl border p-4">
-        <h2 className="text-lg font-medium text-gray-700 mb-4">
-          Modify Your Search
-        </h2>
+        <h2 className="text-lg font-medium text-gray-700 mb-4">Modify Your Search</h2>
         <SearchBar />
       </div>
 
@@ -116,13 +108,8 @@ const Search = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[250px_1fr] gap-5">
         <div className="rounded-xl border border-slate-300 p-5 h-fit lg:sticky lg:top-10 order-2 lg:order-1">
           <div className="space-y-5">
-            <h3 className="text-lg font-medium border-b border-slate-300 pb-5">
-              Filter by:
-            </h3>
-            <StarRatingFilter
-              selectedStars={selectedStars}
-              onChange={handleStarsChange}
-            />
+            <h3 className="text-lg font-medium border-b border-slate-300 pb-5">Filter by:</h3>
+            <StarRatingFilter selectedStars={selectedStars} onChange={handleStarsChange} />
             <HotelTypesFilter
               selectedHotelTypes={selectedHotelTypes}
               onChange={handleHotelTypeChange}
@@ -140,9 +127,7 @@ const Search = () => {
         <div className="flex flex-col gap-5 order-1 lg:order-2">
           <div className="flex justify-between items-center">
             <span className="text-xl font-medium">
-              {isSearchLoading
-                ? "Searching…"
-                : `${hotelData?.pagination.total ?? 0} Hotels found`}
+              {isSearchLoading ? "Searching…" : `${hotelData?.pagination.total ?? 0} Hotels found`}
               {search.destination ? ` in ${search.destination}` : ""}
             </span>
             <Select
@@ -155,9 +140,7 @@ const Search = () => {
               <SelectContent>
                 {SEARCH_PAGE_SORT_OPTIONS.map((o) => (
                   <SelectItem key={o.value} value={o.value}>
-                    <SelectOptionLabel icon={o.icon}>
-                      {o.label}
-                    </SelectOptionLabel>
+                    <SelectOptionLabel icon={o.icon}>{o.label}</SelectOptionLabel>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -190,9 +173,7 @@ const Search = () => {
                   />
                 </svg>
               </div>
-              <h3 className="text-xl font-medium text-gray-700 mb-2">
-                No hotels found
-              </h3>
+              <h3 className="text-xl font-medium text-gray-700 mb-2">No hotels found</h3>
               <p className="text-gray-500 max-w-md">
                 {search.destination ? (
                   <>
@@ -201,8 +182,8 @@ const Search = () => {
                     {selectedStars.length > 0 && (
                       <>
                         {" "}
-                        with {selectedStars.length === 1 ? "a" : ""}{" "}
-                        {selectedStars.join(", ")} star rating
+                        with {selectedStars.length === 1 ? "a" : ""} {selectedStars.join(", ")} star
+                        rating
                       </>
                     )}
                     {selectedPrice && <> under ${selectedPrice} per night</>}.
@@ -213,8 +194,8 @@ const Search = () => {
                     {selectedStars.length > 0 && (
                       <>
                         {" "}
-                        with {selectedStars.length === 1 ? "a" : ""}{" "}
-                        {selectedStars.join(", ")} star rating
+                        with {selectedStars.length === 1 ? "a" : ""} {selectedStars.join(", ")} star
+                        rating
                       </>
                     )}
                     {selectedPrice && <> under ${selectedPrice} per night</>}.
@@ -222,10 +203,7 @@ const Search = () => {
                 )}
               </p>
               <div className="mt-6 space-y-2 text-sm text-gray-400">
-                <p>
-                  Try adjusting your filters or search for a different
-                  destination.
-                </p>
+                <p>Try adjusting your filters or search for a different destination.</p>
                 {selectedStars.length > 0 ||
                 selectedHotelTypes.length > 0 ||
                 selectedFacilities.length > 0 ||
@@ -247,11 +225,9 @@ const Search = () => {
             </div>
           ) : (
             <>
-              {hotelData?.data.map(
-                (hotel: import("@hotel-booking/types").HotelType) => (
-                  <SearchResultsCard key={hotel._id} hotel={hotel} />
-                ),
-              )}
+              {hotelData?.data.map((hotel: import("@hotel-booking/types").HotelType) => (
+                <SearchResultsCard key={hotel._id} hotel={hotel} />
+              ))}
               <div>
                 <Pagination
                   page={hotelData?.pagination.page || 1}

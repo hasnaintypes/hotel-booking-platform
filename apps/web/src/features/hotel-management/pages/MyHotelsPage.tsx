@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 import { BsBuilding, BsMap } from "react-icons/bs";
 import { BiHotel, BiMoney } from "react-icons/bi";
@@ -29,12 +29,12 @@ import {
 } from "@hotel-booking/ui";
 import BookingLogModal from "@/features/hotel-management/components/BookingLogModal";
 import { useState } from "react";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { invalidateHotelQueries } from "@/shared/lib/query-invalidation";
 
 const MyHotels = () => {
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const { isLoggedIn } = useAuth();
   const queryClient = useQueryClient();
   const [selectedHotel, setSelectedHotel] = useState<{
@@ -47,9 +47,9 @@ const MyHotels = () => {
     data: hotelData,
     isLoading: isHotelsLoading,
     isFetching,
-  } = useQueryWithLoading("fetchMyHotels", hotelManagementApi.fetchMyHotels, {
-    onError: () => {},
-    loadingMessage: "Loading your hotels...",
+  } = useQuery({
+    queryKey: hotelKeys.mine(),
+    queryFn: hotelManagementApi.fetchMyHotels,
     enabled: isLoggedIn,
   });
 

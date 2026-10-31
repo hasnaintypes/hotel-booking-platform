@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import * as authApi from "@/features/auth/api";
 import * as bookingsApi from "@/features/bookings/api";
+import useAuth from "@/features/auth/hooks/useAuth";
 import * as hotelsApi from "@/features/hotels/api";
 import BookingForm from "@/features/bookings/components/BookingForm";
 import useSearchContext from "@/features/hotels/hooks/useSearchContext";
@@ -8,18 +8,14 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import BookingDetailsSummary from "@/features/bookings/components/BookingDetailsSummary";
 import { Elements } from "@stripe/react-stripe-js";
-import useAppContext from "@/shared/hooks/useAppContext";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@hotel-booking/ui";
+import { stripePromise } from "@/shared/lib/stripe";
+import { bookingKeys, hotelKeys } from "@/shared/lib/query-keys";
+import { Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
 
 const Booking = () => {
-  const { stripePromise } = useAppContext();
+  const { user: currentUser, isLoading: isLoadingUser } = useAuth();
   const search = useSearchContext();
   const { hotelId } = useParams();
 
@@ -28,32 +24,22 @@ const Booking = () => {
   useEffect(() => {
     if (search.checkIn && search.checkOut) {
       const nights =
-        Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) /
-        (1000 * 60 * 60 * 24);
+        Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) / (1000 * 60 * 60 * 24);
 
       setNumberOfNights(Math.ceil(nights));
     }
   }, [search.checkIn, search.checkOut]);
 
   const { data: paymentIntentData, isLoading: isLoadingPayment } = useQuery({
-    queryKey: ["createPaymentIntent"],
-    queryFn: () =>
-      bookingsApi.createPaymentIntent(
-        hotelId as string,
-        numberOfNights.toString(),
-      ),
+    queryKey: bookingKeys.paymentIntent(hotelId || "", numberOfNights.toString()),
+    queryFn: () => bookingsApi.createPaymentIntent(hotelId as string, numberOfNights.toString()),
     enabled: !!hotelId && numberOfNights > 0,
   });
 
   const { data: hotel, isLoading: isLoadingHotel } = useQuery({
-    queryKey: ["fetchHotelByID"],
+    queryKey: hotelKeys.detail(hotelId || ""),
     queryFn: () => hotelsApi.fetchHotelById(hotelId as string),
     enabled: !!hotelId,
-  });
-
-  const { data: currentUser, isLoading: isLoadingUser } = useQuery({
-    queryKey: ["fetchCurrentUser"],
-    queryFn: authApi.fetchCurrentUser,
   });
 
   if (isLoadingHotel || isLoadingUser) {
@@ -61,9 +47,7 @@ const Booking = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="flex items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="text-lg font-medium text-gray-700">
-            Loading booking details...
-          </span>
+          <span className="text-lg font-medium text-gray-700">Loading booking details...</span>
         </div>
       </div>
     );
@@ -73,12 +57,8 @@ const Booking = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <h2 className="text-sm md:text-lg font-medium text-gray-700 mb-2">
-            Hotel Not Found
-          </h2>
-          <p className="text-gray-600">
-            The hotel you're looking for doesn't exist.
-          </p>
+          <h2 className="text-sm md:text-lg font-medium text-gray-700 mb-2">Hotel Not Found</h2>
+          <p className="text-gray-600">The hotel you're looking for doesn't exist.</p>
         </div>
       </div>
     );
@@ -90,13 +70,10 @@ const Booking = () => {
       <div className="pb-6">
         <div className="flex items-center gap-3 mb-2">
           <CreditCard className="h-6 w-6 text-blue-600" />
-          <h1 className="text-sm md:text-lg font-medium text-gray-700">
-            Complete Your Booking
-          </h1>
+          <h1 className="text-sm md:text-lg font-medium text-gray-700">Complete Your Booking</h1>
         </div>
         <p className="text-gray-600">
-          Please review your details and complete the payment to confirm your
-          reservation.
+          Please review your details and complete the payment to confirm your reservation.
         </p>
       </div>
 
@@ -180,10 +157,7 @@ const Booking = () => {
                   }}
                   key={paymentIntentData.clientSecret}
                 >
-                  <BookingForm
-                    currentUser={currentUser}
-                    paymentIntent={paymentIntentData}
-                  />
+                  <BookingForm currentUser={currentUser} paymentIntent={paymentIntentData} />
                 </Elements>
               </CardContent>
             </Card>

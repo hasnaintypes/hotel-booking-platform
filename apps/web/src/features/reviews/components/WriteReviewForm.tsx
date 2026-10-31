@@ -13,7 +13,7 @@ import {
 } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import { Star } from "lucide-react";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 
 type Props = {
   hotelId: string;
@@ -24,7 +24,7 @@ type Props = {
 /** Compact JWT review form for a completed booking */
 const WriteReviewForm = ({ hotelId, bookingId, onDone }: Props) => {
   const queryClient = useQueryClient();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState("");
   const [open, setOpen] = useState(false);

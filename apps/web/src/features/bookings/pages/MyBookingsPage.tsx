@@ -1,4 +1,5 @@
-import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useQuery } from "@tanstack/react-query";
+import { bookingKeys } from "@/shared/lib/query-keys";
 import * as bookingsApi from "@/features/bookings/api";
 import type { BookingType, HotelWithBookingsType } from "@hotel-booking/types";
 import { Badge } from "@hotel-booking/ui";
@@ -36,14 +37,11 @@ const MyBookings = () => {
     data: hotels,
     isLoading: isBookingsLoading,
     isFetching,
-  } = useQueryWithLoading<HotelWithBookingsType[]>(
-    "fetchMyBookings",
-    bookingsApi.fetchMyBookings,
-    {
-      loadingMessage: "Loading your bookings...",
-      enabled: isLoggedIn,
-    },
-  );
+  } = useQuery<HotelWithBookingsType[]>({
+    queryKey: bookingKeys.mine(),
+    queryFn: bookingsApi.fetchMyBookings,
+    enabled: isLoggedIn,
+  });
 
   if (!isLoggedIn) {
     return (

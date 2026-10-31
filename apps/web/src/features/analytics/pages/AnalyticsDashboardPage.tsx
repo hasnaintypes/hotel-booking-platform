@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useQuery } from "@tanstack/react-query";
+import { analyticsKeys } from "@/shared/lib/query-keys";
 import { fetchBusinessInsightsDashboard, fetchBusinessInsightsForecast, fetchBusinessInsightsSystemStats } from "@/features/analytics/api";
 import {
   BarChart,
@@ -163,7 +164,6 @@ const QUERY_OPTS = {
   refetchInterval: false as const,
   retry: 3,
   retryDelay: 1000,
-  keepPreviousData: true,
 };
 
 const AnalyticsDashboard = () => {
@@ -176,33 +176,33 @@ const AnalyticsDashboard = () => {
     isFetching: dashboardFetching,
     error,
     refetch,
-  } = useQueryWithLoading<AnalyticsData>(
-    "business-insights-dashboard",
-    fetchBusinessInsightsDashboard,
-    QUERY_OPTS,
-  );
+  } = useQuery<AnalyticsData>({
+    queryKey: analyticsKeys.dashboard(),
+    queryFn: fetchBusinessInsightsDashboard,
+    ...QUERY_OPTS,
+  });
 
   const {
     data: forecastData,
     isLoading: forecastLoading,
     isFetching: forecastFetching,
     refetch: refetchForecast,
-  } = useQueryWithLoading<ForecastData>(
-    "business-insights-forecast",
-    fetchBusinessInsightsForecast,
-    QUERY_OPTS,
-  );
+  } = useQuery<ForecastData>({
+    queryKey: analyticsKeys.forecast(),
+    queryFn: fetchBusinessInsightsForecast,
+    ...QUERY_OPTS,
+  });
 
   const {
     data: opsData,
     isLoading: opsLoading,
     isFetching: opsFetching,
     refetch: refetchOps,
-  } = useQueryWithLoading<OpsStatusData>(
-    "business-insights-ops",
-    fetchBusinessInsightsSystemStats,
-    QUERY_OPTS,
-  );
+  } = useQuery<OpsStatusData>({
+    queryKey: analyticsKeys.ops(),
+    queryFn: fetchBusinessInsightsSystemStats,
+    ...QUERY_OPTS,
+  });
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat("en-US", {
