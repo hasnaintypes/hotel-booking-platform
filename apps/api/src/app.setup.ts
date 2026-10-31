@@ -17,6 +17,38 @@ import { isAllowedOrigin } from "./common/security/allowed-origins";
 
 const BODY_LIMIT = "100kb";
 
+// The API only returns JSON, so the default policy denies everything. The Swagger UI
+// (served under /api-docs, development only) needs inline scripts and styles, so only
+// that path gets a relaxed policy.
+const strictHeaders = helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'none'"],
+      baseUri: ["'none'"],
+      formAction: ["'none'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+});
+const docsHeaders = helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: {
+    useDefaults: false,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:"],
+      frameAncestors: ["'none'"],
+    },
+  },
+});
+const DOCS_PATH = /^\/api-docs(\/|$)/;
+const securityHeaders = (req: Request, res: Response, next: NextFunction) =>
+  (DOCS_PATH.test(req.path) ? docsHeaders : strictHeaders)(req, res, next);
+
 /**
  * Applies the middleware, pipes, filters, guards and CORS policy shared by the
  * production server and the integration tests, so tests exercise the same
@@ -51,12 +83,7 @@ export function configureApp(app: NestExpressApplication): void {
     next();
   });
 
-  app.use(
-    helmet({
-      crossOriginResourcePolicy: { policy: "cross-origin" },
-      contentSecurityPolicy: false,
-    }),
-  );
+  app.use(securityHeaders);
   // Explicit body parsers: bounded size, and parser failures become typed errors
   // (Nest would otherwise reduce them to message-only exceptions).
   app.useBodyParser("json", { limit: BODY_LIMIT });

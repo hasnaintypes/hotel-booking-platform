@@ -24,6 +24,15 @@ describe("request pipeline (CORS and origin guard)", () => {
     expect(res.headers["access-control-allow-credentials"]).toBe("true");
   });
 
+  it("sends a deny-all Content-Security-Policy and other security headers on API responses", async () => {
+    const res = await anonymous(t).get(routes.health);
+    const csp = String(res.headers["content-security-policy"]);
+    expect(csp).toContain("default-src 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    expect(res.headers["x-powered-by"]).toBeUndefined();
+  });
+
   it("does not grant CORS access to unknown origins", async () => {
     const res = await anonymous(t).get(routes.health).set("Origin", UNTRUSTED);
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();
