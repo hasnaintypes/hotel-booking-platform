@@ -22,7 +22,7 @@ export async function registerUser(t: TestApp, overrides: Partial<Credentials> =
   const credentials = newCredentials(overrides);
   const agent = request.agent(t.app.getHttpServer());
   const response = await agent.post(routes.auth.register).send(credentials);
-  if (response.status !== 200) {
+  if (response.status !== 201) {
     throw new Error(`register failed: ${response.status} ${JSON.stringify(response.body)}`);
   }
   const me = await agent.get(routes.users.me);

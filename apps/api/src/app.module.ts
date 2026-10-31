@@ -3,8 +3,8 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtModule } from "@nestjs/jwt";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
-import { LoggerModule } from "nestjs-pino";
 import { CommonModule } from "./common/common.module";
+import { AppLoggingModule } from "./common/logging/logging.module";
 import { configuration } from "./config/configuration";
 import { validateEnv } from "./config/env.validation";
 import { DatabaseModule } from "./database/database.module";
@@ -31,18 +31,7 @@ import { AppController } from "./app.controller";
       load: [configuration],
       validate: validateEnv,
     }),
-    LoggerModule.forRoot({
-      pinoHttp: {
-        level:
-          process.env.LOG_LEVEL ??
-          (process.env.NODE_ENV === "production"
-            ? "info"
-            : process.env.NODE_ENV === "test"
-              ? "silent"
-              : "debug"),
-        redact: ["req.headers.authorization", "req.headers.cookie"],
-      },
-    }),
+    AppLoggingModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

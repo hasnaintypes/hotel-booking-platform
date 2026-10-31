@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Logger,
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
@@ -29,6 +30,8 @@ const isCancellable = (booking: { status?: string; checkIn: Date }) => {
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
   constructor(
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
@@ -144,7 +147,10 @@ export class BookingsService {
         refundAmount = typeof refund.amount === "number" ? refund.amount / 100 : booking.totalCost;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Stripe refund failed";
-        console.log(error);
+        this.logger.error(
+          `Stripe refund failed for booking ${id}`,
+          error instanceof Error ? error.stack : undefined,
+        );
         throw new BadGatewayException(message);
       }
     } else if (wasPaid && !booking.stripePaymentIntentId) {

@@ -3,8 +3,19 @@ const stripTrailingSlash = (value?: string) => (value ? value.replace(/\/$/, "")
 export const configuration = () => {
   const port = parseInt(process.env.PORT || "5001", 10);
 
+  const nodeEnv = process.env.NODE_ENV || "development";
+
   return {
-    nodeEnv: process.env.NODE_ENV || "development",
+    nodeEnv,
+    logging: {
+      level:
+        process.env.LOG_LEVEL ??
+        (nodeEnv === "production" ? "info" : nodeEnv === "test" ? "silent" : "debug"),
+      format: (process.env.LOG_FORMAT ?? (nodeEnv === "development" ? "pretty" : "json")) as
+        "json" | "pretty",
+      service: "hotel-booking-api",
+      environment: nodeEnv,
+    },
     port,
     frontendUrl: stripTrailingSlash(process.env.FRONTEND_URL) || "http://localhost:5174",
     adminUrl: stripTrailingSlash(process.env.ADMIN_URL) || "http://localhost:5175",

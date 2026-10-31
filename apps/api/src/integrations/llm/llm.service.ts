@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 
 export type SuggestKind = "hotel_description" | "insights_copy";
@@ -16,8 +16,6 @@ type ChatTarget = {
   apiKey: string;
   model: string;
 };
-
-const RETRYABLE = new Set([408, 429, 500, 502, 503, 504]);
 
 const GROQ_MODELS = ["openai/gpt-oss-20b", "qwen/qwen3.6-27b", "openai/gpt-oss-120b"];
 
@@ -50,6 +48,8 @@ export const stubDraft = (kind: SuggestKind, input: string): string => {
 
 @Injectable()
 export class LlmService {
+  private readonly logger = new Logger(LlmService.name);
+
   constructor(private readonly config: ConfigService) {}
 
   private buildChain(): ChatTarget[] {
@@ -163,11 +163,10 @@ export class LlmService {
           usedFallback,
         };
       } catch (error) {
-        const status = (error as { status?: number }).status;
         const message = error instanceof Error ? error.message : String(error);
-        const retryable =
-          status === undefined || RETRYABLE.has(status) || /abort|network|empty/i.test(message);
-        console.warn(`[llm] ${message}${retryable ? " -> next" : " -> next"}`);
+        // Every failure currently advances to the next provider; classifying
+        // non-retryable errors is tracked in M0-17.
+        this.logger.warn(`Provider attempt failed; trying next target: ${message}`);
         continue;
       }
     }

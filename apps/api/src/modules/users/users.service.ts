@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { JwtService } from "@nestjs/jwt";
 import { Model } from "mongoose";
@@ -49,7 +54,7 @@ export class UsersService {
   async register(dto: RegisterDto) {
     const existing = await this.userModel.findOne({ email: dto.email });
     if (existing) {
-      throw new BadRequestException("User already exists");
+      throw new ConflictException("User already exists");
     }
 
     const user = new this.userModel(dto);

@@ -203,5 +203,7 @@ export class HotelsService {
         totalSpent: newBooking.totalCost,
       },
     });
+
+    return booking;
   }
 }

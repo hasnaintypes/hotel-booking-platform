@@ -19,18 +19,19 @@ describe("auth and sessions", () => {
 
   it("registers a user and starts a cookie session", async () => {
     const res = await anonymous(t).post(routes.auth.register).send(newCredentials());
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(201);
     expect(res.body).toEqual({ message: "User registered OK" });
     const cookie = sessionCookie(res);
     expect(cookie).toBeDefined();
     expect(cookie).toMatch(/HttpOnly/i);
   });
 
-  it("rejects a duplicate registration with 400", async () => {
+  it("rejects a duplicate registration with 409", async () => {
     const credentials = newCredentials();
-    await anonymous(t).post(routes.auth.register).send(credentials).expect(200);
+    await anonymous(t).post(routes.auth.register).send(credentials).expect(201);
     const res = await anonymous(t).post(routes.auth.register).send(credentials);
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe("CONFLICT");
     expect(res.body.message).toBe("User already exists");
   });
 
@@ -43,7 +44,7 @@ describe("auth and sessions", () => {
 
   it("logs in with valid credentials and never returns the token in the body", async () => {
     const credentials = newCredentials();
-    await anonymous(t).post(routes.auth.register).send(credentials).expect(200);
+    await anonymous(t).post(routes.auth.register).send(credentials).expect(201);
 
     const res = await anonymous(t)
       .post(routes.auth.login)
@@ -56,7 +57,7 @@ describe("auth and sessions", () => {
 
   it("rejects wrong credentials with a generic message", async () => {
     const credentials = newCredentials();
-    await anonymous(t).post(routes.auth.register).send(credentials).expect(200);
+    await anonymous(t).post(routes.auth.register).send(credentials).expect(201);
 
     const wrongPassword = await anonymous(t)
       .post(routes.auth.login)
@@ -91,8 +92,7 @@ describe("auth and sessions", () => {
     expect(validate.body.userId).toBe(user._id);
 
     const logout = await agent.post(routes.auth.logout);
-    // Known inconsistency: logout answers 201 (Nest's POST default) while login answers 200.
-    expect(logout.status).toBe(201);
+    expect(logout.status).toBe(204);
     const cleared = sessionCookie(logout);
     expect(cleared).toMatch(/session_id=;/);
 
