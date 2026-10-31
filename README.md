@@ -6,15 +6,6 @@
 
 A full-stack hotel marketplace. Guests search hotels and pay for stays with Stripe, hotel owners list and manage properties, and admins moderate the platform from a separate console. It is a TypeScript pnpm/Turborepo monorepo with a NestJS + MongoDB API and two React single-page apps.
 
-<details>
-<summary>Screenshots</summary>
-
-![Home](https://github.com/user-attachments/assets/7b87581f-8a1a-4de4-99c3-ba5fab14f20d)
-![Search](https://github.com/user-attachments/assets/76e284bb-4324-4798-8e87-0079aab65a57)
-![Booking](https://github.com/user-attachments/assets/c35d0786-f80d-493e-815c-7a594253183c)
-
-</details>
-
 ## Features
 
 - **Guests:** search by destination, guests, price, stars, type and facilities; hotel detail pages; email/password or Google sign-in; Stripe card checkout (GBP); my bookings, cancellation with automatic refund; reviews tied to their bookings.
@@ -136,3 +127,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs install, lint, typecheck, test,
 | Payment form does nothing | Set `VITE_STRIPE_PUB_KEY` and use matching `pk_test`/`sk_test` keys |
 | Image upload fails | Check the three Cloudinary variables |
 | Google sign-in fails | Register the exact callback URI and set `BACKEND_URL` |
+
+## License
+
+Released under the [MIT License](LICENSE). Third-party code policy: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). To report a vulnerability, see [SECURITY.md](SECURITY.md).
