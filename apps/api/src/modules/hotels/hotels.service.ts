@@ -5,9 +5,12 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { HotelSearchResponse, HotelType } from "@hotel-booking/types";
+import type { FieldError } from "../../common/errors/problem";
+import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { escapeRegExp } from "../../common/utils/escape-regexp";
 import { BOOKING_MODEL, HOTEL_MODEL, USER_MODEL } from "../../database/models";
@@ -18,6 +21,8 @@ import { PaymentIntentDto } from "./dto/payment-intent.dto";
 import { SearchHotelsDto } from "./dto/search-hotels.dto";
 import { ToggleActiveDto } from "./dto/toggle-active.dto";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 @Injectable()
 export class HotelsService {
   constructor(
@@ -25,7 +30,54 @@ export class HotelsService {
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(USER_MODEL) private readonly userModel: Model<any>,
     private readonly stripeService: StripeService,
+    private readonly config: ConfigService,
   ) {}
+
+  private get maxNights(): number {
+    return this.config.get<number>("booking.maxNights") ?? 30;
+  }
+
+  /**
+   * Rules that depend on the hotel or on today's date. Field formats are checked earlier by
+   * CreateBookingDto. Check-in may be one day before today (UTC) so a guest in a time zone ahead
+   * of UTC can still book "today".
+   */
+  private validateStay(dto: CreateBookingDto, hotel: HotelType) {
+    const errors: FieldError[] = [];
+    const checkIn = new Date(dto.checkIn).getTime();
+    const checkOut = new Date(dto.checkOut).getTime();
+
+    const startOfTodayUtc = new Date().setUTCHours(0, 0, 0, 0);
+    if (checkIn < startOfTodayUtc - DAY_MS) {
+      errors.push({ field: "checkIn", message: "check-in cannot be in the past" });
+    }
+
+    if (checkOut <= checkIn) {
+      errors.push({ field: "checkOut", message: "check-out must be after check-in" });
+    } else if (Math.ceil((checkOut - checkIn) / DAY_MS) > this.maxNights) {
+      errors.push({
+        field: "checkOut",
+        message: `a stay cannot exceed ${this.maxNights} nights`,
+      });
+    }
+
+    if (dto.adultCount > hotel.adultCount) {
+      errors.push({
+        field: "adultCount",
+        message: `this hotel allows at most ${hotel.adultCount} adults`,
+      });
+    }
+    if (dto.childCount > hotel.childCount) {
+      errors.push({
+        field: "childCount",
+        message: `this hotel allows at most ${hotel.childCount} children`,
+      });
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationFailedException(errors);
+    }
+  }
 
   private async isAdmin(userId?: string): Promise<boolean> {
     if (!userId) return false;
@@ -155,7 +207,14 @@ export class HotelsService {
       throw new ConflictException("This hotel is not available for booking");
     }
 
-    const totalCost = hotel.pricePerNight * Number(dto.numberOfNights);
+    const nights = Number(dto.numberOfNights);
+    if (nights > this.maxNights) {
+      throw new ValidationFailedException([
+        { field: "numberOfNights", message: `a stay cannot exceed ${this.maxNights} nights` },
+      ]);
+    }
+
+    const totalCost = hotel.pricePerNight * nights;
 
     const paymentIntent = await this.stripeService.client.paymentIntents.create({
       amount: totalCost * 100,
@@ -185,6 +244,7 @@ export class HotelsService {
     if (hotel.isActive === false) {
       throw new ConflictException("This hotel is not available for booking");
     }
+    this.validateStay(dto, hotel);
 
     const paymentIntent = await this.stripeService.client.paymentIntents.retrieve(
       dto.paymentIntentId,

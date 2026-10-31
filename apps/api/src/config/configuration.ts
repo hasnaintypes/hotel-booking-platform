@@ -39,6 +39,9 @@ export const configuration = () => {
     stripe: {
       apiKey: process.env.STRIPE_API_KEY,
     },
+    booking: {
+      maxNights: parseInt(process.env.BOOKING_MAX_NIGHTS || "30", 10),
+    },
     ai: {
       enabled: process.env.AI_ASSIST_ENABLED === "true",
       groqApiKey: process.env.GROQ_API_KEY,
