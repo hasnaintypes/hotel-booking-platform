@@ -72,6 +72,7 @@ export class AuthController {
       ...clearAuthCookieOptions(),
       maxAge: 0,
     });
-    res.send();
+    // 204: logout has no response body
+    res.status(HttpStatus.NO_CONTENT).send();
   }
 }

@@ -50,7 +50,7 @@ export class UsersController {
   }
 
   @Post("register")
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { token } = await this.usersService.register(dto);
     res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());

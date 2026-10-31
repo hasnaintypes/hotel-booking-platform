@@ -49,7 +49,7 @@ export class HotelsController {
   }
 
   @Post(":hotelId/bookings/payment-intent")
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 50, ttl: 900000 } })
   createPaymentIntent(
@@ -61,7 +61,7 @@ export class HotelsController {
   }
 
   @Post(":hotelId/bookings")
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
   createBooking(
     @Param("hotelId") hotelId: string,
