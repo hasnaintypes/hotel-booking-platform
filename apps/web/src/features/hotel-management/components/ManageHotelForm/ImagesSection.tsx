@@ -1,3 +1,4 @@
+import { safeImageSrc } from "@/shared/lib/safe-url";
 import { useFormContext } from "react-hook-form";
 import { HotelFormData } from "@/features/hotel-management/components/ManageHotelForm/ManageHotelForm";
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -176,7 +177,11 @@ const ImagesSection = () => {
                   key={image.id}
                   className="relative group bg-gray-50 rounded-xl overflow-hidden border"
                 >
-                  <img src={image.url} alt="Hotel preview" className="w-full h-32 object-cover" />
+                  <img
+                    src={safeImageSrc(image.url)}
+                    alt="Hotel preview"
+                    className="w-full h-32 object-cover"
+                  />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                     <Button
                       onClick={(e) => {

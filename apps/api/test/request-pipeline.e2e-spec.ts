@@ -24,6 +24,15 @@ describe("request pipeline (CORS and origin guard)", () => {
     expect(res.headers["access-control-allow-credentials"]).toBe("true");
   });
 
+  it("sends a deny-all Content-Security-Policy and other security headers on API responses", async () => {
+    const res = await anonymous(t).get(routes.health);
+    const csp = String(res.headers["content-security-policy"]);
+    expect(csp).toContain("default-src 'none'");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(res.headers["x-content-type-options"]).toBe("nosniff");
+    expect(res.headers["x-powered-by"]).toBeUndefined();
+  });
+
   it("does not grant CORS access to unknown origins", async () => {
     const res = await anonymous(t).get(routes.health).set("Origin", UNTRUSTED);
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();
@@ -38,13 +47,12 @@ describe("request pipeline (CORS and origin guard)", () => {
     expect(res.status).toBe(503);
   });
 
-  // KNOWN ISSUE (to be fixed with the problem-details work, M3-02): an untrusted Origin is
-  // rejected by the CORS middleware with HTTP 500 instead of 403, and never reaches the
-  // origin guard because both use the same allow-list.
-  it("rejects an untrusted Origin with 500 from the CORS layer (known issue)", async () => {
+  it("rejects an untrusted Origin with a 403 problem response from the CORS layer", async () => {
     const { agent } = await registerUser(t);
     const res = await agent.post(routes.ai.suggest).set("Origin", UNTRUSTED).send(body);
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe("CORS_ORIGIN_NOT_ALLOWED");
+    expect(res.headers["content-type"]).toMatch(/application\/problem\+json/);
   });
 
   it("blocks unsafe cookie-authenticated requests whose Referer is untrusted", async () => {
@@ -58,7 +66,7 @@ describe("request pipeline (CORS and origin guard)", () => {
   describe("documented exemptions of the origin guard", () => {
     it("exempts Bearer-authenticated requests (Referer-only, so CORS does not intervene)", async () => {
       const credentials = newCredentials();
-      await anonymous(t).post(routes.auth.register).send(credentials).expect(200);
+      await anonymous(t).post(routes.auth.register).send(credentials).expect(201);
       const login = await anonymous(t)
         .post(routes.auth.login)
         .send({ email: credentials.email, password: credentials.password });

@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { InjectModel } from "@nestjs/mongoose";
@@ -11,6 +16,8 @@ import { LoginDto } from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectModel(USER_MODEL) private readonly userModel: Model<UserType>,
     private readonly jwtService: JwtService,
@@ -100,7 +107,7 @@ export class AuthService {
 
       const tokenData = await tokenRes.json();
       if (tokenData.error) {
-        console.error("Google token error:", tokenData);
+        this.logger.warn(`Google token exchange failed: ${String(tokenData.error)}`);
         return { url: `${frontendUrl}/sign-in?error=token_exchange` };
       }
 
@@ -145,7 +152,10 @@ export class AuthService {
 
       return { url: redirectUrl.toString(), token };
     } catch (error) {
-      console.error("Google OAuth error:", error);
+      this.logger.error(
+        "Google OAuth callback failed",
+        error instanceof Error ? error.stack : undefined,
+      );
       return { url: `${frontendUrl}/sign-in?error=server_error` };
     }
   }
