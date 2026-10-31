@@ -16,7 +16,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
-import { authCookieOptions } from "../auth/cookie.config";
+import { SESSION_COOKIE_NAME, authCookieOptions } from "../../common/auth-cookie";
 import { RegisterDto } from "./dto/register.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { UsersService } from "./users.service";
@@ -53,7 +53,7 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { token } = await this.usersService.register(dto);
-    res.cookie("auth_token", token, authCookieOptions());
+    res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());
     return { message: "User registered OK" };
   }
 }

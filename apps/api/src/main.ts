@@ -9,6 +9,8 @@ import helmet from "helmet";
 import { Logger as PinoLogger } from "nestjs-pino";
 import { AppModule } from "./app.module";
 import { AllExceptionsFilter } from "./common/filters/all-exceptions.filter";
+import { OriginGuard } from "./common/guards/origin.guard";
+import { isAllowedOrigin } from "./common/security/allowed-origins";
 import { setupSwagger } from "./config/swagger.config";
 
 async function bootstrap() {
@@ -22,23 +24,13 @@ async function bootstrap() {
   const port = config.get<number>("port") || 5001;
   const backendUrl = config.get<string>("backendUrl");
 
-  const allowedOrigins = [
-    config.get<string>("frontendUrl"),
-    "http://localhost:5174",
-    "http://localhost:5173",
-  ].filter((origin): origin is string => Boolean(origin));
-
   const corsOrigin = (
     origin: string | undefined,
     callback: (error: Error | null, allow?: boolean) => void,
   ) => {
     if (!origin) return callback(null, true);
 
-    if (origin.includes("netlify.app") || origin.includes("vercel.app")) {
-      return callback(null, true);
-    }
-
-    if (allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin, config)) {
       return callback(null, true);
     }
 
@@ -72,6 +64,7 @@ async function bootstrap() {
     }),
   );
   app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalGuards(new OriginGuard(config));
 
   app.enableCors({
     origin: corsOrigin,

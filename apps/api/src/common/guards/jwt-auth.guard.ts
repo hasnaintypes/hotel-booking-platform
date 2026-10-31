@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { SESSION_COOKIE_NAME } from "../auth-cookie";
 import { JwtPayload } from "../types/jwt-payload.interface";
 
 const extractToken = (request: {
@@ -10,7 +11,7 @@ const extractToken = (request: {
   if (typeof authHeader === "string" && authHeader.startsWith("Bearer ")) {
     return authHeader.slice(7);
   }
-  return request.cookies?.session_id;
+  return request.cookies?.[SESSION_COOKIE_NAME];
 };
 
 @Injectable()

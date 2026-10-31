@@ -68,17 +68,20 @@ export class AuthService {
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  async handleGoogleCallback(code?: string, error?: string): Promise<string> {
+  async handleGoogleCallback(
+    code?: string,
+    error?: string,
+  ): Promise<{ url: string; token?: string }> {
     const frontendUrl = this.config.get<string>("frontendUrl");
     const clientId = this.config.get<string>("google.clientId");
     const clientSecret = this.config.get<string>("google.clientSecret");
 
     if (error) {
-      return `${frontendUrl}/sign-in?error=${encodeURIComponent(error)}`;
+      return { url: `${frontendUrl}/sign-in?error=${encodeURIComponent(error)}` };
     }
 
     if (!code || !clientId || !clientSecret) {
-      return `${frontendUrl}/sign-in?error=oauth_config`;
+      return { url: `${frontendUrl}/sign-in?error=oauth_config` };
     }
 
     try {
@@ -98,7 +101,7 @@ export class AuthService {
       const tokenData = await tokenRes.json();
       if (tokenData.error) {
         console.error("Google token error:", tokenData);
-        return `${frontendUrl}/sign-in?error=token_exchange`;
+        return { url: `${frontendUrl}/sign-in?error=token_exchange` };
       }
 
       const userRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
@@ -133,17 +136,17 @@ export class AuthService {
 
       const token = this.jwtService.sign({ userId: user.id });
       const redirectUrl = new URL(`${frontendUrl}/auth/callback`);
-      redirectUrl.searchParams.set("token", token);
+      redirectUrl.searchParams.set("authenticated", "1");
       redirectUrl.searchParams.set("userId", String(user._id));
       redirectUrl.searchParams.set("email", user.email);
       redirectUrl.searchParams.set("firstName", user.firstName);
       redirectUrl.searchParams.set("lastName", user.lastName);
       if (image) redirectUrl.searchParams.set("image", image);
 
-      return redirectUrl.toString();
+      return { url: redirectUrl.toString(), token };
     } catch (error) {
       console.error("Google OAuth error:", error);
-      return `${frontendUrl}/sign-in?error=server_error`;
+      return { url: `${frontendUrl}/sign-in?error=server_error` };
     }
   }
 }

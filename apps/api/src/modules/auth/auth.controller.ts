@@ -10,11 +10,15 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { Response } from "express";
+import {
+  SESSION_COOKIE_NAME,
+  authCookieOptions,
+  clearAuthCookieOptions,
+} from "../../common/auth-cookie";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { AuthService } from "./auth.service";
-import { clearAuthCookieOptions } from "./cookie.config";
 import { LoginDto } from "./dto/login.dto";
 
 @Controller("api/auth")
@@ -32,17 +36,24 @@ export class AuthController {
     @Query("error") error: string | undefined,
     @Res() res: Response,
   ) {
-    const url = await this.authService.handleGoogleCallback(
+    const result = await this.authService.handleGoogleCallback(
       code ? String(code) : undefined,
       error ? String(error) : undefined,
     );
-    res.redirect(url);
+
+    if (result.token) {
+      res.cookie(SESSION_COOKIE_NAME, result.token, authCookieOptions());
+    }
+
+    res.redirect(result.url);
   }
 
   @Post("login")
   @HttpCode(HttpStatus.OK)
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
+    const { token, ...payload } = await this.authService.login(dto);
+    res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());
+    return payload;
   }
 
   @Get("validate-token")
@@ -53,7 +64,7 @@ export class AuthController {
 
   @Post("logout")
   logout(@Res() res: Response) {
-    res.cookie("session_id", "", {
+    res.cookie(SESSION_COOKIE_NAME, "", {
       ...clearAuthCookieOptions(),
       maxAge: 0,
     });

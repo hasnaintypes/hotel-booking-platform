@@ -1,3 +1,5 @@
+export const SESSION_COOKIE_NAME = "session_id";
+
 export const authCookieOptions = (maxAgeMs = 86400000) => {
   const isProd = process.env.NODE_ENV === "production";
   return {
