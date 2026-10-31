@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
+} from "@hotel-booking/ui";
 
 // Google profile image if exists, otherwise Robohash avatar
 const getAvatarUrl = () => {

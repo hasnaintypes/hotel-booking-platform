@@ -4,7 +4,7 @@ import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
 import * as hotelsApi from "@/features/hotels/api";
 import { useEffect, useState } from "react";
 import SearchResultsCard from "@/features/hotels/components/SearchResultsCard";
-import Pagination from "@/shared/components/navigation/Pagination";
+import { Pagination } from "@hotel-booking/ui";
 import StarRatingFilter from "@/features/hotels/components/StarRatingFilter";
 import HotelTypesFilter from "@/features/hotels/components/HotelTypesFilter";
 import FacilitiesFilter from "@/features/hotels/components/FacilitiesFilter";
@@ -16,8 +16,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { SelectOptionLabel } from "@/shared/components/ui/select-option-label";
+} from "@hotel-booking/ui";
+import { SelectOptionLabel } from "@hotel-booking/ui";
 import { SEARCH_PAGE_SORT_OPTIONS } from "@/features/hotels/lib/select-option-maps";
 
 const Search = () => {

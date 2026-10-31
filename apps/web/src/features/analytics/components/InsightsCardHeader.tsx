@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@hotel-booking/ui";
 
 type InsightsCardHeaderProps = {
   icon: LucideIcon;

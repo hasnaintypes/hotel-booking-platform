@@ -1,5 +1,5 @@
-import axiosInstance, { getApiBaseUrl } from "@/shared/api/client";
-import { queryClient } from "@/shared/api/query-client";
+import axiosInstance, { getApiBaseUrl } from "@hotel-booking/api-client";
+import { queryClient } from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
 import type { RegisterFormData, SignInFormData } from "./types";
 

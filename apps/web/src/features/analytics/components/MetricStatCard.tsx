@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@hotel-booking/ui";
 import { InsightsCardHeader } from "@/features/analytics/components/InsightsCardHeader";
 
 export type MetricTone = "neutral" | "positive" | "negative" | "warning";

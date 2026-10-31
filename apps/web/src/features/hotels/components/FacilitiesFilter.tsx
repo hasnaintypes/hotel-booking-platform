@@ -1,5 +1,5 @@
 import { hotelFacilities } from "@/config/hotel-options";
-import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Checkbox } from "@hotel-booking/ui";
 import FilterSectionLabel from "@/features/hotels/components/FilterSectionLabel";
 import { Sparkles } from "lucide-react";
 

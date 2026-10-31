@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@hotel-booking/ui";
 
 /** Icon + title (+ optional subtitle) for filter / form sections */
 type FilterSectionLabelProps = {

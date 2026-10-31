@@ -2,16 +2,16 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as reviewsApi from "@/features/reviews/api";
 import { invalidateReviewQueries } from "@/shared/lib/query-invalidation";
-import { Button } from "@/shared/components/ui/button";
-import { Textarea } from "@/shared/components/ui/textarea";
+import { Button } from "@hotel-booking/ui";
+import { Textarea } from "@hotel-booking/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { SelectOptionLabel } from "@/shared/components/ui/select-option-label";
+} from "@hotel-booking/ui";
+import { SelectOptionLabel } from "@hotel-booking/ui";
 import { Star } from "lucide-react";
 import useAppContext from "@/shared/hooks/useAppContext";
 

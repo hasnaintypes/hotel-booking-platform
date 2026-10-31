@@ -1,15 +1,15 @@
 import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
 import * as bookingsApi from "@/features/bookings/api";
 import type { BookingType, HotelWithBookingsType } from "@hotel-booking/types";
-import { Badge } from "@/shared/components/ui/badge";
-import { Button } from "@/shared/components/ui/button";
-import { SafeImage } from "@/shared/components/ui/safe-image";
+import { Badge } from "@hotel-booking/ui";
+import { Button } from "@hotel-booking/ui";
+import { SafeImage } from "@hotel-booking/ui";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/shared/components/ui/card";
+} from "@hotel-booking/ui";
 import { Link } from "react-router-dom";
 import {
   Calendar,

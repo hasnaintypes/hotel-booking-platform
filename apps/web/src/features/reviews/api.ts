@@ -1,4 +1,4 @@
-import axiosInstance from "@/shared/api/client";
+import axiosInstance from "@hotel-booking/api-client";
 
 /** Public list of reviews for a hotel */
 export const fetchHotelReviews = async (hotelId: string) => {

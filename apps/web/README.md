@@ -4,11 +4,11 @@ A modern, responsive frontend application for the Hotel Booking Management Syste
 
 [![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
-[![React](https://img.shields.io/badge/React-18.2.0-blue)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-7-646CFF)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.3.5-38B2AC)](https://tailwindcss.com/)
+[![React](https://img.shields.io/badge/React-19-blue)](https://react.dev/)
+[![Node.js](https://img.shields.io/badge/Node.js-22+-green)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC)](https://tailwindcss.com/)
 [![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF)](https://stripe.com/)
 
 ---
@@ -80,11 +80,11 @@ Create a `.env` file in the root directory:
 # API Configuration
 VITE_API_BASE_URL=http://localhost:5001
 
-# Payment Processing
-VITE_STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
+# Separate admin SPA
+VITE_ADMIN_URL=http://localhost:5175
 
-# Optional: Analytics (not used in this project yet)
-VITE_GOOGLE_ANALYTICS_ID=GA_MEASUREMENT_ID
+# Payment Processing
+VITE_STRIPE_PUB_KEY=pk_test_your-stripe-publishable-key
 ```
 
 ---
@@ -128,10 +128,6 @@ apps/web/
 │   │   ├── reviews/
 │   │   │   ├── api.ts
 │   │   │   └── components/WriteReviewForm.tsx
-│   │   ├── admin/
-│   │   │   ├── api.ts
-│   │   │   ├── components/       # AdminRoute, AdminLayout
-│   │   │   └── pages/            # Admin*Page
 │   │   ├── analytics/
 │   │   │   ├── api.ts
 │   │   │   ├── types.ts
@@ -141,12 +137,8 @@ apps/web/
 │   │   └── status/
 │   │       └── pages/            # ApiStatusPage, ApiDocsPage
 │   ├── shared/                   # Cross-feature building blocks
-│   │   ├── api/                  # axios client, query client, AI endpoint
-│   │   ├── components/
-│   │   │   ├── ui/               # shadcn primitives
-│   │   │   ├── layout/           # Header, Footer, nav, layouts
-│   │   │   ├── feedback/         # LoadingSpinner
-│   │   │   └── navigation/       # Pagination
+│   │   ├── api/                  # web-only AI endpoint
+│   │   ├── components/layout/    # Header, Footer, nav, layouts
 │   │   ├── context/AppContext.tsx
 │   │   ├── hooks/                # useAppContext, useLoadingHooks
 │   │   └── lib/                  # utils, query invalidation, caches
@@ -183,15 +175,15 @@ apps/web/
 ### **Styling & UI**
 
 - **Tailwind CSS 4.3.3**: Utility-first CSS framework
-- **Shadcn UI**: Modern, accessible component library
+- **Shared design system**: `@hotel-booking/ui` (shadcn-style primitives)
 - **Lucide React**: Beautiful, customizable icons
 - **PostCSS**: CSS processing and optimization
 
 ### **State Management & Data**
 
-- **TanStack Query 5**: Server state management and caching
+- **TanStack Query 5**: Server state management and caching (`@hotel-booking/api-client`)
 - **TanStack Table 9**: Headless table rendering
-- **React Context**: Global state management
+- **React Context**: Global UI/auth state
 - **React Hook Form**: Form handling and validation
 
 ### **Payment & Media**

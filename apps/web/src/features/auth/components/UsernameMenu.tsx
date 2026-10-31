@@ -3,9 +3,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
+} from "@hotel-booking/ui";
 import { Link, useNavigate } from "react-router-dom";
-import { Separator } from "@/shared/components/ui/separator";
+import { Separator } from "@hotel-booking/ui";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "@/features/auth/api";
@@ -20,6 +20,7 @@ import {
 import useAppContext from "@/shared/hooks/useAppContext";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { goodbyeToast, getStoredDisplayName } from "@/shared/lib/toast-messages";
+import { getAdminUrl } from "@/shared/lib/app-urls";
 
 const getAvatarUrl = () => {
   const image = localStorage.getItem("user_image");
@@ -98,10 +99,10 @@ const UsernameMenu = () => {
             asChild
             className={menuItemClass}
           >
-            <Link to="/admin" className={linkRowClass}>
+            <a href={getAdminUrl()} className={linkRowClass}>
               <Shield className="h-4 w-4" />
               Admin Panel
-            </Link>
+            </a>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem

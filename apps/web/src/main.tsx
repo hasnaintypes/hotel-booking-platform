@@ -5,7 +5,7 @@ import "@/styles/index.css";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AppContextProvider } from "@/shared/context/AppContext";
 import { AuthProvider } from "@/features/auth/context/AuthContext";
-import { queryClient } from "@/shared/api/query-client";
+import { queryClient } from "@hotel-booking/api-client";
 import { SearchContextProvider } from "@/features/hotels/context/SearchContext";
 import { installScrollLockGapFix } from "@/shared/lib/scroll-lock-fix";
 

@@ -14,8 +14,8 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/shared/components/ui/card";
-import { Badge } from "@/shared/components/ui/badge";
+} from "@hotel-booking/ui";
+import { Badge } from "@hotel-booking/ui";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
 
 const Booking = () => {

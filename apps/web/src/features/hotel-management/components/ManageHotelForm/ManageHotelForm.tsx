@@ -9,7 +9,7 @@ import PoliciesSection from "@/features/hotel-management/components/ManageHotelF
 import { HotelType } from "@hotel-booking/types";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/shared/components/ui/button";
+import { Button } from "@hotel-booking/ui";
 
 export type HotelFormData = {
   name: string;

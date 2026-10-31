@@ -2,8 +2,8 @@ import { useFormContext } from "react-hook-form";
 import { HotelFormData } from "@/features/hotel-management/components/ManageHotelForm/ManageHotelForm";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { X, Upload, Image as ImageIcon } from "lucide-react";
-import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
+import { Button } from "@hotel-booking/ui";
+import { Badge } from "@hotel-booking/ui";
 
 interface ImagePreview {
   id: string;

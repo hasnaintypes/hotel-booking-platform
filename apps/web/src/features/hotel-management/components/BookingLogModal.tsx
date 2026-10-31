@@ -2,17 +2,17 @@ import React, { useState } from "react";
 import { useQueryWithLoading } from "@/shared/hooks/useLoadingHooks";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 import { BookingType } from "@hotel-booking/types";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/components/ui/dialog";
-import { Badge } from "@/shared/components/ui/badge";
-import { Card, CardContent, CardHeader } from "@/shared/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@hotel-booking/ui";
+import { Badge } from "@hotel-booking/ui";
+import { Card, CardContent, CardHeader } from "@hotel-booking/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { SelectOptionLabel } from "@/shared/components/ui/select-option-label";
+} from "@hotel-booking/ui";
+import { SelectOptionLabel } from "@hotel-booking/ui";
 import CancelBookingButton from "@/features/bookings/components/CancelBookingButton";
 import {
   Calendar,

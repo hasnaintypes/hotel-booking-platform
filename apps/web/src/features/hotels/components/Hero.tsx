@@ -1,7 +1,7 @@
 import { Search, MapPin, Calendar, Users, Star } from "lucide-react";
 import AdvancedSearch from "@/features/hotels/components/AdvancedSearch";
 import PageContainer from "@/shared/components/layout/PageContainer";
-import { StaggerItem } from "@/shared/components/ui/stagger";
+import { StaggerItem } from "@hotel-booking/ui";
 
 /**
  * Landing hero — classic primary blue bg stays static (never staggered).

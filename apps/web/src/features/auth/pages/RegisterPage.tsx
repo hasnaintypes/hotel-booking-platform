@@ -5,7 +5,7 @@ import * as authApi from "@/features/auth/api";
 import useAppContext from "@/shared/hooks/useAppContext";
 import type { RegisterFormData } from "@/features/auth/types";
 import { welcomeNewToast } from "@/shared/lib/toast-messages";
-import { StaggerItem } from "@/shared/components/ui/stagger";
+import { StaggerItem } from "@hotel-booking/ui";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Mail,
@@ -18,18 +18,18 @@ import {
   Sparkle,
 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
+import { Button } from "@hotel-booking/ui";
+import { Input } from "@hotel-booking/ui";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/shared/components/ui/card";
-import { Label } from "@/shared/components/ui/label";
-import { Separator } from "@/shared/components/ui/separator";
-import { Badge } from "@/shared/components/ui/badge";
+} from "@hotel-booking/ui";
+import { Label } from "@hotel-booking/ui";
+import { Separator } from "@hotel-booking/ui";
+import { Badge } from "@hotel-booking/ui";
 
 const Register = () => {
   const queryClient = useQueryClient();

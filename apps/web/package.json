@@ -40,7 +40,9 @@
     "recharts": "^3.10.1",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.7.0",
-    "@tanstack/react-query": "^5.105.0"
+    "@tanstack/react-query": "^5.105.0",
+    "@hotel-booking/api-client": "workspace:*",
+    "@hotel-booking/ui": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

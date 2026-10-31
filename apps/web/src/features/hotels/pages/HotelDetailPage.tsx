@@ -4,8 +4,8 @@ import * as hotelsApi from "@/features/hotels/api";
 import * as reviewsApi from "@/features/reviews/api";
 import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "@/features/bookings/components/GuestInfoForm";
-import { Badge } from "@/shared/components/ui/badge";
-import { SafeImage } from "@/shared/components/ui/safe-image";
+import { Badge } from "@hotel-booking/ui";
+import { SafeImage } from "@hotel-booking/ui";
 import type { ReviewType } from "@hotel-booking/types";
 import {
   MapPin,

@@ -4,8 +4,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { SelectOptionLabel } from "@/shared/components/ui/select-option-label";
+} from "@hotel-booking/ui";
+import { SelectOptionLabel } from "@hotel-booking/ui";
 import FilterSectionLabel from "@/features/hotels/components/FilterSectionLabel";
 import { CircleDashed, DollarSign, PoundSterling } from "lucide-react";
 
