@@ -1,8 +1,7 @@
-import axiosInstance, { getApiBaseUrl } from "@hotel-booking/api-client";
+import axiosInstance, { authSession, getApiBaseUrl } from "@hotel-booking/api-client";
 import { queryClient } from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
 import { authKeys } from "@/shared/lib/query-keys";
-import { clearSessionToken, setSessionToken } from "./auth-storage";
 import type { RegisterFormData, SignInFormData } from "./types";
 
 export { getApiBaseUrl };
@@ -14,19 +13,22 @@ export const fetchCurrentUser = async (): Promise<UserType> => {
 
 export const register = async (formData: RegisterFormData) => {
   const response = await axiosInstance.post("/api/users/register", formData);
+
+  authSession.set();
+  localStorage.setItem("user_email", formData.email);
+  const name = [formData.firstName, formData.lastName].filter(Boolean).join(" ");
+  if (name) localStorage.setItem("user_name", name);
+  await queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
+
   return response.data;
 };
 
 export const signIn = async (formData: SignInFormData) => {
   const response = await axiosInstance.post("/api/auth/login", formData);
 
-  // Store JWT token from response body in localStorage
-  const token = response.data?.token;
-  if (token) {
-    setSessionToken(token);
-  }
+  authSession.set();
 
-  // Store user info for profile avatar / UsernameMenu
+  // Store display fields only; the JWT lives in the httpOnly cookie.
   if (response.data?.userId) {
     localStorage.setItem("user_id", response.data.userId);
   }
@@ -41,15 +43,15 @@ export const signIn = async (formData: SignInFormData) => {
   try {
     await queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
   } catch {
-    // Token stored — UI still works if the refresh races; do not spam console.
+    // Cookie stored — UI still works if the refresh races; do not spam console.
   }
 
   return response.data;
 };
 
-/** Clears JWT keys when session is invalid */
+/** Clears local session state when the server session is invalid. */
 export const clearAuthStorage = () => {
-  clearSessionToken();
+  authSession.clear();
   localStorage.removeItem("user_id");
   localStorage.removeItem("user_email");
   localStorage.removeItem("user_name");
@@ -67,7 +69,7 @@ export const signOut = async () => {
 // Development utility to clear all browser storage
 export const clearAllStorage = () => {
   localStorage.clear();
-  clearSessionToken();
+  authSession.clear();
   sessionStorage.clear();
   document.cookie.split(";").forEach((c) => {
     document.cookie = c

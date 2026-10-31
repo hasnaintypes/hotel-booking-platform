@@ -1,8 +1,8 @@
 import React, { createContext, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { authSession } from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
 import { clearAuthStorage, fetchCurrentUser } from "../api";
-import { getSessionToken, subscribeToAuth } from "../auth-storage";
 import { authKeys } from "@/shared/lib/query-keys";
 
 export type AuthContextValue = {
@@ -15,11 +15,7 @@ export type AuthContextValue = {
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const hasStoredToken = useSyncExternalStore(
-    subscribeToAuth,
-    () => Boolean(getSessionToken()),
-    () => false,
-  );
+  const hasSession = useSyncExternalStore(authSession.subscribe, authSession.get, () => false);
 
   // Guests skip /users/me, avoiding expected 401 noise in production.
   const { isError, data, isLoading, error } = useQuery<UserType>({
@@ -28,7 +24,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
-    enabled: hasStoredToken,
+    enabled: hasSession,
   });
 
   useEffect(() => {
@@ -37,8 +33,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (isError && status === 401) clearAuthStorage();
   }, [isError, error]);
 
-  // Optimistic nav chrome: JWT in localStorage shows profile until validation fails.
-  const isLoggedIn = hasStoredToken && !isError;
+  // Optimistic nav chrome: the session hint shows profile until validation fails.
+  const isLoggedIn = hasSession && !isError;
 
   const value = useMemo(
     () => ({

@@ -3,12 +3,12 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/shared/context/ToastContext";
 import { welcomeBackToast } from "@/shared/lib/toast-messages";
-import { setSessionToken } from "@/features/auth/auth-storage";
+import { authSession } from "@hotel-booking/api-client";
 import { authKeys } from "@/shared/lib/query-keys";
 import { Loader2 } from "lucide-react";
 
 /**
- * Google OAuth return — store JWT, invalidate auth queries, soft-nav home (no reload).
+ * Google OAuth return — mark the cookie session, invalidate auth queries, soft-nav home.
  */
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -17,7 +17,7 @@ const AuthCallback = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const token = searchParams.get("token");
+    const authenticated = searchParams.get("authenticated");
     const userId = searchParams.get("userId");
     const error = searchParams.get("error");
     const email = searchParams.get("email");
@@ -40,9 +40,9 @@ const AuthCallback = () => {
       return;
     }
 
-    if (token && userId) {
-      setSessionToken(token);
-      localStorage.setItem("user_id", userId);
+    if (authenticated || userId) {
+      authSession.set();
+      if (userId) localStorage.setItem("user_id", userId);
       if (email) localStorage.setItem("user_email", email);
       const name = [firstName, lastName].filter(Boolean).join(" ") || email;
       if (name) localStorage.setItem("user_name", name);

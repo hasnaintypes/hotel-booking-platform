@@ -41,8 +41,7 @@ interface DetailedHealthData {
 const ApiStatus = () => {
   const [isDetailed, setIsDetailed] = useState(false);
   const { isLoggedIn } = useAuth();
-  const apiBaseUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const {
     data: healthData,
@@ -63,7 +62,7 @@ const ApiStatus = () => {
     retryDelay: 1000,
   });
 
-  // Detailed requires JWT — Bearer from localStorage (same as axios interceptor)
+  // Detailed requires the httpOnly session cookie.
   const {
     data: detailedData,
     error: detailedError,
@@ -71,9 +70,8 @@ const ApiStatus = () => {
   } = useQuery<DetailedHealthData>({
     queryKey: ["detailedHealth"],
     queryFn: async () => {
-      const token = localStorage.getItem("session_id");
       const response = await fetch(`${apiBaseUrl}/api/health/detailed`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
       });
       if (response.status === 401) {
         throw new Error("SIGN_IN_REQUIRED");
@@ -144,12 +142,8 @@ const ApiStatus = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-2">
-            API Unavailable
-          </h2>
-          <p className="text-gray-600 mb-4">
-            Unable to connect to the API server.
-          </p>
+          <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-2">API Unavailable</h2>
+          <p className="text-gray-600 mb-4">Unable to connect to the API server.</p>
           <button
             onClick={() => refetch()}
             className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors"
@@ -171,9 +165,7 @@ const ApiStatus = () => {
   return (
     <div>
       <div className="text-center mb-12">
-        <h1 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">
-          API Status
-        </h1>
+        <h1 className="text-lg md:text-2xl font-medium text-gray-700 mb-4">API Status</h1>
         <p className="text-xl text-gray-600">
           Real-time monitoring of our hotel booking API health and performance
         </p>
@@ -183,9 +175,7 @@ const ApiStatus = () => {
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <Server className="w-8 h-8 text-blue-600 mr-3" />
-            <h2 className="text-lg md:text-2xl font-medium text-gray-700">
-              Overall Status
-            </h2>
+            <h2 className="text-lg md:text-2xl font-medium text-gray-700">Overall Status</h2>
           </div>
           <div className="flex items-center space-x-4">
             <button
@@ -206,9 +196,7 @@ const ApiStatus = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">
-                API Status
-              </span>
+              <span className="text-sm font-medium text-gray-600">API Status</span>
               {getStatusIcon(healthData?.status || "unknown")}
             </div>
             <span
@@ -222,9 +210,7 @@ const ApiStatus = () => {
 
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">
-                Database
-              </span>
+              <span className="text-sm font-medium text-gray-600">Database</span>
               {getStatusIcon(healthData?.database?.status || "unknown")}
             </div>
             <span
@@ -238,15 +224,11 @@ const ApiStatus = () => {
 
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">
-                Probe time
-              </span>
+              <span className="text-sm font-medium text-gray-600">Probe time</span>
               <Clock className="w-4 h-4 text-gray-400" />
             </div>
             <span className="text-sm font-medium text-gray-700">
-              {healthData?.timestamp
-                ? new Date(healthData.timestamp).toLocaleTimeString()
-                : "N/A"}
+              {healthData?.timestamp ? new Date(healthData.timestamp).toLocaleTimeString() : "N/A"}
             </span>
           </div>
         </div>
@@ -255,12 +237,9 @@ const ApiStatus = () => {
       {needsSignInForDetails && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 pb-6 text-center">
           <AlertCircle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
-          <p className="text-amber-900 font-medium">
-            Sign in to view detailed status
-          </p>
+          <p className="text-amber-900 font-medium">Sign in to view detailed status</p>
           <p className="text-sm text-amber-800 mt-1">
-            Detailed metrics require authentication and no longer expose
-            infrastructure identifiers.
+            Detailed metrics require authentication and no longer expose infrastructure identifiers.
           </p>
         </div>
       )}
@@ -277,9 +256,7 @@ const ApiStatus = () => {
                 <span className="text-gray-600">Status:</span>
                 <span
                   className={`font-medium ${
-                    detailedData.database.status === "connected"
-                      ? "text-green-600"
-                      : "text-red-600"
+                    detailedData.database.status === "connected" ? "text-green-600" : "text-red-600"
                   }`}
                 >
                   {detailedData.database.status}
@@ -296,21 +273,15 @@ const ApiStatus = () => {
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Used:</span>
-                <span className="font-medium">
-                  {detailedData.performance.memory.usedMb} MB
-                </span>
+                <span className="font-medium">{detailedData.performance.memory.usedMb} MB</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Total:</span>
-                <span className="font-medium">
-                  {detailedData.performance.memory.totalMb} MB
-                </span>
+                <span className="font-medium">{detailedData.performance.memory.totalMb} MB</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Usage:</span>
-                <span className="font-medium">
-                  {detailedData.performance.memory.percentage}%
-                </span>
+                <span className="font-medium">{detailedData.performance.memory.percentage}%</span>
               </div>
             </div>
           </div>
@@ -342,9 +313,7 @@ const ApiStatus = () => {
 
       <div className="text-center text-gray-500 text-sm">
         Last updated:{" "}
-        {healthData?.timestamp
-          ? new Date(healthData.timestamp).toLocaleString()
-          : "N/A"}
+        {healthData?.timestamp ? new Date(healthData.timestamp).toLocaleString() : "N/A"}
       </div>
     </div>
   );
