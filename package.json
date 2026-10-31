@@ -6,9 +6,12 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "check:bundle": "node scripts/check-bundle-size.mjs",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "format": "prettier --write .",
+    "format:code": "prettier --write \"{apps,packages}/**/*.{ts,tsx,js,jsx,mjs,cjs,css,html}\"",
     "format:check": "prettier --check .",
     "clean": "turbo run clean"
   },
