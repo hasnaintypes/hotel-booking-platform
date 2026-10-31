@@ -3,7 +3,7 @@ import * as hotelsApi from "@/features/hotels/api";
 import LatestDestinationCard from "@/features/hotels/components/LatestDestinationCard";
 import Hero from "@/features/hotels/components/Hero";
 import PageContainer from "@/shared/components/layout/PageContainer";
-import { StaggerItem, StaggerScope } from "@/shared/components/ui/stagger";
+import { StaggerItem, StaggerScope } from "@hotel-booking/ui";
 
 /** Match LatestDestinationCard height so footer does not jump while hotels load */
 const DEST_SKELETON_COUNT = 3;

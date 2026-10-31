@@ -3,15 +3,15 @@ import { Controller, useFormContext } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { HotelFormData } from "@/features/hotel-management/components/ManageHotelForm/ManageHotelForm";
 import * as aiApi from "@/shared/api/ai";
-import { Button } from "@/shared/components/ui/button";
+import { Button } from "@hotel-booking/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { SelectOptionLabel } from "@/shared/components/ui/select-option-label";
+} from "@hotel-booking/ui";
+import { SelectOptionLabel } from "@hotel-booking/ui";
 import { Star } from "lucide-react";
 import useAppContext from "@/shared/hooks/useAppContext";
 import useAuth from "@/features/auth/hooks/useAuth";

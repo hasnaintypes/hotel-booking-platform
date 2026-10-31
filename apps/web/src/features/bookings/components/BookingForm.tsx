@@ -8,10 +8,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as bookingsApi from "@/features/bookings/api";
 import useAppContext from "@/shared/hooks/useAppContext";
 import type { BookingFormData } from "@/features/bookings/types";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
-import { CardContent, CardHeader, CardTitle } from "@/shared/components/ui/card";
+import { Button } from "@hotel-booking/ui";
+import { Input } from "@hotel-booking/ui";
+import { Label } from "@hotel-booking/ui";
+import { CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import {
   User,
   Phone,

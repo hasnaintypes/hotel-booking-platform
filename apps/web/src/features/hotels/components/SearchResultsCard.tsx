@@ -15,8 +15,8 @@ import {
   Plane,
   Building,
 } from "lucide-react";
-import { Badge } from "@/shared/components/ui/badge";
-import { SafeImage } from "@/shared/components/ui/safe-image";
+import { Badge } from "@hotel-booking/ui";
+import { SafeImage } from "@hotel-booking/ui";
 
 type Props = {
   hotel: HotelType;

@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/shared/components/ui/button";
+import { Button } from "@hotel-booking/ui";
 import { Building2, Calendar, BarChart3, LogIn, Hotel } from "lucide-react";
 import UsernameMenu from "@/features/auth/components/UsernameMenu";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { getHotelsSearchUrl } from "@/shared/lib/nav-utils";
 import { prefetchBusinessInsightsQueries } from "@/features/analytics/lib/prefetch";
-import { queryClient } from "@/shared/api/query-client";
+import { queryClient } from "@hotel-booking/api-client";
 
 const linkClass =
   "flex items-center gap-2 w-full py-3 text-sm font-normal text-gray-700 hover:text-primary-600 transition-colors";

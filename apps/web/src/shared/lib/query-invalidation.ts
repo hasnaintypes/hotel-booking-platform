@@ -5,25 +5,24 @@ import {
 } from "@/shared/lib/hotel-places";
 
 /**
- * Central React Query invalidation for hotel / booking / review / admin CRUD.
+ * Central React Query invalidation for hotel / booking / review CRUD.
  * Call from every mutation onSuccess so current + other pages update without full reload.
  *
  * Keys in use (keep in sync with api-client callers):
  * - fetchMyHotels, fetchMyHotelById — owner dashboard
- * - fetchQuery, searchHotels, fetchHotels — home + search + admin hotels
+ * - fetchQuery, searchHotels, fetchHotels — home + search + hotels
  * - fetchHotelById / fetchHotelByID — hotel detail
  * - hotelPlaces — destination typeahead / Popular Destinations (also clears localStorage)
- * - fetchMyBookings, fetchHotelBookings, fetchAdminBookings — booking lists
- * - fetchHotelReviews, fetchAdminReviews — reviews
- * - fetchAdminUsers, fetchBusinessInsightsRollups, fetchAdminBusinessInsightsDashboard
+ * - fetchMyBookings, fetchHotelBookings — booking lists
+ * - fetchHotelReviews — reviews
  * - business-insights-dashboard | -forecast | -ops — AnalyticsDashboard page keys
  * - fetchCurrentUser — profile role / AdminRoute (invalidate on role PATCH)
  *
- * Insights invalidation lives only in invalidateHotelQueries; booking/review/admin
+ * Insights invalidation lives only in invalidateHotelQueries; booking/review
  * chain through hotel so Insights refreshes once per CRUD (no double invalidate).
  */
 
-/** AnalyticsDashboard + admin insights rollups — called from invalidateHotelQueries */
+/** AnalyticsDashboard keys — called from invalidateHotelQueries */
 export const invalidateBusinessInsightsQueries = async (
   queryClient: QueryClient,
 ) => {
@@ -31,8 +30,6 @@ export const invalidateBusinessInsightsQueries = async (
     queryClient.invalidateQueries({ queryKey: ["business-insights-dashboard"] }),
     queryClient.invalidateQueries({ queryKey: ["business-insights-forecast"] }),
     queryClient.invalidateQueries({ queryKey: ["business-insights-ops"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchAdminBusinessInsightsDashboard"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchBusinessInsightsRollups"] }),
   ]);
 };
 
@@ -56,27 +53,14 @@ export const invalidateBookingQueries = async (queryClient: QueryClient) => {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["fetchMyBookings"] }),
     queryClient.invalidateQueries({ queryKey: ["fetchHotelBookings"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchAdminBookings"] }),
     invalidateHotelQueries(queryClient),
   ]);
 };
 
-/** After create/update review — refresh detail, my-hotels stats, admin lists */
+/** After create/update review — refresh detail, my-hotels stats */
 export const invalidateReviewQueries = async (queryClient: QueryClient) => {
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["fetchHotelReviews"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchAdminReviews"] }),
-    invalidateHotelQueries(queryClient),
-  ]);
-};
-
-/** Admin shell lists + rollups + current user (role changes refresh Admin link) */
-export const invalidateAdminQueries = async (queryClient: QueryClient) => {
-  await Promise.all([
-    queryClient.invalidateQueries({ queryKey: ["fetchAdminUsers"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchAdminReviews"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchAdminBookings"] }),
-    queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
     invalidateHotelQueries(queryClient),
   ]);
 };

@@ -5,8 +5,8 @@ import {
   SheetDescription,
   SheetTitle,
   SheetTrigger,
-} from "@/shared/components/ui/sheet";
-import { Separator } from "@/shared/components/ui/separator";
+} from "@hotel-booking/ui";
+import { Separator } from "@hotel-booking/ui";
 import MobileNavLinks from "@/shared/components/layout/MobileNavLinks";
 
 const MobileNav = () => {

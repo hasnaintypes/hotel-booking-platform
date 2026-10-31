@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import LoadingSpinner from "@/shared/components/feedback/LoadingSpinner";
+import { LoadingSpinner } from "@hotel-booking/ui";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { toast as sonnerToast } from "sonner";
 import type { ToastPayload } from "@/shared/lib/toast-messages";

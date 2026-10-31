@@ -1,4 +1,4 @@
-import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Checkbox } from "@hotel-booking/ui";
 import FilterSectionLabel from "@/features/hotels/components/FilterSectionLabel";
 import { Star } from "lucide-react";
 

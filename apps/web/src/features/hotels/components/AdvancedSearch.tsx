@@ -35,18 +35,18 @@ import {
   startOfLocalDay,
 } from "@/shared/lib/date-input";
 import { SEARCH_SORT_OPTIONS } from "@/features/hotels/lib/select-option-maps";
-import { Input } from "@/shared/components/ui/input";
-import { Button } from "@/shared/components/ui/button";
-import { Badge } from "@/shared/components/ui/badge";
-import { Checkbox } from "@/shared/components/ui/checkbox";
+import { Input } from "@hotel-booking/ui";
+import { Button } from "@hotel-booking/ui";
+import { Badge } from "@hotel-booking/ui";
+import { Checkbox } from "@hotel-booking/ui";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/shared/components/ui/select";
-import { SelectOptionLabel } from "@/shared/components/ui/select-option-label";
+} from "@hotel-booking/ui";
+import { SelectOptionLabel } from "@hotel-booking/ui";
 import FilterSectionLabel from "@/features/hotels/components/FilterSectionLabel";
 
 interface AdvancedSearchProps {

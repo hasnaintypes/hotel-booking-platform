@@ -4,16 +4,16 @@ import "react-datepicker/dist/react-datepicker.css";
 import useSearchContext from "@/features/hotels/hooks/useSearchContext";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Label } from "@/shared/components/ui/label";
+import { Button } from "@hotel-booking/ui";
+import { Input } from "@hotel-booking/ui";
+import { Label } from "@hotel-booking/ui";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@/shared/components/ui/card";
-import { Badge } from "@/shared/components/ui/badge";
+} from "@hotel-booking/ui";
+import { Badge } from "@hotel-booking/ui";
 import { Calendar, Users, User, Baby, CreditCard } from "lucide-react";
 
 type Props = {

@@ -1,4 +1,4 @@
-import axiosInstance from "./client";
+import axiosInstance from "@hotel-booking/api-client";
 
 /**
  * AI draft assist — returns text only; caller must Apply (never auto-save).

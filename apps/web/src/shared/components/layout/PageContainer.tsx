@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@hotel-booking/ui";
 
 /**
  * Canonical content shell — keep Header / main / Footer on one vertical edge.

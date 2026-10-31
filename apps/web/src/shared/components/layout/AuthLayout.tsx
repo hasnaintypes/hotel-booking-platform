@@ -1,6 +1,6 @@
 import Footer from "@/shared/components/layout/Footer";
 import Header from "@/shared/components/layout/Header";
-import { StaggerItem, StaggerScope } from "@/shared/components/ui/stagger";
+import { StaggerItem, StaggerScope } from "@hotel-booking/ui";
 import { useLocation } from "react-router-dom";
 
 interface Props {

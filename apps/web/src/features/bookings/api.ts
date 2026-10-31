@@ -1,4 +1,4 @@
-import axiosInstance from "@/shared/api/client";
+import axiosInstance from "@hotel-booking/api-client";
 import type {
   BookingType,
   HotelWithBookingsType,

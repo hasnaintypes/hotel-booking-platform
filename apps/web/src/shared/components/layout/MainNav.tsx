@@ -1,10 +1,10 @@
-import { Button } from "@/shared/components/ui/button";
+import { Button } from "@hotel-booking/ui";
 import UsernameMenu from "@/features/auth/components/UsernameMenu";
 import { Link } from "react-router-dom";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { getHotelsSearchUrl } from "@/shared/lib/nav-utils";
 import { prefetchBusinessInsightsQueries } from "@/features/analytics/lib/prefetch";
-import { queryClient } from "@/shared/api/query-client";
+import { queryClient } from "@hotel-booking/api-client";
 import * as bookingsApi from "@/features/bookings/api";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 

@@ -131,9 +131,10 @@ This repository is designed as a **teaching project**. By reading and running it
 ## Architecture overview
 
 ```text
-Browser (React SPA :5174)
-        │  HTTPS JSON + JWT Bearer
-        ▼
+Browser (web SPA :5174)        Browser (admin SPA :5175)
+        │  HTTPS JSON + JWT Bearer        │
+        └───────────────┬─────────────────┘
+                        ▼
 NestJS API (:5001)
         ├── MongoDB Atlas
         ├── Stripe
@@ -144,7 +145,7 @@ NestJS API (:5001)
 **Typical request path**
 
 1. React page calls a function in its feature's `api.ts`
-2. Axios (`shared/api/client.ts`) adds the Bearer token
+2. Axios (`packages/api-client`) adds the Bearer token
 3. Nest controller (+ optional `JwtAuthGuard`) runs
 4. Mongoose reads/writes MongoDB
 5. JSON returns → React Query caches / invalidates
@@ -167,19 +168,27 @@ hotel-booking-platform/
 │   │   │   └── modules/       # auth, users, hotels, bookings, reviews…
 │   │   ├── Dockerfile
 │   │   └── .env.example
-│   └── web/                   # Vite React SPA (@hotel-booking/web)
+│   ├── web/                   # Public Vite React SPA (@hotel-booking/web)
+│   │   ├── src/
+│   │   │   ├── main.tsx       # providers
+│   │   │   ├── app/           # router composition
+│   │   │   ├── features/      # auth, hotels, bookings, analytics…
+│   │   │   ├── shared/        # layout, hooks, lib
+│   │   │   └── styles/
+│   │   ├── vercel.json
+│   │   └── .env.example
+│   └── admin/                 # Admin Vite React SPA (@hotel-booking/admin)
 │       ├── src/
-│       │   ├── main.tsx       # providers
-│       │   ├── app/           # router + query client
-│       │   ├── features/      # auth, hotels, bookings, admin, analytics…
-│       │   ├── shared/        # api, ui, layout, hooks, lib
-│       │   ├── config/
-│       │   └── styles/
+│       │   ├── main.tsx
+│       │   ├── app/           # router + guard
+│       │   ├── features/      # auth, dashboard, hotels, users…
+│       │   └── shared/        # layout, query keys, URLs
 │       ├── vercel.json
 │       └── .env.example
 ├── packages/
-│   └── types/                 # @hotel-booking/types (shared contracts)
-│       └── src/index.ts
+│   ├── types/                 # @hotel-booking/types (shared contracts)
+│   ├── ui/                    # @hotel-booking/ui (design system + Tailwind preset)
+│   └── api-client/            # @hotel-booking/api-client (Axios + QueryClient)
 ├── .github/workflows/ci.yml
 ├── docker-compose.yml         # local MongoDB
 ├── package.json               # workspace scripts
@@ -267,6 +276,19 @@ cp .env.example .env
 | --------------------- | ------------------- | ------------------------------------------------------------- |
 | `VITE_API_BASE_URL`   | Recommended locally | Backend origin, e.g. `http://localhost:5001`                  |
 | `VITE_STRIPE_PUB_KEY` | For payments        | Stripe **publishable** key `pk_test_…` (used in `AppContext`) |
+| `VITE_ADMIN_URL`      | For admin link      | Admin SPA origin, e.g. `http://localhost:5175`                |
+
+### Frontend — `apps/admin/.env`
+
+```bash
+cd apps/admin
+cp .env.example .env
+```
+
+| Variable            | Required?           | Purpose                                      |
+| ------------------- | ------------------- | -------------------------------------------- |
+| `VITE_API_BASE_URL` | Recommended locally | Backend origin, e.g. `http://localhost:5001` |
+| `VITE_WEB_URL`      | Recommended locally | Public site origin, e.g. `http://localhost:5174` |
 
 > Vite only exposes variables prefixed with `VITE_` to the browser. Never put secret keys (`sk_…`, Mongo URI, JWT secret) in frontend env.
 
@@ -288,7 +310,7 @@ You can explore UI/API docs without Google OAuth. You need Stripe keys for real 
 
 ## How to run locally
 
-Install once from the repo root, then use **two terminals** (or `pnpm dev` for both).
+Install once from the repo root, then use separate terminals (or `pnpm dev` for all apps).
 
 ```bash
 pnpm install
@@ -313,17 +335,27 @@ Smoke checks:
 pnpm --filter @hotel-booking/api seed   # destroys User/Hotel/Booking/Review/Analytics then reseeds
 ```
 
-Login after seed: `test@user.com` / `12345678` (**admin** — opens `/admin`). Also: `owner@hotel.com`, `guest@user.com` (same password). This stack uses **MongoDB + Mongoose**, not Prisma.
+Login after seed: `test@user.com` / `12345678` (**admin** — sign in at the admin app on `:5175`). Also: `owner@hotel.com`, `guest@user.com` (same password). This stack uses **MongoDB + Mongoose**, not Prisma.
 
 Optional AI assist (draft-and-approve only): set `AI_ASSIST_ENABLED=true` in backend `.env` (optional `OPENAI_API_KEY`; stub drafts when unset).
 
-### 2) Frontend
+### 2) Web frontend
 
 ```bash
 cd apps/web
 cp .env.example .env   # edit VITE_* as needed
 pnpm dev               # → http://localhost:5174
 ```
+
+### 3) Admin frontend
+
+```bash
+cd apps/admin
+cp .env.example .env
+pnpm dev               # → http://localhost:5175
+```
+
+The admin SPA is intentionally separate: it has its own router, auth guard, bundle, and deploy target. Shared UI and HTTP/query setup live in `packages/ui` and `packages/api-client`.
 
 ### Build verification
 
@@ -371,12 +403,12 @@ Layouts: `Layout` (chrome) · `AuthLayout` (centered auth).
 
 | File                          | Job                                                        |
 | ----------------------------- | ---------------------------------------------------------- |
-| `shared/api/client.ts`        | Axios instance, base URL, Bearer interceptor, 401 cleanup  |
+| `packages/api-client`         | Axios instance, base URL, Bearer interceptor, 401 cleanup  |
 | `features/auth/api.ts`        | `signIn`, `register`, `validateToken`, `signOut`           |
 | `features/hotels/api.ts`      | `searchHotels`, `fetchHotels`, `fetchHotelById`            |
 | `features/bookings/api.ts`    | `createPaymentIntent`, `createRoomBooking`, `cancelBooking`|
-| `features/admin/api.ts`       | admin users/bookings/reviews + hotel visibility            |
 | `features/analytics/api.ts`   | business-insights + rollups                                |
+| `apps/admin/src/features/*`    | admin-only users/bookings/reviews + rollups                |
 
 Example pattern you can reuse in other projects:
 
@@ -612,11 +644,12 @@ pnpm --filter @hotel-booking/api build
 
 ### Frontend Deployment (Netlify/Vercel)
 
-- Config: `apps/web/vercel.json` (SPA rewrite → `index.html`); set the Vercel project root to `apps/web`.
-- Build: `pnpm --filter @hotel-booking/web build` → `apps/web/dist/`
-- Env in host dashboard:
-  - `VITE_API_BASE_URL` = production API origin
-  - `VITE_STRIPE_PUB_KEY` = live or test publishable key
+- Web config: `apps/web/vercel.json` (SPA rewrite → `index.html`); set the Vercel project root to `apps/web`.
+- Admin config: `apps/admin/vercel.json`; set a second Vercel project root to `apps/admin`.
+- Builds: `pnpm --filter @hotel-booking/web build` and `pnpm --filter @hotel-booking/admin build`
+- Env in host dashboards:
+  - Web: `VITE_API_BASE_URL`, `VITE_STRIPE_PUB_KEY`, `VITE_ADMIN_URL`
+  - Admin: `VITE_API_BASE_URL`, `VITE_WEB_URL`
 
 ```bash
 pnpm --filter @hotel-booking/web build

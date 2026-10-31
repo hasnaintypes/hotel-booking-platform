@@ -5,9 +5,9 @@ import { MdTravelExplore } from "react-icons/md";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/shared/components/ui/button";
-import { Input } from "@/shared/components/ui/input";
-import { Card, CardContent } from "@/shared/components/ui/card";
+import { Button } from "@hotel-booking/ui";
+import { Input } from "@hotel-booking/ui";
+import { Card, CardContent } from "@hotel-booking/ui";
 
 const SearchBar = () => {
   const navigate = useNavigate();

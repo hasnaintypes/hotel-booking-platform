@@ -4,7 +4,7 @@ import * as bookingsApi from "@/features/bookings/api";
 import { invalidateBookingQueries } from "@/shared/lib/query-invalidation";
 import { isBookingCancellable } from "@/features/bookings/lib/booking-utils";
 import type { BookingType } from "@hotel-booking/types";
-import { Button } from "@/shared/components/ui/button";
+import { Button } from "@hotel-booking/ui";
 import useAppContext from "@/shared/hooks/useAppContext";
 
 type Props = {
