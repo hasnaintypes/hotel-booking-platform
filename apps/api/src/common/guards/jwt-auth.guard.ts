@@ -3,7 +3,7 @@ import { JwtService } from "@nestjs/jwt";
 import { SESSION_COOKIE_NAME } from "../auth-cookie";
 import { JwtPayload } from "../types/jwt-payload.interface";
 
-const extractToken = (request: {
+export const extractToken = (request: {
   headers: Record<string, string | string[] | undefined>;
   cookies?: Record<string, string>;
 }): string | undefined => {

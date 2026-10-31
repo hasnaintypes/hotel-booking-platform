@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -7,6 +8,7 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { HotelSearchResponse, HotelType } from "@hotel-booking/types";
+import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { BOOKING_MODEL, HOTEL_MODEL, USER_MODEL } from "../../database/models";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { IBooking } from "../bookings/schemas/booking.schema";
@@ -24,8 +26,15 @@ export class HotelsService {
     private readonly stripeService: StripeService,
   ) {}
 
+  private async isAdmin(userId?: string): Promise<boolean> {
+    if (!userId) return false;
+    const user = await this.userModel.findById(userId).select("role");
+    return user?.role === "admin";
+  }
+
   private constructSearchQuery(queryParams: SearchHotelsDto) {
-    const constructedQuery: Record<string, any> = {};
+    // Deactivated hotels never appear in guest search.
+    const constructedQuery: Record<string, any> = { isActive: { $ne: false } };
 
     if (queryParams.destination && queryParams.destination.trim() !== "") {
       const destination = queryParams.destination.trim();
@@ -108,8 +117,10 @@ export class HotelsService {
     };
   }
 
-  findAll() {
-    return this.hotelModel.find().sort("-lastUpdated");
+  /** Admins see every hotel; everyone else sees only active ones. */
+  async findAll(viewer?: AuthenticatedUser) {
+    const filter = (await this.isAdmin(viewer?.userId)) ? {} : { isActive: { $ne: false } };
+    return this.hotelModel.find(filter).sort("-lastUpdated");
   }
 
   async setActive(id: string, dto: ToggleActiveDto) {
@@ -126,14 +137,31 @@ export class HotelsService {
     return hotel;
   }
 
-  findOne(id: string) {
-    return this.hotelModel.findById(id);
+  /** An inactive hotel is visible only to its owner and to admins; everyone else gets a 404. */
+  async findOne(id: string, viewer?: AuthenticatedUser) {
+    const hotel = await this.hotelModel.findById(id);
+    if (!hotel) {
+      throw new NotFoundException("Hotel not found");
+    }
+
+    if (hotel.isActive === false) {
+      const isOwner = viewer !== undefined && hotel.userId === viewer.userId;
+      if (!isOwner && !(await this.isAdmin(viewer?.userId))) {
+        throw new NotFoundException("Hotel not found");
+      }
+    }
+
+    return hotel;
   }
 
   async createPaymentIntent(hotelId: string, dto: PaymentIntentDto, userId: string) {
     const hotel = await this.hotelModel.findById(hotelId);
     if (!hotel) {
       throw new BadRequestException("Hotel not found");
+    }
+
+    if (hotel.isActive === false) {
+      throw new ConflictException("This hotel is not available for booking");
     }
 
     const totalCost = hotel.pricePerNight * Number(dto.numberOfNights);
@@ -159,6 +187,14 @@ export class HotelsService {
   }
 
   async createBooking(hotelId: string, dto: CreateBookingDto, userId: string) {
+    const hotel = await this.hotelModel.findById(hotelId);
+    if (!hotel) {
+      throw new NotFoundException("Hotel not found");
+    }
+    if (hotel.isActive === false) {
+      throw new ConflictException("This hotel is not available for booking");
+    }
+
     const paymentIntent = await this.stripeService.client.paymentIntents.retrieve(
       dto.paymentIntentId,
     );
