@@ -24,6 +24,15 @@ export const routes = {
     paymentIntent: (id: string) => `/api/hotels/${id}/bookings/payment-intent`,
     bookings: (id: string) => `/api/hotels/${id}/bookings`,
   },
+  bookings: {
+    byId: (id: string) => `/api/bookings/${id}`,
+    forHotel: (hotelId: string) => `/api/bookings/hotel/${hotelId}`,
+  },
+  reviews: {
+    create: "/api/reviews",
+    byHotel: (hotelId: string) => `/api/reviews/hotel/${hotelId}`,
+    summary: (hotelId: string) => `/api/reviews/hotel/${hotelId}/summary`,
+  },
   ai: { suggest: "/api/ai/suggest" },
   myHotels: {
     list: "/api/my-hotels",
