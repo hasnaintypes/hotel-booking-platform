@@ -6,6 +6,12 @@ import useAuth from "@/features/auth/hooks/useAuth";
 import { getHotelsSearchUrl } from "@/shared/lib/nav-utils";
 import { prefetchBusinessInsightsQueries } from "@/features/analytics/lib/prefetch";
 import { queryClient } from "@hotel-booking/api-client";
+import {
+  prefetchAnalyticsRoute,
+  prefetchMyBookingsRoute,
+  prefetchMyHotelsRoute,
+  prefetchSearchRoute,
+} from "@/shared/lib/route-prefetch";
 
 const linkClass =
   "flex items-center gap-2 w-full py-3 text-sm font-normal text-gray-700 hover:text-primary-600 transition-colors";
@@ -16,23 +22,45 @@ const MobileNavLinks = () => {
 
   return (
     <div className="flex flex-col gap-1">
-      <Link to={getHotelsSearchUrl()} className={linkClass}>
+      <Link
+        to={getHotelsSearchUrl()}
+        className={linkClass}
+        onMouseEnter={prefetchSearchRoute}
+        onFocus={prefetchSearchRoute}
+      >
         <Hotel className="h-4 w-4" />
         Hotels
       </Link>
-      <Link to="/my-bookings" className={linkClass}>
+      <Link
+        to="/my-bookings"
+        className={linkClass}
+        onMouseEnter={prefetchMyBookingsRoute}
+        onFocus={prefetchMyBookingsRoute}
+      >
         <Calendar className="h-4 w-4" />
         My Bookings
       </Link>
       <Link
         to="/business-insights"
         className={linkClass}
-        onMouseEnter={() => prefetchBusinessInsightsQueries(queryClient)}
+        onMouseEnter={() => {
+          prefetchAnalyticsRoute();
+          prefetchBusinessInsightsQueries(queryClient);
+        }}
+        onFocus={() => {
+          prefetchAnalyticsRoute();
+          prefetchBusinessInsightsQueries(queryClient);
+        }}
       >
         <BarChart3 className="h-4 w-4" />
         Business Insights
       </Link>
-      <Link to="/my-hotels" className={linkClass}>
+      <Link
+        to="/my-hotels"
+        className={linkClass}
+        onMouseEnter={prefetchMyHotelsRoute}
+        onFocus={prefetchMyHotelsRoute}
+      >
         <Building2 className="h-4 w-4" />
         My Hotels
       </Link>

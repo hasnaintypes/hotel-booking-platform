@@ -4,15 +4,15 @@ import LatestDestinationCard from "@/features/hotels/components/LatestDestinatio
 import Hero from "@/features/hotels/components/Hero";
 import PageContainer from "@/shared/components/layout/PageContainer";
 import { StaggerItem, StaggerScope } from "@hotel-booking/ui";
+import { hotelKeys } from "@/shared/lib/query-keys";
 
 /** Match LatestDestinationCard height so footer does not jump while hotels load */
 const DEST_SKELETON_COUNT = 3;
 
 const Home = () => {
   const { data: hotels, isLoading } = useQuery({
-    queryKey: ["fetchQuery"],
-    queryFn: () =>
-    hotelsApi.fetchHotels(),
+    queryKey: hotelKeys.home(),
+    queryFn: () => hotelsApi.fetchHotels(),
   });
 
   const handleSearch = (_searchData: unknown) => {

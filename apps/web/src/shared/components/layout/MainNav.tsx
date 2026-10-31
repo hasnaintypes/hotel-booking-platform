@@ -7,6 +7,13 @@ import { prefetchBusinessInsightsQueries } from "@/features/analytics/lib/prefet
 import { queryClient } from "@hotel-booking/api-client";
 import * as bookingsApi from "@/features/bookings/api";
 import * as hotelManagementApi from "@/features/hotel-management/api";
+import { bookingKeys, hotelKeys } from "@/shared/lib/query-keys";
+import {
+  prefetchAnalyticsRoute,
+  prefetchMyBookingsRoute,
+  prefetchMyHotelsRoute,
+  prefetchSearchRoute,
+} from "@/shared/lib/route-prefetch";
 
 const NAV_AUTH_WIDTH = "min-w-[120px]";
 
@@ -16,32 +23,53 @@ const navLinkClass =
 const MainNav = () => {
   const { isLoggedIn } = useAuth();
 
-  // Prefetch owner lists on hover so destination chrome + data arrive faster
-  const prefetchMyHotels = () => {
-    if (!isLoggedIn) return;
-    void queryClient.prefetchQuery({ queryKey: ["fetchMyHotels"], queryFn: hotelManagementApi.fetchMyHotels });
-  };
+  // Prefetch route chunks and owner lists on hover so chrome + data arrive faster
   const prefetchMyBookings = () => {
+    prefetchMyBookingsRoute();
     if (!isLoggedIn) return;
-    void queryClient.prefetchQuery({ queryKey: ["fetchMyBookings"], queryFn: bookingsApi.fetchMyBookings });
+    void queryClient.prefetchQuery({
+      queryKey: bookingKeys.mine(),
+      queryFn: bookingsApi.fetchMyBookings,
+    });
+  };
+
+  const prefetchMyHotels = () => {
+    prefetchMyHotelsRoute();
+    if (!isLoggedIn) return;
+    void queryClient.prefetchQuery({
+      queryKey: hotelKeys.mine(),
+      queryFn: hotelManagementApi.fetchMyHotels,
+    });
+  };
+
+  const prefetchInsights = () => {
+    prefetchAnalyticsRoute();
+    prefetchBusinessInsightsQueries(queryClient);
   };
 
   return (
     <nav className="flex items-center gap-1 lg:gap-2">
-      <Link to={getHotelsSearchUrl()} className={navLinkClass}>
+      <Link
+        to={getHotelsSearchUrl()}
+        className={navLinkClass}
+        onMouseEnter={prefetchSearchRoute}
+        onFocus={prefetchSearchRoute}
+      >
         Hotels
       </Link>
       <Link
         to="/my-bookings"
         className={navLinkClass}
         onMouseEnter={prefetchMyBookings}
+        onFocus={prefetchMyBookings}
       >
         My Bookings
       </Link>
       <Link
         to="/business-insights"
         className={navLinkClass}
-        onMouseEnter={() => prefetchBusinessInsightsQueries(queryClient)}
+        onMouseEnter={prefetchInsights}
+        onFocus={prefetchInsights}
       >
         Business Insights
       </Link>
@@ -49,6 +77,7 @@ const MainNav = () => {
         to="/my-hotels"
         className={navLinkClass}
         onMouseEnter={prefetchMyHotels}
+        onFocus={prefetchMyHotels}
       >
         My Hotels
       </Link>
