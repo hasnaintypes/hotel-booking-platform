@@ -9,6 +9,7 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { HotelSearchResponse, HotelType } from "@hotel-booking/types";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
+import { escapeRegExp } from "../../common/utils/escape-regexp";
 import { BOOKING_MODEL, HOTEL_MODEL, USER_MODEL } from "../../database/models";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { IBooking } from "../bookings/schemas/booking.schema";
@@ -36,48 +37,38 @@ export class HotelsService {
     // Deactivated hotels never appear in guest search.
     const constructedQuery: Record<string, any> = { isActive: { $ne: false } };
 
-    if (queryParams.destination && queryParams.destination.trim() !== "") {
-      const destination = queryParams.destination.trim();
+    const destination = queryParams.destination?.trim();
+    if (destination) {
+      // Matched literally: the text is escaped so it cannot act as a pattern.
+      const literal = escapeRegExp(destination);
       constructedQuery.$or = [
-        { city: { $regex: destination, $options: "i" } },
-        { country: { $regex: destination, $options: "i" } },
+        { city: { $regex: literal, $options: "i" } },
+        { country: { $regex: literal, $options: "i" } },
       ];
     }
 
-    if (queryParams.adultCount) {
-      constructedQuery.adultCount = { $gte: parseInt(queryParams.adultCount) };
+    if (queryParams.adultCount !== undefined) {
+      constructedQuery.adultCount = { $gte: queryParams.adultCount };
     }
 
-    if (queryParams.childCount) {
-      constructedQuery.childCount = { $gte: parseInt(queryParams.childCount) };
+    if (queryParams.childCount !== undefined) {
+      constructedQuery.childCount = { $gte: queryParams.childCount };
     }
 
-    if (queryParams.facilities) {
-      constructedQuery.facilities = {
-        $all: Array.isArray(queryParams.facilities)
-          ? queryParams.facilities
-          : [queryParams.facilities],
-      };
+    if (queryParams.facilities?.length) {
+      constructedQuery.facilities = { $all: queryParams.facilities };
     }
 
-    if (queryParams.types) {
-      constructedQuery.type = {
-        $in: Array.isArray(queryParams.types) ? queryParams.types : [queryParams.types],
-      };
+    if (queryParams.types?.length) {
+      constructedQuery.type = { $in: queryParams.types };
     }
 
-    if (queryParams.stars) {
-      const starRatings = Array.isArray(queryParams.stars)
-        ? queryParams.stars.map((star) => parseInt(star))
-        : parseInt(queryParams.stars);
-
-      constructedQuery.starRating = { $in: starRatings };
+    if (queryParams.stars?.length) {
+      constructedQuery.starRating = { $in: queryParams.stars };
     }
 
-    if (queryParams.maxPrice) {
-      constructedQuery.pricePerNight = {
-        $lte: parseInt(queryParams.maxPrice).toString(),
-      };
+    if (queryParams.maxPrice !== undefined) {
+      constructedQuery.pricePerNight = { $lte: queryParams.maxPrice };
     }
 
     return constructedQuery;
@@ -100,7 +91,7 @@ export class HotelsService {
     }
 
     const pageSize = 5;
-    const pageNumber = parseInt(queryParams.page ? queryParams.page.toString() : "1");
+    const pageNumber = queryParams.page ?? 1;
     const skip = (pageNumber - 1) * pageSize;
 
     const hotels = await this.hotelModel.find(query).sort(sortOptions).skip(skip).limit(pageSize);
