@@ -1,710 +1,138 @@
-# Hotel Booking Management System — React + NestJS Full-Stack TypeScript Project
+# Hotel Booking Platform
 
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
-[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E)](https://nestjs.com/)
-[![React](https://img.shields.io/badge/React-19-61DAFB)](https://react.dev/)
-[![Node.js](https://img.shields.io/badge/Node.js-22+-green)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-6.x-blue)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite-8-646CFF)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC)](https://tailwindcss.com/)
-[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF)](https://stripe.com/)
+[![CI](https://github.com/hasnaintypes/hotel-booking-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/hasnaintypes/hotel-booking-platform/actions/workflows/ci.yml)
+[![Node](https://img.shields.io/badge/Node-22-339933)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6)](https://www.typescriptlang.org/)
 
-A production-style **hotel booking platform** for learning full-stack TypeScript: guests search and book with **Stripe**, owners manage hotels with **Cloudinary** images, and everyone can explore a **Business Insights** dashboard. Built as a **TypeScript** monorepo (MongoDB · NestJS · React) with a Vite SPA frontend.
+A full-stack hotel marketplace. Guests search hotels and pay for stays with Stripe, hotel owners list and manage properties, and admins moderate the platform from a separate console. It is a TypeScript pnpm/Turborepo monorepo with a NestJS + MongoDB API and two React single-page apps.
 
-![Screenshot 2025-09-04 at 12 02 23](https://github.com/user-attachments/assets/7b87581f-8a1a-4de4-99c3-ba5fab14f20d)
-![Screenshot 2025-09-04 at 12 03 00](https://github.com/user-attachments/assets/76e284bb-4324-4798-8e87-0079aab65a57)
-![Screenshot 2025-09-04 at 12 03 48](https://github.com/user-attachments/assets/c35d0786-f80d-493e-815c-7a594253183c)
-![Screenshot 2025-09-04 at 12 04 14](https://github.com/user-attachments/assets/d02e0687-8bd6-4924-8b07-9311c0308e11)
-![Screenshot 2025-09-04 at 12 04 37](https://github.com/user-attachments/assets/2adc94fe-7bd8-4622-9d7e-2342ef5a7bd5)
-![Screenshot 2025-09-04 at 12 05 31](https://github.com/user-attachments/assets/34fd12ca-9c3e-4242-960d-dfdfe5447299)
-![Screenshot 2025-09-04 at 12 05 59](https://github.com/user-attachments/assets/ff330293-fe8e-487f-a73a-1a1c4ade0fc1)
-![Screenshot 2025-09-04 at 12 06 36](https://github.com/user-attachments/assets/7b8c1b80-e395-4d46-b9f7-2b93211612eb)
-![Screenshot 2025-09-04 at 12 07 06](https://github.com/user-attachments/assets/1b15e2b6-5ad0-42a7-b121-c54d9ddf623a)
-![Screenshot 2025-09-04 at 12 07 24](https://github.com/user-attachments/assets/09e10d64-9c1d-4f0f-a167-a92d18caa85e)
-![Screenshot 2025-09-04 at 12 07 44](https://github.com/user-attachments/assets/9cb2e884-759e-4545-a963-11df51aa9785)
-![Screenshot 2025-09-04 at 12 08 32](https://github.com/user-attachments/assets/e89dd5df-c14f-4304-a012-9f3d35417182)
-![Screenshot 2025-09-04 at 12 09 52](https://github.com/user-attachments/assets/a4729503-28f4-489e-bc8f-d5a3e3bea93a)
-![Screenshot 2025-09-04 at 12 10 04](https://github.com/user-attachments/assets/68552511-83ac-42fa-8f54-99c926e3015d)
-![Screenshot 2025-09-04 at 12 10 20](https://github.com/user-attachments/assets/a5d236d7-3a07-493d-b966-afdafa83b383)
-![Screenshot 2025-09-04 at 12 10 33](https://github.com/user-attachments/assets/539c4d39-ca89-4383-9abd-1fa3dc184e50)
+<details>
+<summary>Screenshots</summary>
 
-## Table of contents
+![Home](https://github.com/user-attachments/assets/7b87581f-8a1a-4de4-99c3-ba5fab14f20d)
+![Search](https://github.com/user-attachments/assets/76e284bb-4324-4798-8e87-0079aab65a57)
+![Booking](https://github.com/user-attachments/assets/c35d0786-f80d-493e-815c-7a594253183c)
 
-- [What you will learn](#what-you-will-learn)
-- [Features](#features)
-- [Tech stack & keywords](#tech-stack--keywords)
-- [Architecture overview](#architecture-overview)
-- [Monorepo structure](#monorepo-structure)
-- [Prerequisites](#prerequisites)
-- [Environment variables (.env)](#environment-variables-env)
-- [How to run locally](#how-to-run-locally)
-- [Frontend walkthrough](#frontend-walkthrough)
-- [Backend walkthrough](#backend-walkthrough)
-- [API reference](#api-reference)
-- [Authentication flow](#authentication-flow)
-- [Booking & Stripe flow](#booking--stripe-flow)
-- [Components & reuse guide](#components--reuse-guide)
-- [Shared types](#shared-types)
-- [Deployment](#-deployment)
-- [Learning path (suggested)](#learning-path-suggested)
-- [Troubleshooting](#troubleshooting)
-- [Keywords](#keywords)
-- [Conclusion](#conclusion)
-- [Happy Coding!](#happy-coding-)
-
----
-
-## What you will learn
-
-This repository is designed as a **teaching project**. By reading and running it you practice:
-
-| Topic                                     | Where it shows up                          |
-| ----------------------------------------- | ------------------------------------------ |
-| REST API design with NestJS + TypeScript  | `apps/api/src/modules/`                    |
-| JWT auth + optional Google OAuth          | `modules/auth/`, `common/guards/`          |
-| Mongoose schemas + Nest DI                | `modules/*/schemas/`, `database/`          |
-| React SPA routing & layouts               | `app/App.tsx`, `shared/components/layout/` |
-| Feature modules + React Query             | `features/*/api.ts`, `features/*/context/` |
-| File uploads → Cloudinary                 | `modules/my-hotels/`                       |
-| Card payments with Stripe PaymentIntents  | booking routes + `BookingForm`             |
-| Tailwind + shadcn/ui-style primitives     | `shared/components/ui/`                    |
-| Monorepo shared contracts                 | `packages/types/src/index.ts`              |
-| Docker / Coolify + Vercel deploy          | `apps/api/Dockerfile`, `apps/web/vercel.json` |
-
----
+</details>
 
 ## Features
 
-### For guests (travelers)
+- **Guests:** search by destination, guests, price, stars, type and facilities; hotel detail pages; email/password or Google sign-in; Stripe card checkout (GBP); my bookings, cancellation with automatic refund; reviews tied to their bookings.
+- **Hotel owners:** create and edit hotels with up to 6 images (Cloudinary); per-hotel booking log; activate/deactivate listings.
+- **Admins** (`apps/admin`): dashboard, hotels, users and roles, bookings, reviews, activity.
+- **Insights:** business dashboard, forecast and system stats; optional LLM-drafted copy (draft-only, off by default).
+- **Platform:** httpOnly cookie sessions with origin (CSRF) checks, rate limiting, Helmet, Pino logging, Swagger docs at `/api-docs`.
 
-- Browse featured hotels on the home page
-- Search by destination, dates, guests, price, stars, types, facilities
-- Open hotel detail pages with images and amenities
-- Register / sign in (email+password or Google)
-- Book rooms with Stripe card payment (GBP)
-- View **My Bookings**
-
-### For hotel owners
-
-- Add / edit hotels (multipart form, up to 6 images)
-- List **My Hotels** and inspect booking logs per property
-- Track revenue-related totals stored on hotel/user documents
-
-### For learners / operators
-
-- Interactive **Swagger** API docs (`/api-docs`)
-- **API status** health UI (`/api-status`)
-- **Business Insights** dashboard (`/business-insights`) with Recharts
-- Rate limiting, Helmet, compression, and Pino logging on the API
-
-> **Note:** `Review` and `Analytics` Mongoose models exist for future work; live insights currently aggregate from `Hotel`, `User`, and `Booking`.
-
----
-
-## Tech stack & keywords
-
-### Stack (MERN + friends)
-
-| Layer         | Technology                                         | Role (beginner view)                        |
-| ------------- | -------------------------------------------------- | ------------------------------------------- |
-| Database      | **MongoDB** + **Mongoose**                         | Stores users, hotels, bookings as documents |
-| API           | **Node.js** + **NestJS 11**                        | HTTP server; modules + controllers           |
-| UI            | **React 19** + **Vite 8**                          | SPA — fast HMR in development               |
-| Language      | **TypeScript**                                     | Types catch bugs before runtime             |
-| Styling       | **Tailwind CSS** + **Radix / shadcn-style UI**     | Utility CSS + accessible primitives         |
-| Data fetching | **React Query (v5)** + **Axios**                   | Cache server data; attach JWT               |
-| Auth          | **JWT** + **bcryptjs** + optional **Google OAuth** | Stateless login; hashed passwords           |
-| Payments      | **Stripe**                                         | PaymentIntents; confirm then create booking |
-| Media         | **Cloudinary** + **multer**                        | Image CDN after upload                      |
-| Charts        | **Recharts**                                       | Business insights graphs                    |
-
-### Keyword cheat-sheet
-
-- **JWT (JSON Web Token):** signed string proving “this user is logged in.” The API sets it in the httpOnly `session_id` cookie; the browser stores only a non-sensitive `auth_session` hint.
-- **CORS:** browser rule; API must allow your frontend origin (`FRONTEND_URL`, Vercel, etc.).
-- **PaymentIntent:** Stripe object that represents a payment attempt; booking is created only if status is `succeeded`.
-- **React Query key:** typed key-factory identity for a cached request (e.g. `authKeys.currentUser()`). Invalidate after login/logout.
-- **SPA rewrite:** host (Vercel) serves `index.html` for all routes so `/search` works on refresh.
-
----
-
-## Architecture overview
+## Architecture
 
 ```text
-Browser (web SPA :5174)        Browser (admin SPA :5175)
-        │  HTTPS JSON + session cookie    │
-        └───────────────┬─────────────────┘
+ web SPA :5174        admin SPA :5175
+        │  HTTPS + httpOnly session cookie
+        └───────────────┬───────────────┘
                         ▼
-NestJS API (:5001)
-        ├── MongoDB Atlas
-        ├── Stripe
-        ├── Cloudinary
-        └── Google OAuth (optional)
+                NestJS API :5001 ── MongoDB
+                        ├────────── Stripe
+                        ├────────── Cloudinary
+                        └────────── Google OAuth (optional)
 ```
 
-**Typical request path**
+| Path | Package | Purpose |
+| --- | --- | --- |
+| `apps/api` | `@hotel-booking/api` | NestJS REST API, Mongoose models, integrations |
+| `apps/web` | `@hotel-booking/web` | Guest and hotel-owner SPA (React 19, Vite) |
+| `apps/admin` | `@hotel-booking/admin` | Admin SPA |
+| `packages/types` | `@hotel-booking/types` | Shared TypeScript contracts |
+| `packages/api-client` | `@hotel-booking/api-client` | Axios instance, session store, TanStack Query client |
+| `packages/ui` | `@hotel-booking/ui` | Shared UI components and Tailwind preset |
 
-1. React page calls a function in its feature's `api.ts`
-2. Axios (`packages/api-client`) sends the httpOnly session cookie (`withCredentials: true`)
-3. Nest controller (+ optional `JwtAuthGuard`) runs
-4. Mongoose reads/writes MongoDB
-5. JSON returns → React Query caches / invalidates
+**Stack:** NestJS 11, Mongoose 9, MongoDB, React 19, Vite 8, React Router 7, TanStack Query 5, Tailwind CSS 4, Radix UI, Stripe, Cloudinary, Vitest.
 
----
+Deeper documentation (architecture, API, data model, patterns, deployment) is in [`docs/`](docs/INDEX.md) when present locally.
 
-## Monorepo structure
+## Getting started
 
-```text
-hotel-booking-platform/
-├── apps/
-│   ├── api/                   # NestJS API (@hotel-booking/api)
-│   │   ├── src/
-│   │   │   ├── main.ts        # bootstrap, middleware, Swagger
-│   │   │   ├── app.module.ts  # root module wiring
-│   │   │   ├── config/        # typed config, env validation, Swagger
-│   │   │   ├── common/        # guards, decorators, exception filter
-│   │   │   ├── database/      # global Mongoose wiring + seed
-│   │   │   ├── integrations/  # Stripe, Cloudinary, LLM providers
-│   │   │   └── modules/       # auth, users, hotels, bookings, reviews…
-│   │   ├── Dockerfile
-│   │   └── .env.example
-│   ├── web/                   # Public Vite React SPA (@hotel-booking/web)
-│   │   ├── src/
-│   │   │   ├── main.tsx       # providers
-│   │   │   ├── app/           # router composition
-│   │   │   ├── features/      # auth, hotels, bookings, analytics…
-│   │   │   ├── shared/        # layout, hooks, lib
-│   │   │   └── styles/
-│   │   ├── vercel.json
-│   │   └── .env.example
-│   └── admin/                 # Admin Vite React SPA (@hotel-booking/admin)
-│       ├── src/
-│       │   ├── main.tsx
-│       │   ├── app/           # router + guard
-│       │   ├── features/      # auth, dashboard, hotels, users…
-│       │   └── shared/        # layout, query keys, URLs
-│       ├── vercel.json
-│       └── .env.example
-├── packages/
-│   ├── types/                 # @hotel-booking/types (shared contracts)
-│   ├── ui/                    # @hotel-booking/ui (design system + Tailwind preset)
-│   └── api-client/            # @hotel-booking/api-client (Axios + QueryClient)
-├── .github/workflows/ci.yml
-├── docker-compose.yml         # local MongoDB
-├── package.json               # workspace scripts
-├── pnpm-workspace.yaml
-├── turbo.json
-├── tsconfig.base.json
-└── README.md
-```
-
----
-
-## Prerequisites
-
-- **Node.js** 22+ and [pnpm](https://pnpm.io/) 10 (`corepack enable`)
-- **MongoDB** — local (`docker compose up -d mongo`) or free [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) cluster
-- (Recommended) **Stripe** test keys, **Cloudinary** free account
-- (Optional) **Google Cloud** OAuth client for “Continue with Google”
-
----
-
-## Environment variables (.env)
-
-### Do you need a `.env`?
-
-| Package      | Required to start?  | Notes                                                                                            |
-| ------------ | ------------------- | ------------------------------------------------------------------------------------------------ |
-| **Backend**  | **Yes**             | App **exits** if required vars are missing (`config/env.validation.ts` fail-fast). Copy `.env.example` → `.env`. |
-| **Frontend** | **Mostly optional** | SPA boots without a file, but set `.env` so API + Stripe point to the right places.              |
-
-Never commit real `.env` files (they are gitignored). Examples are safe templates.
-
----
-
-### Backend — `apps/api/.env`
-
-Copy:
+**Prerequisites:** Node 22, pnpm 10.15 (`corepack enable`), Docker (or a MongoDB Atlas URI), and Stripe and Cloudinary test accounts.
 
 ```bash
-cd apps/api
-cp .env.example .env
+pnpm install --frozen-lockfile
+docker compose up -d mongo            # local MongoDB on :27017
+
+cp apps/api/.env.example   apps/api/.env      # fill in the required values
+cp apps/web/.env.example   apps/web/.env
+cp apps/admin/.env.example apps/admin/.env
+
+pnpm dev                              # API, web and admin together
 ```
 
-#### Required (server will not start without these)
-
-| Variable                    | What it is            | How to get it                                                                      |
-| --------------------------- | --------------------- | ---------------------------------------------------------------------------------- |
-| `MONGODB_CONNECTION_STRING` | Mongo connection URI  | Atlas → Connect → Drivers → copy URI; replace password                             |
-| `JWT_SECRET_KEY`            | Secret to sign JWTs   | `openssl rand -base64 64` (long random string)                                     |
-| `CLOUDINARY_CLOUD_NAME`     | Cloudinary cloud name | [cloudinary.com](https://cloudinary.com) dashboard                                 |
-| `CLOUDINARY_API_KEY`        | Cloudinary API key    | same dashboard                                                                     |
-| `CLOUDINARY_API_SECRET`     | Cloudinary API secret | same dashboard                                                                     |
-| `STRIPE_API_KEY`            | Stripe **secret** key | [dashboard.stripe.com/apikeys](https://dashboard.stripe.com/apikeys) → `sk_test_…` |
-
-#### Strongly recommended / optional
-
-| Variable        | Purpose                                     | Local example                                     |
-| --------------- | ------------------------------------------- | ------------------------------------------------- |
-| `PORT`          | API port                                    | `5001` (macOS often blocks `5000` via AirPlay)    |
-| `NODE_ENV`      | `development` / `production`                | `development`                                     |
-| `FRONTEND_URL`  | CORS + OAuth redirects                      | `http://localhost:5174`                           |
-| `ADMIN_URL`     | CORS allow-list for the admin SPA           | `http://localhost:5175`                           |
-| `BACKEND_URL`   | Public API origin for Google `redirect_uri` | local: omit (defaults to `http://localhost:PORT`) |
-| `GOOGLE_ID`     | Google OAuth client id                      | Google Cloud Console → Credentials                |
-| `GOOGLE_SECRET` | Google OAuth client secret                  | same                                              |
-
-**Google redirect URI to register** (when using Google sign-in locally):
-
-```text
-http://localhost:5001/api/auth/callback/google
-```
-
-Production example: `{BACKEND_URL}/api/auth/callback/google`
-
----
-
-### Frontend — `apps/web/.env`
-
-Copy:
-
-```bash
-cd apps/web
-cp .env.example .env
-```
-
-| Variable              | Required?           | Purpose                                                       |
-| --------------------- | ------------------- | ------------------------------------------------------------- |
-| `VITE_API_BASE_URL`   | Recommended locally | Backend origin, e.g. `http://localhost:5001`                  |
-| `VITE_STRIPE_PUB_KEY` | For payments        | Stripe **publishable** key `pk_test_…` (used in `shared/lib/stripe.ts`) |
-| `VITE_ADMIN_URL`      | For admin link      | Admin SPA origin, e.g. `http://localhost:5175`                |
-
-### Frontend — `apps/admin/.env`
-
-```bash
-cd apps/admin
-cp .env.example .env
-```
-
-| Variable            | Required?           | Purpose                                      |
-| ------------------- | ------------------- | -------------------------------------------- |
-| `VITE_API_BASE_URL` | Recommended locally | Backend origin, e.g. `http://localhost:5001` |
-| `VITE_WEB_URL`      | Recommended locally | Public site origin, e.g. `http://localhost:5174` |
-
-> Vite only exposes variables prefixed with `VITE_` to the browser. Never put secret keys (`sk_…`, Mongo URI, JWT secret) in frontend env.
-
-If `VITE_API_BASE_URL` is unset, `getApiBaseUrl()` falls back to `http://localhost:5001`. Set `VITE_API_BASE_URL` in deployed environments.
-
----
-
-### Minimal “happy path” checklist
-
-1. Atlas DB created → paste URI into backend `.env`
-2. Generate `JWT_SECRET_KEY`
-3. Create Cloudinary + Stripe test accounts → paste keys
-4. Frontend: `VITE_API_BASE_URL=http://localhost:5001` and `VITE_STRIPE_PUB_KEY=pk_test_…`
-5. Start backend, then frontend
-
-You can explore UI/API docs without Google OAuth. You need Stripe keys for real booking payments.
-
----
-
-## How to run locally
-
-Install once from the repo root, then use separate terminals (or `pnpm dev` for all apps).
-
-```bash
-pnpm install
-```
-
-### 1) Backend
-
-```bash
-cd apps/api
-cp .env.example .env   # then edit values
-pnpm dev               # → http://localhost:5001
-```
-
-Smoke checks:
-
-- Health: `http://localhost:5001/api/health`
-- Swagger: `http://localhost:5001/api-docs`
-
-### Demo data seed (Mongoose — wipes local DB)
-
-```bash
-pnpm --filter @hotel-booking/api seed   # destroys User/Hotel/Booking/Review/Analytics then reseeds
-```
-
-Login after seed: `test@user.com` / `12345678` (**admin** — sign in at the admin app on `:5175`). Also: `owner@hotel.com`, `guest@user.com` (same password). This stack uses **MongoDB + Mongoose**, not Prisma.
-
-Optional AI assist (draft-and-approve only): set `AI_ASSIST_ENABLED=true` in backend `.env` (optional `OPENAI_API_KEY`; stub drafts when unset).
-
-### 2) Web frontend
-
-```bash
-cd apps/web
-cp .env.example .env   # edit VITE_* as needed
-pnpm dev               # → http://localhost:5174
-```
-
-### 3) Admin frontend
-
-```bash
-cd apps/admin
-cp .env.example .env
-pnpm dev               # → http://localhost:5175
-```
-
-The admin SPA is intentionally separate: it has its own router, auth guard, bundle, and deploy target. Shared UI and HTTP/query setup live in `packages/ui` and `packages/api-client`.
-
-### Build verification
-
-From the repository root:
-
-```bash
-pnpm typecheck
-pnpm lint
-pnpm test
-pnpm build
-pnpm check:bundle
-```
-
----
-
-## Frontend walkthrough
-
-### Bootstrap (`main.tsx`)
-
-```text
-QueryClientProvider
-  └── ToastProvider           (Sonner notification API)
-        └── AuthProvider      (current-user query + auth storage)
-              └── SearchContextProvider   (search criteria → sessionStorage)
-                    └── App (React Router)
-```
-
-**React Query** caches API responses. After login/logout the app invalidates the `authKeys.currentUser()` query so `isLoggedIn` updates. Global loading overlays were removed; pages use local query/mutation state instead.
-
-### Routes (`App.tsx`)
-
-| Path                                 | Page               | Notes                          |
-| ------------------------------------ | ------------------ | ------------------------------ |
-| `/`                                  | Home               | Featured hotels                |
-| `/search`                            | Search             | Filters + pagination           |
-| `/detail/:hotelId`                   | Detail             | Public                         |
-| `/business-insights`                 | AnalyticsDashboard | Charts                         |
-| `/api-docs`, `/api-status`           | Docs / health UI   | Public                         |
-| `/register`, `/sign-in`              | Auth forms         | `AuthLayout`                   |
-| `/auth/callback`                     | OAuth return       | Marks the cookie session hint  |
-| `/my-bookings`, `/my-hotels`         | Lists              | API still needs the session    |
-| `/hotel/:hotelId/booking`            | Booking            | UI requires login              |
-| `/add-hotel`, `/edit-hotel/:hotelId` | Owner forms        | UI requires login              |
-
-Layouts: `Layout` (chrome) · `AuthLayout` (centered auth).
-
-### API client layers
-
-| File                          | Job                                                        |
-| ----------------------------- | ---------------------------------------------------------- |
-| `packages/api-client`         | Axios instance, base URL, cookie credentials, 401 cleanup  |
-| `features/auth/api.ts`        | `signIn`, `register`, `fetchCurrentUser`, `signOut`        |
-| `features/hotels/api.ts`      | `searchHotels`, `fetchHotels`, `fetchHotelById`            |
-| `features/bookings/api.ts`    | `createPaymentIntent`, `createRoomBooking`, `cancelBooking`|
-| `features/analytics/api.ts`   | business-insights + rollups                                |
-| `apps/admin/src/features/*`    | admin-only users/bookings/reviews + rollups                |
-
-Example pattern you can reuse in other projects:
-
-```ts
-// Conceptual — see real helpers in features/*/api.ts
-export const fetchMyHotels = async () => {
-  const response = await apiClient.get("/api/my-hotels");
-  return response.data;
-};
-```
-
----
-
-## Backend walkthrough
-
-### Boot sequence (`src/main.ts` + `src/app.module.ts`)
-
-1. `ConfigModule.forRoot` loads `.env`, validates required variables, and exposes typed config
-2. `NestFactory.create(AppModule)` builds the dependency graph (global Mongoose, JWT, throttler, feature modules)
-3. Global middleware runs: Helmet, compression, cookie parser, CORS allowlist, JSON body parsing, Pino HTTP logging
-4. Global `ValidationPipe` validates DTOs and strips unknown fields
-5. `AllExceptionsFilter` keeps the legacy `{ message }` error shape
-6. Swagger is mounted at `/api-docs`; the app listens on `PORT` (default **5001**)
-
-### Request pipeline highlights
-
-- **`helmet`** — security headers
-- **`@nestjs/throttler`** — global rate limit; stricter limit on the payment-intent route
-- **CORS** — allows exactly `FRONTEND_URL`, `ADMIN_URL`, `BACKEND_URL`, and localhost Vite ports
-- **`JwtAuthGuard`** — accepts the `session_id` cookie, or a Bearer header when one is present
-- **`OriginGuard`** — blocks unsafe cookie-auth requests from untrusted origins
-- **`RolesGuard` + `@Roles(...)`** — role checks for admin/owner routes
-- **`ValidationPipe`** — `whitelist`, `transform`, implicit conversion
-
-### Data models
-
-| Model              | File                                            | Idea                                        |
-| ------------------ | ----------------------------------------------- | ------------------------------------------- |
-| User               | `modules/users/schemas/user.schema.ts`          | email, hashed password, profile, totals     |
-| Hotel              | `modules/hotels/schemas/hotel.schema.ts`        | owner `userId`, pricing, images, policies   |
-| Booking            | `modules/bookings/schemas/booking.schema.ts`    | separate collection (not embedded in Hotel) |
-| Review / Analytics | `modules/reviews|analytics/schemas/*.schema.ts` | reviews + rollup snapshots                  |
-
----
-
-## API reference
-
-Base URL local: `http://localhost:5001`
-
-### Auth — `/api/auth`
-
-| Method | Path               | Auth | Description                                |
-| ------ | ------------------ | ---- | ------------------------------------------ |
-| GET    | `/google`          | —    | Start Google OAuth                         |
-| GET    | `/callback/google` | —    | OAuth callback → redirect frontend + token |
-| POST   | `/login`           | —    | Email/password → JWT                       |
-| GET    | `/validate-token`  | JWT  | `{ userId }`                               |
-| POST   | `/logout`          | —    | Clear session cookie                       |
-
-### Users — `/api/users`
-
-| Method | Path        | Auth | Description     |
-| ------ | ----------- | ---- | --------------- |
-| POST   | `/register` | —    | Create user     |
-| GET    | `/me`       | JWT  | Current profile |
-
-### Hotels — `/api/hotels`
-
-| Method | Path                                | Auth | Description                        |
-| ------ | ----------------------------------- | ---- | ---------------------------------- |
-| GET    | `/`                                 | —    | All hotels                         |
-| GET    | `/search`                           | —    | Filters + pagination (page size 5) |
-| GET    | `/:id`                              | —    | Hotel by id                        |
-| POST   | `/:hotelId/bookings/payment-intent` | JWT  | Stripe PaymentIntent               |
-| POST   | `/:hotelId/bookings`                | JWT  | Confirm booking after payment      |
-
-**Search query params:** `destination`, `adultCount`, `childCount`, `facilities[]`, `types[]`, `stars[]`, `maxPrice`, `sortOption`, `page`
-
-### My hotels — `/api/my-hotels`
-
-| Method | Path        | Auth | Description                  |
-| ------ | ----------- | ---- | ---------------------------- |
-| POST   | `/`         | JWT  | Create + images (Cloudinary) |
-| GET    | `/`         | JWT  | Owner list                   |
-| GET    | `/:id`      | JWT  | One owned hotel              |
-| PUT    | `/:hotelId` | JWT  | Update                       |
-
-### My bookings — `/api/my-bookings`
-
-| Method | Path | Auth | Description                      |
-| ------ | ---- | ---- | -------------------------------- |
-| GET    | `/`  | JWT  | Guest bookings (hotel populated) |
-
-### Bookings management — `/api/bookings`
-
-| Method | Path              | Auth | Description                      |
-| ------ | ----------------- | ---- | -------------------------------- |
-| GET    | `/`               | JWT  | List                             |
-| GET    | `/hotel/:hotelId` | JWT  | By hotel                         |
-| GET    | `/:id`            | JWT  | By id                            |
-| PATCH  | `/:id/status`     | JWT  | Status                           |
-| PATCH  | `/:id/payment`    | JWT  | Payment status                   |
-| DELETE | `/:id`            | JWT  | Delete + adjust analytics fields |
-
-### Health — `/api/health`
-
-| Method | Path        | Description                                                      |
-| ------ | ----------- | ---------------------------------------------------------------- |
-| GET    | `/`         | Public liveness (`status`, `timestamp`, `database.status` only)  |
-| GET    | `/detailed` | JWT — rounded memory MB + uptime (no host/PID/Node)              |
-
-### Business insights — `/api/business-insights`
-
-| Method | Path                                     | Auth    | Description  |
-| ------ | ---------------------------------------- | ------- | ------------ |
-| GET    | `/dashboard` · `/dashboard/public`       | JWT / — | Metrics      |
-| GET    | `/forecast` · `/forecast/public`         | JWT / — | Forecast     |
-| GET    | `/system-stats` · `/system-stats/public` | JWT / — | System stats |
-
-Interactive docs: **`/api-docs`** (Swagger UI).
-
----
-
-## Authentication flow
-
-### Email / password
-
-1. `POST /api/auth/login` with `{ email, password }`
-2. Backend verifies with **bcrypt** and sets the JWT in the httpOnly `session_id` cookie
-3. Frontend sets the `auth_session` hint and stores display fields only
-4. Axios sends the cookie on later calls (`withCredentials: true`)
-5. `GET /api/users/me` (`authKeys.currentUser()`) drives `isLoggedIn` and role
-
-### Google OAuth
-
-1. Browser goes to `{API}/api/auth/google`
-2. Google → `{BACKEND}/api/auth/callback/google`
-3. Backend creates/finds user, sets the session cookie, redirects to `{FRONTEND}/auth/callback?authenticated=1&userId=…`
-4. `AuthCallback` marks the session hint and invalidates React Query
-
-### Logout
-
-`POST /api/auth/logout` clears the cookie; the SPA clears the hint/display fields and drops the `authKeys.currentUser()` query.
-
----
-
-## Booking & Stripe flow
-
-```text
-Detail → /hotel/:id/booking
-   → POST .../payment-intent  (server creates PaymentIntent, GBP)
-   → BookingForm: stripe.confirmCardPayment(clientSecret)
-   → POST .../bookings        (only if PaymentIntent succeeded)
-   → /my-bookings
-```
-
-Amount ≈ `pricePerNight × nights × 100` (pence). Use Stripe **test cards** in development.
-
----
-
-## Components & reuse guide
-
-### High-value UI pieces
-
-| Component                                      | Path                     | Reuse idea                                              |
-| ---------------------------------------------- | ------------------------ | ------------------------------------------------------- |
-| `SearchBar` / `AdvancedSearch`                 | `components/`            | Copy pattern: form → context → navigate with query      |
-| Filters (`PriceFilter`, `StarRatingFilter`, …) | `components/`            | Controlled checkboxes/sliders → parent search params    |
-| `SearchResultsCard`                            | `components/`            | Presentational card: props in, Link out                 |
-| `Pagination`                                   | `components/`            | Page number UI for any list API                         |
-| `MainNav` / `MobileNav`                        | `components/`            | Auth-aware nav; swap brand links                        |
-| `ManageHotelForm` sections                     | `forms/ManageHotelForm/` | Multi-section RHF form + file input                     |
-| `BookingForm`                                  | `forms/BookingForm/`     | Stripe Elements wrapper pattern                         |
-| `ui/*` (Button, Dialog, …)                     | `components/ui/`         | shadcn-style primitives — drop into other Tailwind apps |
-
-### Contexts you can port
-
-- **AuthContext** — current user, role, and login state from React Query plus auth storage.
-- **ToastContext** — stable Sonner notification API shared across features.
-- **SearchContext** — persist search criteria in `sessionStorage` so detail/booking keep dates/guests.
-
-### Example: sending the session cookie (portable)
-
-```ts
-// lib/api-client.ts (simplified idea)
-const apiClient = axios.create({
-  baseURL: apiBaseUrl,
-  withCredentials: true, // send the httpOnly session cookie
-});
-```
-
-Use the same pattern in any Axios/React project; never store the JWT in `localStorage`.
-
-### Example: invalidate after auth
-
-```ts
-queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
-queryClient.refetchQueries({ queryKey: authKeys.currentUser() });
-```
-
----
-
-## Shared types
-
-`@hotel-booking/types` (`packages/types/src/index.ts`) exports `UserType`, `HotelType`, `BookingType`, search/payment response shapes.
-
-**Why it matters:** frontend and backend stay aligned. Both apps consume the workspace package.
-
-```ts
-import { HotelType } from "@hotel-booking/types";
-```
-
----
+| App | URL |
+| --- | --- |
+| API | http://localhost:5001 (health: `/api/health`, Swagger: `/api-docs`) |
+| Web | http://localhost:5174 |
+| Admin | http://localhost:5175 |
+
+To use the admin console, register a user in the web app and set that user's `role` to `admin` in MongoDB.
+
+## Configuration
+
+The API exits at startup if a required variable is missing. Browser apps only receive `VITE_`-prefixed values, which are embedded in the build; never put secrets there.
+
+| Variable | App | Required | Purpose |
+| --- | --- | --- | --- |
+| `MONGODB_CONNECTION_STRING` | api | Yes | MongoDB URI |
+| `JWT_SECRET_KEY` | api | Yes | JWT signing secret (`openssl rand -base64 64`) |
+| `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | api | Yes | Image uploads |
+| `STRIPE_API_KEY` | api | Yes | Stripe secret key (`sk_test_…` locally) |
+| `FRONTEND_URL`, `ADMIN_URL`, `BACKEND_URL` | api | No | CORS/origin allow-list and OAuth redirects (default to localhost) |
+| `PORT` | api | No | Default `5001` |
+| `GOOGLE_ID`, `GOOGLE_SECRET` | api | No | Google sign-in; register `{BACKEND_URL}/api/auth/callback/google` |
+| `AI_ASSIST_ENABLED`, `GROQ_*`, `OPENAI_*`, `OPENROUTER_*` | api | No | Optional LLM drafts |
+| `VITE_API_BASE_URL` | web, admin | Recommended | API origin (falls back to `http://localhost:5001`) |
+| `VITE_STRIPE_PUB_KEY` | web | For payments | Stripe publishable key |
+| `VITE_ADMIN_URL` / `VITE_WEB_URL` | web / admin | No | Cross-links between the apps |
+
+See each app's `.env.example` for the full template.
+
+## Scripts
+
+Run from the repository root.
+
+| Command | Purpose |
+| --- | --- |
+| `pnpm dev` | Start all apps in watch mode |
+| `pnpm build` | Build all workspaces |
+| `pnpm lint` | ESLint with zero warnings allowed |
+| `pnpm typecheck` | `tsc --noEmit` in every workspace |
+| `pnpm test` | Vitest (web and admin) |
+| `pnpm check:bundle` | Enforce the entry-bundle budget (run after `build`) |
+| `pnpm format:check` / `pnpm format:code` | Prettier check / write for `apps` and `packages` |
+
+Run a single test file with `pnpm --filter @hotel-booking/admin exec vitest run <path>`.
+
+> `pnpm --filter @hotel-booking/api seed` **deletes all collections** before inserting sample data. Use it only on a disposable database.
+
+## Quality and CI
+
+GitHub Actions (`.github/workflows/ci.yml`) runs install, lint, typecheck, test, build and the bundle check on every pull request and push to `main`. Unit tests currently cover the shared auth-session store and the admin guard and booking rules; the API, payment and refund flows have no automated tests yet.
 
 ## Deployment
 
----
+- **API:** Docker image built from the **repository root** (`docker build -f apps/api/Dockerfile .`), exposing port 5001 with a `/api/health` healthcheck. Set all required variables, `NODE_ENV=production`, and `FRONTEND_URL`, `ADMIN_URL` and `BACKEND_URL` to the public origins.
+- **Web and admin:** deployed as two Vercel projects (root directories `apps/web` and `apps/admin`) using each app's `vercel.json`, which sets the SPA rewrite, security headers and a Content-Security-Policy. Any new script, frame or connect origin must be added to the CSP.
+- **Production checklist:** secrets only in the host dashboards; live Stripe keys match the mode; Google redirect URI matches `BACKEND_URL`; API and SPA origins are listed in `FRONTEND_URL`/`ADMIN_URL`.
 
-### Backend Deployment (Coolify on VPS)
+## Contributing
 
-1. Build from the **repo root** context (see `apps/api/Dockerfile`).
-2. Set **all required** backend env vars in Coolify (same names as `apps/api/.env.example`).
-3. Set `FRONTEND_URL` to the web URL, `ADMIN_URL` to the admin URL, and `BACKEND_URL` to the public API origin.
-4. Expose `PORT` as configured in Coolify; health check: `GET /api/health`.
-5. Redeploy when `main` changes.
-
-```bash
-pnpm --filter @hotel-booking/api build
-```
-
----
-
-### Frontend Deployment (Netlify/Vercel)
-
-- Web config: `apps/web/vercel.json` (SPA rewrite → `index.html`); set the Vercel project root to `apps/web`.
-- Admin config: `apps/admin/vercel.json`; set a second Vercel project root to `apps/admin`.
-- Builds: `pnpm --filter @hotel-booking/web build` and `pnpm --filter @hotel-booking/admin build`
-- Env in host dashboards:
-  - Web: `VITE_API_BASE_URL`, `VITE_STRIPE_PUB_KEY`, `VITE_ADMIN_URL`
-  - Admin: `VITE_API_BASE_URL`, `VITE_WEB_URL`
-
-```bash
-pnpm --filter @hotel-booking/web build
-```
-
-### Production checklist
-
-- [ ] Secrets only in host dashboards (never in git)
-- [ ] CORS / `FRONTEND_URL` match the live SPA
-- [ ] Google OAuth redirect URIs match production `BACKEND_URL`
-- [ ] Stripe keys match mode (test vs live)
-- [ ] SSL + health endpoint OK
-
----
-
-## Learning path (suggested)
-
-1. Run backend health + open Swagger
-2. Register a user, call `/api/users/me` with the session cookie
-3. Trace `Search` page → `GET /api/hotels/search`
-4. Add a hotel (watch Cloudinary URLs appear)
-5. Complete one Stripe **test** booking
-6. Read React Query invalidation on login/logout
-
----
+- Never push to `main`. Create a branch (`feat/…`, `fix/…`, `docs/…`), keep commits small with a Conventional Commit subject such as `feat(web): …`, and open a pull request. `main` is protected and requires the `verify` check to pass.
+- Before opening a PR run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm check:bundle`.
+- Style: TypeScript, two-space indent, double quotes, 100-column Prettier.
 
 ## Troubleshooting
 
-| Symptom                         | Likely fix                                                               |
-| ------------------------------- | ------------------------------------------------------------------------ |
-| Backend exits immediately       | Missing required env var — check console list                            |
-| Frontend calls wrong host       | Set `VITE_API_BASE_URL=http://localhost:5001`                            |
-| CORS errors                     | Set backend `FRONTEND_URL=http://localhost:5174`                         |
-| Port in use / weird 5000 issues | Use `PORT=5001`                                                          |
-| Google OAuth fails              | Register exact callback URI; set `BACKEND_URL` / `FRONTEND_URL`          |
-| Payments fail                   | Matching `sk_test` + `pk_test`; Booking page needs `VITE_STRIPE_PUB_KEY` |
-| Images fail on create hotel     | Cloudinary trio in backend `.env`                                        |
-
----
-
-## Keywords
-
-`MERN` · `MongoDB` · `NestJS` · `React` · `Node.js` · `TypeScript` · `Vite` · `Tailwind CSS` · `React Query` · `Axios` · `JWT` · `OAuth` · `bcrypt` · `Stripe PaymentIntent` · `Cloudinary` · `multer` · `Mongoose` · `Swagger` · `Helmet` · `rate limiting` · `Pino` · `class-validator` · `Recharts` · `Vercel` · `Coolify` · `Docker` · `hotel booking` · `full-stack` · `open source`
-
----
-
-## Conclusion
-
-This project is a complete, production-flavored **hotel booking** codebase you can study end-to-end: typed API, JWT auth, media uploads, payments, analytics UI, and real deploy paths. Start with the env templates, run both apps locally, then follow one user journey (search → book) while reading the matching route and page files. Reuse the API-client, auth interceptor, form sections, and UI primitives in your own TypeScript React projects.
-
----
-
-## Happy Coding
-
-This is an **open-source project** — feel free to use, enhance, and extend this project further!
+| Symptom | Fix |
+| --- | --- |
+| API exits immediately | A required environment variable is missing; the log lists which |
+| CORS or 403 "origin not allowed" | `FRONTEND_URL` / `ADMIN_URL` must exactly match the SPA origin |
+| Signed in but immediately signed out | Cookie not sent: check the API origin in `VITE_API_BASE_URL`; in production cross-site cookies need HTTPS |
+| Payment form does nothing | Set `VITE_STRIPE_PUB_KEY` and use matching `pk_test`/`sk_test` keys |
+| Image upload fails | Check the three Cloudinary variables |
+| Google sign-in fails | Register the exact callback URI and set `BACKEND_URL` |
