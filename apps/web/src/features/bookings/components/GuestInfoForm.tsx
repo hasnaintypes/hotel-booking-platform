@@ -7,12 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
 import { Label } from "@hotel-booking/ui";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@hotel-booking/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { Calendar, Users, User, Baby, CreditCard } from "lucide-react";
 
@@ -65,24 +60,12 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
   maxDate.setFullYear(maxDate.getFullYear() + 1);
 
   const onSignInClick = (data: GuestInfoFormData) => {
-    search.saveSearchValues(
-      "",
-      data.checkIn,
-      data.checkOut,
-      data.adultCount,
-      data.childCount,
-    );
+    search.saveSearchValues("", data.checkIn, data.checkOut, data.adultCount, data.childCount);
     navigate("/sign-in", { state: { from: location } });
   };
 
   const onSubmit = (data: GuestInfoFormData) => {
-    search.saveSearchValues(
-      "",
-      data.checkIn,
-      data.checkOut,
-      data.adultCount,
-      data.childCount,
-    );
+    search.saveSearchValues("", data.checkIn, data.checkOut, data.adultCount, data.childCount);
     navigate(`/hotel/${hotelId}/booking`);
   };
 
@@ -165,17 +148,13 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
               </span>
             </div>
             <div className="text-right">
-              <div className="text-lg md:text-2xl font-medium text-blue-600">
-                £{totalPrice}
-              </div>
+              <div className="text-lg md:text-2xl font-medium text-blue-600">£{totalPrice}</div>
               <div className="text-xs text-gray-500">Total Price</div>
             </div>
           </div>
 
           <form
-            onSubmit={
-              isLoggedIn ? handleSubmit(onSubmit) : handleSubmit(onSignInClick)
-            }
+            onSubmit={isLoggedIn ? handleSubmit(onSubmit) : handleSubmit(onSignInClick)}
             className="space-y-4"
           >
             {/* Date Selection */}
@@ -190,9 +169,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                   <DatePicker
                     required
                     selected={checkIn}
-                    onChange={(date: Date | null) =>
-                      setValue("checkIn", date as Date)
-                    }
+                    onChange={(date: Date | null) => setValue("checkIn", date as Date)}
                     selectsStart
                     startDate={checkIn}
                     endDate={checkOut}
@@ -208,9 +185,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                   <DatePicker
                     required
                     selected={checkOut}
-                    onChange={(date: Date | null) =>
-                      setValue("checkOut", date as Date)
-                    }
+                    onChange={(date: Date | null) => setValue("checkOut", date as Date)}
                     selectsStart
                     startDate={checkIn}
                     endDate={checkOut}
@@ -252,9 +227,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                     })}
                   />
                   {errors.adultCount && (
-                    <span className="text-red-500 text-xs">
-                      {errors.adultCount.message}
-                    </span>
+                    <span className="text-red-500 text-xs">{errors.adultCount.message}</span>
                   )}
                 </div>
 

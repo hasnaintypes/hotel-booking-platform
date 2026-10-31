@@ -65,8 +65,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
     onError: () => {
       showToast({
         title: "Booking Failed",
-        description:
-          "There was an error processing your booking. Please try again.",
+        description: "There was an error processing your booking. Please try again.",
         type: "ERROR",
       });
     },
@@ -135,9 +134,7 @@ MM/YY: 12/35 CVC: 123`;
           <User className="h-6 w-6 text-blue-600" />
           Confirm Your Details
         </CardTitle>
-        <p className="text-gray-600 mt-2">
-          Please review and complete your booking information
-        </p>
+        <p className="text-gray-600 mt-2">Please review and complete your booking information</p>
       </CardHeader>
 
       <CardContent className="space-y-6">
@@ -151,9 +148,7 @@ MM/YY: 12/35 CVC: 123`;
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  First Name
-                </Label>
+                <Label className="text-sm font-medium text-gray-700">First Name</Label>
                 <Input
                   type="text"
                   readOnly
@@ -164,9 +159,7 @@ MM/YY: 12/35 CVC: 123`;
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Last Name
-                </Label>
+                <Label className="text-sm font-medium text-gray-700">Last Name</Label>
                 <Input
                   type="text"
                   readOnly
@@ -177,9 +170,7 @@ MM/YY: 12/35 CVC: 123`;
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium text-gray-700">
-                  Email
-                </Label>
+                <Label className="text-sm font-medium text-gray-700">Email</Label>
                 <Input
                   type="email"
                   readOnly
@@ -221,8 +212,7 @@ MM/YY: 12/35 CVC: 123`;
                 onChange={(e) => setSpecialRequests(e.target.value)}
               />
               <p className="text-xs text-gray-500">
-                Let us know if you have any special requirements or preferences
-                for your stay.
+                Let us know if you have any special requirements or preferences for your stay.
               </p>
             </div>
           </div>
@@ -288,13 +278,10 @@ MM/YY: 12/35 CVC: 123`;
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-yellow-600  flex-shrink-0" />
                 <div className="flex-1">
-                  <h4 className="text-sm font-medium text-yellow-800 mb-2">
-                    For Testing Purpose
-                  </h4>
+                  <h4 className="text-sm font-medium text-yellow-800 mb-2">For Testing Purpose</h4>
                   <p className="text-sm text-yellow-700 mb-3">
-                    You can use these dummy credentials to complete checkout and
-                    see the booking status page, analytical page, or other pages
-                    to see the interactive results:
+                    You can use these dummy credentials to complete checkout and see the booking
+                    status page, analytical page, or other pages to see the interactive results:
                   </p>
                   <div className="bg-white border border-yellow-300 rounded-xl p-3 relative">
                     <div className="flex items-center justify-between">

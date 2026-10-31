@@ -28,13 +28,11 @@ const ImagesSection = () => {
   // Initialize with existing images
   useEffect(() => {
     if (existingImageUrls && existingImageUrls.length > 0) {
-      const existingPreviews: ImagePreview[] = existingImageUrls.map(
-        (url, index) => ({
-          id: `existing-${index}`,
-          url,
-          isExisting: true,
-        }),
-      );
+      const existingPreviews: ImagePreview[] = existingImageUrls.map((url, index) => ({
+        id: `existing-${index}`,
+        url,
+        isExisting: true,
+      }));
       setImagePreviews(existingPreviews);
     }
   }, [existingImageUrls]);
@@ -43,14 +41,12 @@ const ImagesSection = () => {
     const files = event.target.files;
     if (!files) return;
 
-    const newPreviews: ImagePreview[] = Array.from(files).map(
-      (file, index) => ({
-        id: `new-${Date.now()}-${index}`,
-        file,
-        url: URL.createObjectURL(file),
-        isExisting: false,
-      }),
-    );
+    const newPreviews: ImagePreview[] = Array.from(files).map((file, index) => ({
+      id: `new-${Date.now()}-${index}`,
+      file,
+      url: URL.createObjectURL(file),
+      isExisting: false,
+    }));
 
     const updatedPreviews = [...imagePreviews, ...newPreviews];
 
@@ -76,9 +72,7 @@ const ImagesSection = () => {
 
     if (imageToDelete.isExisting) {
       // Remove from existing imageUrls
-      const updatedUrls = existingImageUrls.filter(
-        (url) => url !== imageToDelete.url,
-      );
+      const updatedUrls = existingImageUrls.filter((url) => url !== imageToDelete.url);
       setValue("imageUrls", updatedUrls);
     } else {
       // Remove from new imageFiles
@@ -92,10 +86,7 @@ const ImagesSection = () => {
 
       const dataTransfer = new DataTransfer();
       updatedFiles.forEach((file) => dataTransfer.items.add(file));
-      setValue(
-        "imageFiles",
-        updatedFiles.length > 0 ? dataTransfer.files : undefined,
-      );
+      setValue("imageFiles", updatedFiles.length > 0 ? dataTransfer.files : undefined);
     }
 
     // Clean up object URL
@@ -143,12 +134,9 @@ const ImagesSection = () => {
               <Upload className="w-8 h-8 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                Upload Hotel Images
-              </h3>
+              <h3 className="text-lg font-medium text-gray-700 mb-2">Upload Hotel Images</h3>
               <p className="text-gray-500 mb-4">
-                Select multiple images to upload. You can upload up to 6 images
-                total.
+                Select multiple images to upload. You can upload up to 6 images total.
               </p>
               <Button
                 onClick={handleUploadClick}
@@ -178,9 +166,7 @@ const ImagesSection = () => {
                 Selected Images ({totalImages}/6)
               </h3>
               {totalImages > 6 && (
-                <span className="text-red-500 text-sm font-medium">
-                  Maximum 6 images allowed
-                </span>
+                <span className="text-red-500 text-sm font-medium">Maximum 6 images allowed</span>
               )}
             </div>
 
@@ -190,11 +176,7 @@ const ImagesSection = () => {
                   key={image.id}
                   className="relative group bg-gray-50 rounded-xl overflow-hidden border"
                 >
-                  <img
-                    src={image.url}
-                    alt="Hotel preview"
-                    className="w-full h-32 object-cover"
-                  />
+                  <img src={image.url} alt="Hotel preview" className="w-full h-32 object-cover" />
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                     <Button
                       onClick={(e) => {
@@ -209,10 +191,7 @@ const ImagesSection = () => {
                     </Button>
                   </div>
                   <div className="p-2">
-                    <Badge
-                      variant={image.isExisting ? "outline" : "default"}
-                      className="text-xs"
-                    >
+                    <Badge variant={image.isExisting ? "outline" : "default"} className="text-xs">
                       {image.isExisting ? "Existing" : "New Upload"}
                     </Badge>
                   </div>

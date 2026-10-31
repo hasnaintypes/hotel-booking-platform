@@ -1,11 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  ArrowDown,
-  ArrowUp,
-  MapPin,
-  Sparkles,
-  Star,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, MapPin, Sparkles, Star } from "lucide-react";
 
 /** Shared sort options — AdvancedSearch + Search page Sort Select */
 export const SEARCH_SORT_OPTIONS: {

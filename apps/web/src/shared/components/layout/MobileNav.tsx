@@ -1,11 +1,5 @@
 import { Menu } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-  SheetTrigger,
-} from "@hotel-booking/ui";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@hotel-booking/ui";
 import { Separator } from "@hotel-booking/ui";
 import MobileNavLinks from "@/shared/components/layout/MobileNavLinks";
 

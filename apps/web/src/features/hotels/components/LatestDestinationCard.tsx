@@ -30,9 +30,7 @@ const LatestDestinationCard = ({ hotel }: Props) => {
         <div className="absolute top-4 right-4">
           <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
             <Star className="w-4 h-4 text-yellow-500 fill-current" />
-            <span className="text-sm font-medium text-gray-700">
-              {hotel.starRating}
-            </span>
+            <span className="text-sm font-medium text-gray-700">{hotel.starRating}</span>
           </div>
         </div>
 
@@ -99,9 +97,7 @@ const LatestDestinationCard = ({ hotel }: Props) => {
             </div>
 
             <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-1 hover:bg-white/30 transition-colors">
-              <span className="text-sm font-medium text-white">
-                View Details
-              </span>
+              <span className="text-sm font-medium text-white">View Details</span>
             </div>
           </div>
         </div>

@@ -9,15 +9,11 @@ export default defineConfig({
     alias: [
       {
         find: /^@hotel-booking\/ui$/,
-        replacement: fileURLToPath(
-          new URL("../../packages/ui/src", import.meta.url),
-        ),
+        replacement: fileURLToPath(new URL("../../packages/ui/src", import.meta.url)),
       },
       {
         find: /^@hotel-booking\/api-client$/,
-        replacement: fileURLToPath(
-          new URL("../../packages/api-client/src", import.meta.url),
-        ),
+        replacement: fileURLToPath(new URL("../../packages/api-client/src", import.meta.url)),
       },
       {
         find: /^@\//,

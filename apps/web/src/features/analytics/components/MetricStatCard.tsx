@@ -35,12 +35,7 @@ export function MetricStatCard({
   className,
 }: MetricStatCardProps) {
   return (
-    <div
-      className={cn(
-        "bg-white rounded-xl shadow-xl border p-6 flex flex-col",
-        className,
-      )}
-    >
+    <div className={cn("bg-white rounded-xl shadow-xl border p-6 flex flex-col", className)}>
       <InsightsCardHeader
         icon={icon}
         title={title}

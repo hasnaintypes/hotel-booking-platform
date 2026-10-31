@@ -53,9 +53,7 @@ const SearchResultsCard = ({ hotel }: Props) => {
           {/* Overlay Badges */}
           <div className="absolute top-4 left-4 flex flex-col space-y-2">
             <div className="bg-primary-600 text-white rounded-full px-3 py-1">
-              <span className="text-sm font-medium">
-                £{hotel.pricePerNight}
-              </span>
+              <span className="text-sm font-medium">£{hotel.pricePerNight}</span>
             </div>
             {hotel.isFeatured && (
               <div className="bg-yellow-500 text-white rounded-full px-3 py-1">
@@ -68,9 +66,7 @@ const SearchResultsCard = ({ hotel }: Props) => {
           <div className="absolute top-4 right-4">
             <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1">
               <AiFillStar className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm font-medium text-gray-700">
-                {hotel.starRating}
-              </span>
+              <span className="text-sm font-medium text-gray-700">{hotel.starRating}</span>
             </div>
           </div>
         </div>
@@ -90,11 +86,7 @@ const SearchResultsCard = ({ hotel }: Props) => {
                   <div className="flex flex-wrap gap-1">
                     {Array.isArray(hotel.type) ? (
                       hotel.type.slice(0, 4).map((type) => (
-                        <Badge
-                          key={type}
-                          variant="default"
-                          className="text-xs px-2 py-1"
-                        >
+                        <Badge key={type} variant="default" className="text-xs px-2 py-1">
                           {type}
                         </Badge>
                       ))
@@ -123,9 +115,7 @@ const SearchResultsCard = ({ hotel }: Props) => {
             </div>
 
             {/* Description */}
-            <div className="text-gray-600 leading-relaxed line-clamp-3">
-              {hotel.description}
-            </div>
+            <div className="text-gray-600 leading-relaxed line-clamp-3">{hotel.description}</div>
 
             {/* Hotel Stats */}
             <div className="flex items-center space-x-6 text-sm text-gray-600">
@@ -148,9 +138,7 @@ const SearchResultsCard = ({ hotel }: Props) => {
 
           {/* Facilities */}
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-3">
-              Key Amenities
-            </h4>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Key Amenities</h4>
             <div className="flex flex-wrap gap-2">
               {hotel.facilities.slice(0, 6).map((facility) => {
                 const IconComponent = getFacilityIcon(facility);

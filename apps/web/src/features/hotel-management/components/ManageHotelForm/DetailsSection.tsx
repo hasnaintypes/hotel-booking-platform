@@ -4,13 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { HotelFormData } from "@/features/hotel-management/components/ManageHotelForm/ManageHotelForm";
 import * as aiApi from "@/shared/api/ai";
 import { Button } from "@hotel-booking/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import { Star } from "lucide-react";
 import { useToast } from "@/shared/context/ToastContext";
@@ -42,14 +36,12 @@ const DetailsSection = () => {
       setAiDisabled(false);
     },
     onError: (err: unknown) => {
-      const status = (err as { response?: { status?: number } })?.response
-        ?.status;
+      const status = (err as { response?: { status?: number } })?.response?.status;
       if (status === 503) {
         setAiDisabled(true);
         showToast({
           title: "AI assist unavailable",
-          description:
-            "Enable AI_ASSIST_ENABLED on the server to use suggestions.",
+          description: "Enable AI_ASSIST_ENABLED on the server to use suggestions.",
           type: "INFO",
         });
         return;
@@ -72,9 +64,7 @@ const DetailsSection = () => {
           className="border rounded w-full py-1 px-2 font-normal"
           {...register("name", { required: "This field is required" })}
         ></input>
-        {errors.name && (
-          <span className="text-red-500">{errors.name.message}</span>
-        )}
+        {errors.name && <span className="text-red-500">{errors.name.message}</span>}
       </label>
 
       <div className="flex gap-4">
@@ -85,9 +75,7 @@ const DetailsSection = () => {
             className="border rounded w-full py-1 px-2 font-normal"
             {...register("city", { required: "This field is required" })}
           ></input>
-          {errors.city && (
-            <span className="text-red-500">{errors.city.message}</span>
-          )}
+          {errors.city && <span className="text-red-500">{errors.city.message}</span>}
         </label>
         <label className="text-gray-700 text-sm font-medium flex-1">
           Country
@@ -96,9 +84,7 @@ const DetailsSection = () => {
             className="border rounded w-full py-1 px-2 font-normal"
             {...register("country", { required: "This field is required" })}
           ></input>
-          {errors.country && (
-            <span className="text-red-500">{errors.country.message}</span>
-          )}
+          {errors.country && <span className="text-red-500">{errors.country.message}</span>}
         </label>
       </div>
       <label className="text-gray-700 text-sm font-medium flex-1">
@@ -108,9 +94,7 @@ const DetailsSection = () => {
           className="border rounded w-full py-1 px-2 font-normal"
           {...register("description", { required: "This field is required" })}
         ></textarea>
-        {errors.description && (
-          <span className="text-red-500">{errors.description.message}</span>
-        )}
+        {errors.description && <span className="text-red-500">{errors.description.message}</span>}
       </label>
 
       {/* Draft-and-approve: never auto-saves description */}
@@ -130,9 +114,7 @@ const DetailsSection = () => {
               <p className="text-xs text-slate-500">
                 Draft ({provider}) — review then Apply or Discard
               </p>
-              <p className="text-sm text-slate-800 whitespace-pre-line">
-                {draft}
-              </p>
+              <p className="text-sm text-slate-800 whitespace-pre-line">{draft}</p>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -149,12 +131,7 @@ const DetailsSection = () => {
                 >
                   Apply
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setDraft(null)}
-                >
+                <Button type="button" size="sm" variant="ghost" onClick={() => setDraft(null)}>
                   Discard
                 </Button>
               </div>
@@ -202,19 +179,13 @@ const DetailsSection = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="_unset">
-                  <SelectOptionLabel
-                    icon={Star}
-                    iconClassName="text-gray-400"
-                  >
+                  <SelectOptionLabel icon={Star} iconClassName="text-gray-400">
                     Select as Rating
                   </SelectOptionLabel>
                 </SelectItem>
                 {[1, 2, 3, 4, 5].map((num) => (
                   <SelectItem key={num} value={String(num)}>
-                    <SelectOptionLabel
-                      icon={Star}
-                      iconClassName="fill-amber-400 text-amber-500"
-                    >
+                    <SelectOptionLabel icon={Star} iconClassName="fill-amber-400 text-amber-500">
                       {num}
                     </SelectOptionLabel>
                   </SelectItem>
@@ -223,9 +194,7 @@ const DetailsSection = () => {
             </Select>
           )}
         />
-        {errors.starRating && (
-          <span className="text-red-500">{errors.starRating.message}</span>
-        )}
+        {errors.starRating && <span className="text-red-500">{errors.starRating.message}</span>}
       </div>
     </div>
   );

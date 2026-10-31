@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import FilterSectionLabel from "@/features/hotels/components/FilterSectionLabel";
 import { CircleDashed, DollarSign, PoundSterling } from "lucide-react";
@@ -20,27 +14,20 @@ const PriceFilter = ({ selectedPrice, onChange }: Props) => {
       <FilterSectionLabel icon={DollarSign} title="Max Price" />
       <Select
         value={selectedPrice != null ? String(selectedPrice) : "any"}
-        onValueChange={(v) =>
-          onChange(v === "any" ? undefined : parseInt(v, 10))
-        }
+        onValueChange={(v) => onChange(v === "any" ? undefined : parseInt(v, 10))}
       >
         <SelectTrigger>
           <SelectValue placeholder="Select max price" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="any">
-            <SelectOptionLabel
-              icon={CircleDashed}
-              iconClassName="text-gray-400"
-            >
+            <SelectOptionLabel icon={CircleDashed} iconClassName="text-gray-400">
               Any
             </SelectOptionLabel>
           </SelectItem>
           {[50, 100, 200, 300, 500].map((price) => (
             <SelectItem key={price} value={String(price)}>
-              <SelectOptionLabel icon={PoundSterling}>
-                £{price}
-              </SelectOptionLabel>
+              <SelectOptionLabel icon={PoundSterling}>£{price}</SelectOptionLabel>
             </SelectItem>
           ))}
         </SelectContent>

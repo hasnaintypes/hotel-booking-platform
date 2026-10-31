@@ -20,27 +20,25 @@ export function getStoredDisplayName(): string {
 }
 
 export function welcomeBackToast(name?: string): ToastPayload {
-  const display = (name?.trim() || getStoredDisplayName()) || "there";
+  const display = name?.trim() || getStoredDisplayName() || "there";
   return {
     title: `Welcome back, ${display} 👋`,
-    description:
-      "Enjoy browsing your desired destinations and hotels. Happy travels!",
+    description: "Enjoy browsing your desired destinations and hotels. Happy travels!",
     type: "SUCCESS",
   };
 }
 
 export function welcomeNewToast(name?: string): ToastPayload {
-  const display = (name?.trim() || getStoredDisplayName()) || "there";
+  const display = name?.trim() || getStoredDisplayName() || "there";
   return {
     title: `Welcome, ${display} 👋`,
-    description:
-      "Your account is ready — explore destinations and book your dream stay.",
+    description: "Your account is ready — explore destinations and book your dream stay.",
     type: "SUCCESS",
   };
 }
 
 export function goodbyeToast(name?: string): ToastPayload {
-  const display = (name?.trim() || getStoredDisplayName()) || "there";
+  const display = name?.trim() || getStoredDisplayName() || "there";
   return {
     title: `Goodbye, ${display} 👋`,
     description: "Hope to see you again soon. Safe travels!",

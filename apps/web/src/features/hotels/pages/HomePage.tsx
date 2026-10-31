@@ -27,9 +27,7 @@ const Home = () => {
       <PageContainer className="py-6">
         <StaggerScope resetKey="home-destinations">
           <StaggerItem index={0} className="text-center mb-6">
-            <h2 className="text-lg md:text-2xl font-medium text-gray-700">
-              Latest Destinations
-            </h2>
+            <h2 className="text-lg md:text-2xl font-medium text-gray-700">Latest Destinations</h2>
             <p className="text-sm md:text-lg text-gray-600 font-normal">
               Most recent destinations added by our hosts
             </p>

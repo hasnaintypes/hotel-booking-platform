@@ -18,37 +18,23 @@ const Footer = () => {
               <div className="bg-white p-2 rounded-xl">
                 <Building2 className="w-6 h-6 text-primary-600" />
               </div>
-              <span className="text-lg md:text-2xl font-medium">
-                HolidayHotel
-              </span>
+              <span className="text-lg md:text-2xl font-medium">HolidayHotel</span>
             </div>
             <p className="text-gray-300 leading-relaxed">
-              Discover amazing hotels, resorts, and accommodations worldwide.
-              Book with confidence and enjoy unforgettable experiences.
+              Discover amazing hotels, resorts, and accommodations worldwide. Book with confidence
+              and enjoy unforgettable experiences.
             </p>
             <div className="flex space-x-4">
-              <a
-                href="#"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
+              <a href="#" className="text-gray-300 hover:text-white transition-colors">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a
-                href="#"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
+              <a href="#" className="text-gray-300 hover:text-white transition-colors">
                 <Twitter className="w-5 h-5" />
               </a>
-              <a
-                href="#"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
+              <a href="#" className="text-gray-300 hover:text-white transition-colors">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a
-                href="#"
-                className="text-gray-300 hover:text-white transition-colors"
-              >
+              <a href="#" className="text-gray-300 hover:text-white transition-colors">
                 <Linkedin className="w-5 h-5" />
               </a>
             </div>
@@ -59,42 +45,27 @@ const Footer = () => {
             <h3 className="text-lg font-medium">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Home
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Hotels
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Destinations
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   About Us
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Contact
                 </a>
               </li>
@@ -106,42 +77,27 @@ const Footer = () => {
             <h3 className="text-lg font-medium">Support</h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Help Center
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Booking Guide
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Cancellation Policy
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Privacy Policy
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="text-gray-300 hover:text-white transition-colors"
-                >
+                <a href="#" className="text-gray-300 hover:text-white transition-colors">
                   Terms of Service
                 </a>
               </li>
@@ -162,9 +118,7 @@ const Footer = () => {
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-primary-300" />
-                <span className="text-gray-300">
-                  123 Travel St, Tourism City
-                </span>
+                <span className="text-gray-300">123 Travel St, Tourism City</span>
               </div>
             </div>
           </div>
@@ -176,22 +130,13 @@ const Footer = () => {
             &copy; {new Date().getFullYear()}. All rights reserved.
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a
-              href="#"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
-            >
+            <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors">
               Privacy Policy
             </a>
-            <a
-              href="#"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
-            >
+            <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors">
               Terms of Service
             </a>
-            <a
-              href="#"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
-            >
+            <a href="#" className="text-gray-300 hover:text-white text-sm transition-colors">
               Cookie Policy
             </a>
           </div>

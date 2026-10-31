@@ -2,7 +2,11 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { analyticsKeys } from "@/shared/lib/query-keys";
-import { fetchBusinessInsightsDashboard, fetchBusinessInsightsForecast, fetchBusinessInsightsSystemStats } from "@/features/analytics/api";
+import {
+  fetchBusinessInsightsDashboard,
+  fetchBusinessInsightsForecast,
+  fetchBusinessInsightsSystemStats,
+} from "@/features/analytics/api";
 import {
   BarChart,
   Bar,
@@ -210,8 +214,7 @@ const AnalyticsDashboard = () => {
       currency: "USD",
     }).format(amount);
 
-  const formatNumber = (num: number) =>
-    new Intl.NumberFormat("en-US").format(num);
+  const formatNumber = (num: number) => new Intl.NumberFormat("en-US").format(num);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -222,8 +225,7 @@ const AnalyticsDashboard = () => {
     }
   };
 
-  const refreshing =
-    isRefreshing || dashboardFetching || forecastFetching || opsFetching;
+  const refreshing = isRefreshing || dashboardFetching || forecastFetching || opsFetching;
 
   const ov = analyticsData?.overview;
   const cancelRate = ov?.cancellationRate ?? 0;
@@ -233,18 +235,14 @@ const AnalyticsDashboard = () => {
     : 0;
 
   const categoryRows = analyticsData?.reviewCategoryAverages
-    ? Object.entries(analyticsData.reviewCategoryAverages).map(
-        ([category, score]) => ({
-          category: category.charAt(0).toUpperCase() + category.slice(1),
-          score,
-        }),
-      )
+    ? Object.entries(analyticsData.reviewCategoryAverages).map(([category, score]) => ({
+        category: category.charAt(0).toUpperCase() + category.slice(1),
+        score,
+      }))
     : [];
 
   const topCategory =
-    categoryRows.length > 0
-      ? categoryRows.reduce((a, b) => (b.score > a.score ? b : a))
-      : null;
+    categoryRows.length > 0 ? categoryRows.reduce((a, b) => (b.score > a.score ? b : a)) : null;
 
   const statusChartData =
     analyticsData?.bookingStatusBreakdown?.map((r) => ({
@@ -341,9 +339,7 @@ const AnalyticsDashboard = () => {
 
       {error && activeTab === "overview" && !analyticsData && (
         <div className="bg-white rounded-xl shadow-xl border p-6 text-center">
-          <p className="text-red-500 mb-4">
-            Failed to load business insights data
-          </p>
+          <p className="text-red-500 mb-4">Failed to load business insights data</p>
           <button
             type="button"
             onClick={() => void handleRefresh()}
@@ -359,10 +355,7 @@ const AnalyticsDashboard = () => {
         <div className="w-full space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="h-28 bg-slate-200 rounded-xl animate-pulse"
-              />
+              <div key={i} className="h-28 bg-slate-200 rounded-xl animate-pulse" />
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
@@ -374,11 +367,7 @@ const AnalyticsDashboard = () => {
       )}
 
       {activeTab === "overview" && analyticsData && ov && (
-        <div
-          className={`w-full space-y-8 ${
-            dashboardFetching ? "opacity-90" : ""
-          }`}
-        >
+        <div className={`w-full space-y-8 ${dashboardFetching ? "opacity-90" : ""}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             <MetricStatCard
               icon={Building}
@@ -505,15 +494,11 @@ const AnalyticsDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="date"
-                    tickFormatter={(value) =>
-                      new Date(String(value)).toLocaleDateString()
-                    }
+                    tickFormatter={(value) => new Date(String(value)).toLocaleDateString()}
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip
-                    labelFormatter={(value) =>
-                      new Date(String(value)).toLocaleDateString()
-                    }
+                    labelFormatter={(value) => new Date(String(value)).toLocaleDateString()}
                     formatter={(value) => [String(value ?? ""), "Bookings"]}
                   />
                   <Bar dataKey="bookings" fill="#3B82F6" radius={[4, 4, 0, 0]}>
@@ -554,10 +539,7 @@ const AnalyticsDashboard = () => {
                     dataKey="count"
                   >
                     {analyticsData.popularDestinations.map((_, index) => (
-                      <Cell
-                        key={`dest-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                      <Cell key={`dest-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -596,14 +578,9 @@ const AnalyticsDashboard = () => {
                     dataKey="count"
                     nameKey="status"
                   >
-                    {(analyticsData.paymentStatusBreakdown ?? []).map(
-                      (_, index) => (
-                        <Cell
-                          key={`pay-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ),
-                    )}
+                    {(analyticsData.paymentStatusBreakdown ?? []).map((_, index) => (
+                      <Cell key={`pay-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
                   </Pie>
                   <Tooltip formatter={(value) => [String(value ?? ""), "Bookings"]} />
                 </PieChart>
@@ -634,9 +611,7 @@ const AnalyticsDashboard = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {analyticsData.popularDestinations.map((dest) => (
                       <tr key={dest._id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-700">
-                          {dest._id}
-                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{dest._id}</td>
                         <td
                           className={`px-4 py-3 text-sm font-medium ${
                             dest.count > 0 ? "text-green-600" : "text-gray-400"
@@ -646,9 +621,7 @@ const AnalyticsDashboard = () => {
                         </td>
                         <td
                           className={`px-4 py-3 text-sm font-medium ${
-                            (dest.totalRevenue ?? 0) > 0
-                              ? "text-green-600"
-                              : "text-gray-400"
+                            (dest.totalRevenue ?? 0) > 0 ? "text-green-600" : "text-gray-400"
                           }`}
                         >
                           {formatCurrency(dest.totalRevenue ?? 0)}
@@ -675,14 +648,7 @@ const AnalyticsDashboard = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {[
-                      "Hotel",
-                      "City",
-                      "Rating",
-                      "Price/Night",
-                      "Bookings",
-                      "Revenue",
-                    ].map((h) => (
+                    {["Hotel", "City", "Rating", "Price/Night", "Bookings", "Revenue"].map((h) => (
                       <th
                         key={h}
                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -694,10 +660,7 @@ const AnalyticsDashboard = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {analyticsData.hotelPerformance.slice(0, 10).map((hotel) => (
-                    <tr
-                      key={String(hotel._id ?? hotel.name)}
-                      className="hover:bg-gray-50"
-                    >
+                    <tr key={String(hotel._id ?? hotel.name)} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-normal">
                         {hotel._id ? (
                           <Link
@@ -721,18 +684,14 @@ const AnalyticsDashboard = () => {
                       </td>
                       <td
                         className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                          hotel.bookingCount > 0
-                            ? "text-green-600"
-                            : "text-gray-400"
+                          hotel.bookingCount > 0 ? "text-green-600" : "text-gray-400"
                         }`}
                       >
                         {hotel.bookingCount}
                       </td>
                       <td
                         className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
-                          hotel.totalRevenue > 0
-                            ? "text-green-600"
-                            : "text-gray-400"
+                          hotel.totalRevenue > 0 ? "text-green-600" : "text-gray-400"
                         }`}
                       >
                         {formatCurrency(hotel.totalRevenue)}
@@ -750,10 +709,7 @@ const AnalyticsDashboard = () => {
         <div className="w-full space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
             {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-28 bg-slate-200 rounded-xl animate-pulse"
-              />
+              <div key={i} className="h-28 bg-slate-200 rounded-xl animate-pulse" />
             ))}
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
@@ -764,19 +720,13 @@ const AnalyticsDashboard = () => {
       )}
 
       {activeTab === "forecast" && forecastData && (
-        <div
-          className={`w-full space-y-8 ${forecastFetching ? "opacity-90" : ""}`}
-        >
+        <div className={`w-full space-y-8 ${forecastFetching ? "opacity-90" : ""}`}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             <MetricStatCard
               icon={TrendingUp}
               title="Booking Trend"
               subtitle="Predicted direction"
-              value={
-                <span className="capitalize">
-                  {forecastData.trends.bookingTrend}
-                </span>
-              }
+              value={<span className="capitalize">{forecastData.trends.bookingTrend}</span>}
               tone={toneFromTrend(forecastData.trends.bookingTrend)}
               iconClassName="bg-blue-100 text-blue-600"
             />
@@ -784,11 +734,7 @@ const AnalyticsDashboard = () => {
               icon={DollarSign}
               title="Revenue Trend"
               subtitle="Predicted direction"
-              value={
-                <span className="capitalize">
-                  {forecastData.trends.revenueTrend}
-                </span>
-              }
+              value={<span className="capitalize">{forecastData.trends.revenueTrend}</span>}
               tone={toneFromTrend(forecastData.trends.revenueTrend)}
               iconClassName="bg-green-100 text-green-600"
             />
@@ -805,13 +751,7 @@ const AnalyticsDashboard = () => {
               title="AI Confidence"
               subtitle="Avg forecast confidence"
               value={`${(avgConf * 100).toFixed(0)}%`}
-              tone={
-                avgConf >= 0.6
-                  ? "positive"
-                  : avgConf >= 0.4
-                    ? "warning"
-                    : "negative"
-              }
+              tone={avgConf >= 0.6 ? "positive" : avgConf >= 0.4 ? "warning" : "negative"}
               iconClassName="bg-violet-100 text-violet-600"
             />
           </div>
@@ -825,21 +765,15 @@ const AnalyticsDashboard = () => {
                 iconClassName="bg-blue-100 text-blue-600"
               />
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart
-                  data={[...forecastData.historical, ...forecastData.forecasts]}
-                >
+                <AreaChart data={[...forecastData.historical, ...forecastData.forecasts]}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="week"
-                    tickFormatter={(value) =>
-                      new Date(String(value)).toLocaleDateString()
-                    }
+                    tickFormatter={(value) => new Date(String(value)).toLocaleDateString()}
                   />
                   <YAxis allowDecimals={false} />
                   <Tooltip
-                    labelFormatter={(value) =>
-                      new Date(String(value)).toLocaleDateString()
-                    }
+                    labelFormatter={(value) => new Date(String(value)).toLocaleDateString()}
                     formatter={(value) => [String(value ?? ""), "Bookings"]}
                   />
                   <Area
@@ -867,25 +801,16 @@ const AnalyticsDashboard = () => {
                 iconClassName="bg-emerald-100 text-emerald-600"
               />
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={[...forecastData.historical, ...forecastData.forecasts]}
-                >
+                <LineChart data={[...forecastData.historical, ...forecastData.forecasts]}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="week"
-                    tickFormatter={(value) =>
-                      new Date(String(value)).toLocaleDateString()
-                    }
+                    tickFormatter={(value) => new Date(String(value)).toLocaleDateString()}
                   />
                   <YAxis />
                   <Tooltip
-                    labelFormatter={(value) =>
-                      new Date(String(value)).toLocaleDateString()
-                    }
-                    formatter={(value) => [
-                      formatCurrency(Number(value)),
-                      "Revenue",
-                    ]}
+                    labelFormatter={(value) => new Date(String(value)).toLocaleDateString()}
+                    formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
                   />
                   <Line
                     type="monotone"
@@ -919,30 +844,23 @@ const AnalyticsDashboard = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    {["Week", "Kind", "Bookings", "Revenue", "Confidence"].map(
-                      (h) => (
-                        <th
-                          key={h}
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          {h}
-                        </th>
-                      ),
-                    )}
+                    {["Week", "Kind", "Bookings", "Revenue", "Confidence"].map((h) => (
+                      <th
+                        key={h}
+                        className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {forecastTableRows.map((row) => (
-                    <tr
-                      key={`${row.kind}-${row.week}`}
-                      className="hover:bg-gray-50"
-                    >
+                    <tr key={`${row.kind}-${row.week}`} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {new Date(row.week).toLocaleDateString()}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {row.kind}
-                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{row.kind}</td>
                       <td
                         className={`px-4 py-3 text-sm font-medium ${
                           row.bookings > 0 ? "text-green-600" : "text-gray-400"
@@ -958,9 +876,7 @@ const AnalyticsDashboard = () => {
                         {formatCurrency(row.revenue)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
-                        {row.confidence != null
-                          ? `${Math.round(row.confidence * 100)}%`
-                          : "—"}
+                        {row.confidence != null ? `${Math.round(row.confidence * 100)}%` : "—"}
                       </td>
                     </tr>
                   ))}
@@ -974,10 +890,7 @@ const AnalyticsDashboard = () => {
       {activeTab === "quality" && isLoading && !analyticsData && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="h-28 bg-slate-200 rounded-xl animate-pulse"
-            />
+            <div key={i} className="h-28 bg-slate-200 rounded-xl animate-pulse" />
           ))}
         </div>
       )}
@@ -1013,9 +926,7 @@ const AnalyticsDashboard = () => {
               icon={BadgeCheck}
               title="Verified Reviews"
               subtitle={
-                topCategory
-                  ? `Top category: ${topCategory.category}`
-                  : "Verified guest stays"
+                topCategory ? `Top category: ${topCategory.category}` : "Verified guest stays"
               }
               value={formatNumber(ov.verifiedReviewCount ?? 0)}
               tone={toneFromNumber(ov.verifiedReviewCount ?? 0)}
@@ -1026,13 +937,7 @@ const AnalyticsDashboard = () => {
               title="Cancel Rate"
               subtitle={`${formatNumber(ov.cancelledBookings ?? 0)} cancelled`}
               value={`${cancelRate}%`}
-              tone={
-                cancelRate > 15
-                  ? "negative"
-                  : cancelRate > 5
-                    ? "warning"
-                    : "positive"
-              }
+              tone={cancelRate > 15 ? "negative" : cancelRate > 5 ? "warning" : "positive"}
               iconClassName="bg-red-100 text-red-600"
             />
           </div>
@@ -1052,11 +957,7 @@ const AnalyticsDashboard = () => {
                   <YAxis allowDecimals={false} />
                   <Tooltip formatter={(value) => [String(value ?? ""), "Bookings"]} />
                   <Bar dataKey="count" fill="#6366F1" radius={[4, 4, 0, 0]}>
-                    <LabelList
-                      dataKey="count"
-                      position="top"
-                      className="text-xs fill-gray-700"
-                    />
+                    <LabelList dataKey="count" position="top" className="text-xs fill-gray-700" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -1076,11 +977,7 @@ const AnalyticsDashboard = () => {
                   <YAxis type="category" dataKey="category" width={90} />
                   <Tooltip formatter={(value) => [value, "Avg score"]} />
                   <Bar dataKey="score" fill="#F59E0B" radius={[0, 4, 4, 0]}>
-                    <LabelList
-                      dataKey="score"
-                      position="right"
-                      className="text-xs fill-gray-700"
-                    />
+                    <LabelList dataKey="score" position="right" className="text-xs fill-gray-700" />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -1089,36 +986,31 @@ const AnalyticsDashboard = () => {
 
           {(analyticsData.hotelsByStar?.length || analyticsData.guestMix) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {analyticsData.hotelsByStar &&
-                analyticsData.hotelsByStar.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-xl border p-6">
-                    <InsightsCardHeader
-                      icon={Hotel}
-                      title="Hotels by Star Rating"
-                      subtitle="Inventory mix"
-                      iconClassName="bg-sky-100 text-sky-600"
-                    />
-                    <ResponsiveContainer width="100%" height={240}>
-                      <BarChart data={analyticsData.hotelsByStar}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="starRating" />
-                        <YAxis allowDecimals={false} />
-                        <Tooltip formatter={(value) => [value, "Hotels"]} />
-                        <Bar
+              {analyticsData.hotelsByStar && analyticsData.hotelsByStar.length > 0 && (
+                <div className="bg-white rounded-xl shadow-xl border p-6">
+                  <InsightsCardHeader
+                    icon={Hotel}
+                    title="Hotels by Star Rating"
+                    subtitle="Inventory mix"
+                    iconClassName="bg-sky-100 text-sky-600"
+                  />
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={analyticsData.hotelsByStar}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="starRating" />
+                      <YAxis allowDecimals={false} />
+                      <Tooltip formatter={(value) => [value, "Hotels"]} />
+                      <Bar dataKey="count" fill="#0EA5E9" radius={[4, 4, 0, 0]}>
+                        <LabelList
                           dataKey="count"
-                          fill="#0EA5E9"
-                          radius={[4, 4, 0, 0]}
-                        >
-                          <LabelList
-                            dataKey="count"
-                            position="top"
-                            className="text-xs fill-gray-700"
-                          />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
+                          position="top"
+                          className="text-xs fill-gray-700"
+                        />
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
               {analyticsData.guestMix && (
                 <div className="bg-white rounded-xl shadow-xl border p-6">
                   <InsightsCardHeader
@@ -1144,12 +1036,11 @@ const AnalyticsDashboard = () => {
                         cy="50%"
                         labelLine={false}
                         label={(props) => {
-                          const { name, percent, count } =
-                            props as unknown as {
-                              name: string;
-                              percent?: number;
-                              count: number;
-                            };
+                          const { name, percent, count } = props as unknown as {
+                            name: string;
+                            percent?: number;
+                            count: number;
+                          };
                           return `${name} ${((percent || 0) * 100).toFixed(0)}% (${count})`;
                         }}
                         outerRadius={80}
@@ -1179,10 +1070,7 @@ const AnalyticsDashboard = () => {
         <div className="w-full space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
             {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-28 bg-slate-200 rounded-xl animate-pulse"
-              />
+              <div key={i} className="h-28 bg-slate-200 rounded-xl animate-pulse" />
             ))}
           </div>
         </div>
@@ -1199,14 +1087,9 @@ const AnalyticsDashboard = () => {
                   ? `${opsData.system.memory.used}MB / ${opsData.system.memory.total}MB`
                   : "Sign in for process metrics"
               }
-              value={
-                opsData.system?.memory != null
-                  ? `${opsData.system.memory.percentage}%`
-                  : "—"
-              }
+              value={opsData.system?.memory != null ? `${opsData.system.memory.percentage}%` : "—"}
               tone={
-                opsData.system?.memory != null &&
-                opsData.system.memory.percentage > 85
+                opsData.system?.memory != null && opsData.system.memory.percentage > 85
                   ? "warning"
                   : "neutral"
               }
@@ -1229,11 +1112,7 @@ const AnalyticsDashboard = () => {
               title="Response Time"
               subtitle="Demo avg (not live APM)"
               value={`${opsData.application.avgResponseTime}ms`}
-              tone={
-                opsData.application.avgResponseTime > 200
-                  ? "warning"
-                  : "positive"
-              }
+              tone={opsData.application.avgResponseTime > 200 ? "warning" : "positive"}
               iconClassName="bg-purple-100 text-purple-600"
             />
             <MetricStatCard
@@ -1269,17 +1148,13 @@ const AnalyticsDashboard = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-sm">Total Hotels</span>
-                  <span className="font-medium text-gray-700">
-                    {opsData.database.totalHotels}
-                  </span>
+                  <span className="font-medium text-gray-700">{opsData.database.totalHotels}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 text-sm">Total Bookings</span>
                   <span
                     className={`font-medium ${
-                      opsData.database.totalBookings > 0
-                        ? "text-green-600"
-                        : "text-gray-400"
+                      opsData.database.totalBookings > 0 ? "text-green-600" : "text-gray-400"
                     }`}
                   >
                     {opsData.database.totalBookings}
@@ -1289,9 +1164,7 @@ const AnalyticsDashboard = () => {
                   <span className="text-gray-600 text-sm">Total Revenue</span>
                   <span
                     className={`font-medium ${
-                      opsData.database.totalRevenue > 0
-                        ? "text-green-600"
-                        : "text-gray-400"
+                      opsData.database.totalRevenue > 0 ? "text-green-600" : "text-gray-400"
                     }`}
                   >
                     {formatCurrency(opsData.database.totalRevenue)}
@@ -1309,28 +1182,20 @@ const AnalyticsDashboard = () => {
               />
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 text-sm">
-                    Today&apos;s Bookings
-                  </span>
+                  <span className="text-gray-600 text-sm">Today&apos;s Bookings</span>
                   <span
                     className={`font-medium ${
-                      opsData.application.todayBookings > 0
-                        ? "text-green-600"
-                        : "text-gray-400"
+                      opsData.application.todayBookings > 0 ? "text-green-600" : "text-gray-400"
                     }`}
                   >
                     {opsData.application.todayBookings}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600 text-sm">
-                    This Week&apos;s Bookings
-                  </span>
+                  <span className="text-gray-600 text-sm">This Week&apos;s Bookings</span>
                   <span
                     className={`font-medium ${
-                      opsData.application.thisWeekBookings > 0
-                        ? "text-green-600"
-                        : "text-gray-400"
+                      opsData.application.thisWeekBookings > 0 ? "text-green-600" : "text-gray-400"
                     }`}
                   >
                     {opsData.application.thisWeekBookings}
@@ -1344,9 +1209,7 @@ const AnalyticsDashboard = () => {
 
       <div className="text-center text-gray-500 text-sm">
         Last updated:{" "}
-        {analyticsData?.lastUpdated
-          ? new Date(analyticsData.lastUpdated).toLocaleString()
-          : "N/A"}
+        {analyticsData?.lastUpdated ? new Date(analyticsData.lastUpdated).toLocaleString() : "N/A"}
       </div>
     </div>
   );

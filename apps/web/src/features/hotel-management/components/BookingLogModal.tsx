@@ -6,13 +6,7 @@ import { BookingType } from "@hotel-booking/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { Card, CardContent, CardHeader } from "@hotel-booking/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import CancelBookingButton from "@/features/bookings/components/CancelBookingButton";
 import {
@@ -106,24 +100,19 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
   };
 
   const filteredBookings = bookings?.filter((booking: BookingType) => {
-    const statusMatch =
-      statusFilter === "all" || booking.status === statusFilter;
-    const dateMatch =
-      dateFilter === "all" || getDateCategory(booking.checkIn) === dateFilter;
+    const statusMatch = statusFilter === "all" || booking.status === statusFilter;
+    const dateMatch = dateFilter === "all" || getDateCategory(booking.checkIn) === dateFilter;
     return statusMatch && dateMatch;
   });
 
-  const groupedBookings = filteredBookings?.reduce(
-    (groups: any, booking: BookingType) => {
-      const category = getDateCategory(booking.checkIn);
-      if (!groups[category]) {
-        groups[category] = [];
-      }
-      groups[category].push(booking);
-      return groups;
-    },
-    {},
-  );
+  const groupedBookings = filteredBookings?.reduce((groups: any, booking: BookingType) => {
+    const category = getDateCategory(booking.checkIn);
+    if (!groups[category]) {
+      groups[category] = [];
+    }
+    groups[category].push(booking);
+    return groups;
+  }, {});
 
   const getCategoryTitle = (category: string) => {
     switch (category) {
@@ -197,17 +186,13 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                 <SelectOptionLabel icon={Clock}>Pending</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="confirmed">
-                <SelectOptionLabel icon={CheckCircle2}>
-                  Confirmed
-                </SelectOptionLabel>
+                <SelectOptionLabel icon={CheckCircle2}>Confirmed</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="cancelled">
                 <SelectOptionLabel icon={XCircle}>Cancelled</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="completed">
-                <SelectOptionLabel icon={BadgeCheck}>
-                  Completed
-                </SelectOptionLabel>
+                <SelectOptionLabel icon={BadgeCheck}>Completed</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="refunded">
                 <SelectOptionLabel icon={RotateCcw}>Refunded</SelectOptionLabel>
@@ -224,14 +209,10 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                 <SelectOptionLabel icon={Calendar}>All Dates</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="upcoming">
-                <SelectOptionLabel icon={CalendarClock}>
-                  Upcoming (Next 7 Days)
-                </SelectOptionLabel>
+                <SelectOptionLabel icon={CalendarClock}>Upcoming (Next 7 Days)</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="future">
-                <SelectOptionLabel icon={CalendarPlus}>
-                  Future
-                </SelectOptionLabel>
+                <SelectOptionLabel icon={CalendarPlus}>Future</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="past">
                 <SelectOptionLabel icon={History}>Past</SelectOptionLabel>
@@ -247,9 +228,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Total Bookings
-                    </p>
+                    <p className="text-sm font-medium text-gray-600">Total Bookings</p>
                     <p className="text-lg md:text-2xl font-medium text-gray-700">
                       {bookings.length}
                     </p>
@@ -265,15 +244,9 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Confirmed
-                    </p>
+                    <p className="text-sm font-medium text-gray-600">Confirmed</p>
                     <p className="text-lg md:text-2xl font-medium text-green-600">
-                      {
-                        bookings.filter(
-                          (b: BookingType) => b.status === "confirmed",
-                        ).length
-                      }
+                      {bookings.filter((b: BookingType) => b.status === "confirmed").length}
                     </p>
                   </div>
                   <div className="bg-green-100 p-2 rounded-xl">
@@ -287,18 +260,12 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Total Revenue
-                    </p>
+                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                     <p className="text-lg md:text-2xl font-medium text-gray-700">
                       £
                       {bookings
                         .filter((b: BookingType) => b.paymentStatus === "paid")
-                        .reduce(
-                          (sum: number, b: BookingType) =>
-                            sum + (b.totalCost || 0),
-                          0,
-                        )
+                        .reduce((sum: number, b: BookingType) => sum + (b.totalCost || 0), 0)
                         .toLocaleString()}
                     </p>
                   </div>
@@ -315,11 +282,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                   <div>
                     <p className="text-sm font-medium text-gray-600">Pending</p>
                     <p className="text-lg md:text-2xl font-medium text-yellow-600">
-                      {
-                        bookings.filter(
-                          (b: BookingType) => b.status === "pending",
-                        ).length
-                      }
+                      {bookings.filter((b: BookingType) => b.status === "pending").length}
                     </p>
                   </div>
                   <div className="bg-yellow-100 p-2 rounded-xl">
@@ -345,18 +308,13 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               }
             </Badge>
             <Badge className="bg-blue-100 text-blue-800 border-blue-200 border">
-              Completed:{" "}
-              {
-                bookings.filter((b: BookingType) => b.status === "completed")
-                  .length
-              }
+              Completed: {bookings.filter((b: BookingType) => b.status === "completed").length}
             </Badge>
             <Badge className="bg-red-100 text-red-800 border-red-200 border">
               Cancelled:{" "}
               {
                 bookings.filter(
-                  (b: BookingType) =>
-                    b.status === "cancelled" || b.status === "refunded",
+                  (b: BookingType) => b.status === "cancelled" || b.status === "refunded",
                 ).length
               }
             </Badge>
@@ -375,26 +333,19 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
             ) : !bookings || bookings.length === 0 ? (
               <div className="text-center py-12 flex flex-col items-center justify-center h-full">
                 <Building2 className="w-16 h-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-600 mb-2">
-                  No Bookings Found
-                </h3>
-                <p className="text-gray-500 mb-4">
-                  This hotel doesn't have any bookings yet.
-                </p>
+                <h3 className="text-xl font-medium text-gray-600 mb-2">No Bookings Found</h3>
+                <p className="text-gray-500 mb-4">This hotel doesn't have any bookings yet.</p>
                 <div className="bg-blue-50 rounded-xl p-4 max-w-md">
                   <p className="text-sm text-blue-700">
-                    When guests make bookings for this hotel, they will appear
-                    here with all their details, special requests, and payment
-                    information.
+                    When guests make bookings for this hotel, they will appear here with all their
+                    details, special requests, and payment information.
                   </p>
                 </div>
               </div>
             ) : !filteredBookings || filteredBookings.length === 0 ? (
               <div className="text-center py-12 flex flex-col items-center justify-center h-full">
                 <Filter className="w-16 h-16 text-gray-400 mb-4" />
-                <h3 className="text-xl font-medium text-gray-600 mb-2">
-                  No Matching Bookings
-                </h3>
+                <h3 className="text-xl font-medium text-gray-600 mb-2">No Matching Bookings</h3>
                 <p className="text-gray-500 mb-4">
                   No bookings match your current filter criteria.
                 </p>
@@ -403,8 +354,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                     Try adjusting your filters:
                     {statusFilter !== "all" && (
                       <span className="block mt-1">
-                        • Status: Currently filtering for "{statusFilter}"
-                        bookings
+                        • Status: Currently filtering for "{statusFilter}" bookings
                       </span>
                     )}
                     {dateFilter !== "all" && (
@@ -432,10 +382,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
 
                     <div className="space-y-4">
                       {categoryBookings.map((booking: BookingType) => (
-                        <Card
-                          key={booking._id}
-                          className="hover:shadow-xl transition-shadow"
-                        >
+                        <Card key={booking._id} className="hover:shadow-xl transition-shadow">
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center space-x-3">
@@ -447,22 +394,15 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                                     {booking.firstName} {booking.lastName}
                                   </h4>
                                   <p className="text-sm text-gray-600">
-                                    Booking #
-                                    {booking._id.slice(-8).toUpperCase()}
+                                    Booking #{booking._id.slice(-8).toUpperCase()}
                                   </p>
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
-                                <Badge
-                                  className={getStatusColor(booking.status)}
-                                >
+                                <Badge className={getStatusColor(booking.status)}>
                                   {booking.status}
                                 </Badge>
-                                <Badge
-                                  className={getPaymentStatusColor(
-                                    booking.paymentStatus,
-                                  )}
-                                >
+                                <Badge className={getPaymentStatusColor(booking.paymentStatus)}>
                                   {booking.paymentStatus}
                                 </Badge>
                               </div>
@@ -475,21 +415,16 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                               <div className="space-y-2">
                                 <div className="flex items-center space-x-2 text-sm">
                                   <Mail className="w-4 h-4 text-gray-500" />
-                                  <span className="text-gray-700">
-                                    {booking.email}
-                                  </span>
+                                  <span className="text-gray-700">{booking.email}</span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm">
                                   <Phone className="w-4 h-4 text-gray-500" />
-                                  <span className="text-gray-700">
-                                    {booking.phone}
-                                  </span>
+                                  <span className="text-gray-700">{booking.phone}</span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm">
                                   <Users className="w-4 h-4 text-gray-500" />
                                   <span className="text-gray-700">
-                                    {booking.adultCount} adults,{" "}
-                                    {booking.childCount} children
+                                    {booking.adultCount} adults, {booking.childCount} children
                                   </span>
                                 </div>
                               </div>
@@ -499,19 +434,13 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                                 <div className="flex items-center space-x-2 text-sm">
                                   <Calendar className="w-4 h-4 text-gray-500" />
                                   <span className="text-gray-700">
-                                    Check-in:{" "}
-                                    {new Date(
-                                      booking.checkIn,
-                                    ).toLocaleDateString()}
+                                    Check-in: {new Date(booking.checkIn).toLocaleDateString()}
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm">
                                   <Calendar className="w-4 h-4 text-gray-500" />
                                   <span className="text-gray-700">
-                                    Check-out:{" "}
-                                    {new Date(
-                                      booking.checkOut,
-                                    ).toLocaleDateString()}
+                                    Check-out: {new Date(booking.checkOut).toLocaleDateString()}
                                   </span>
                                 </div>
                                 <div className="flex items-center space-x-2 text-sm">
@@ -519,9 +448,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                                   <span className="text-gray-700">
                                     Booked:{" "}
                                     {booking.createdAt
-                                      ? new Date(
-                                          booking.createdAt,
-                                        ).toLocaleDateString()
+                                      ? new Date(booking.createdAt).toLocaleDateString()
                                       : "N/A"}
                                   </span>
                                 </div>
@@ -532,20 +459,17 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                                 <div className="flex items-center space-x-2 text-sm">
                                   <CreditCard className="w-4 h-4 text-gray-500" />
                                   <span className="text-gray-700">
-                                    Total: £
-                                    {booking.totalCost?.toLocaleString()}
+                                    Total: £{booking.totalCost?.toLocaleString()}
                                   </span>
                                 </div>
-                                {booking.refundAmount !== undefined &&
-                                  booking.refundAmount > 0 && (
-                                    <div className="flex items-center space-x-2 text-sm">
-                                      <CreditCard className="w-4 h-4 text-red-500" />
-                                      <span className="text-red-700">
-                                        Refunded: £
-                                        {booking.refundAmount.toLocaleString()}
-                                      </span>
-                                    </div>
-                                  )}
+                                {booking.refundAmount !== undefined && booking.refundAmount > 0 && (
+                                  <div className="flex items-center space-x-2 text-sm">
+                                    <CreditCard className="w-4 h-4 text-red-500" />
+                                    <span className="text-red-700">
+                                      Refunded: £{booking.refundAmount.toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -571,16 +495,11 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                                 <p className="text-sm font-medium text-red-800 mb-1">
                                   Cancellation reason
                                 </p>
-                                <p className="text-sm text-red-700">
-                                  {booking.cancellationReason}
-                                </p>
+                                <p className="text-sm text-red-700">{booking.cancellationReason}</p>
                               </div>
                             )}
 
-                            <CancelBookingButton
-                              booking={booking}
-                              className="mt-4"
-                            />
+                            <CancelBookingButton booking={booking} className="mt-4" />
                           </CardContent>
                         </Card>
                       ))}

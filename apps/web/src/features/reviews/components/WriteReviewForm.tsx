@@ -4,13 +4,7 @@ import * as reviewsApi from "@/features/reviews/api";
 import { invalidateReviewQueries } from "@/shared/lib/query-invalidation";
 import { Button } from "@hotel-booking/ui";
 import { Textarea } from "@hotel-booking/ui";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@hotel-booking/ui";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { SelectOptionLabel } from "@hotel-booking/ui";
 import { Star } from "lucide-react";
 import { useToast } from "@/shared/context/ToastContext";
@@ -32,33 +26,28 @@ const WriteReviewForm = ({ hotelId, bookingId, onDone }: Props) => {
   const { mutate, isPending: isLoading } = useMutation({
     mutationFn: reviewsApi.createHotelReview,
     onSuccess: async () => {
-    await invalidateReviewQueries(queryClient);
-    showToast({
-      title: "Review submitted",
-      description: "Thanks for sharing your stay experience.",
-      type: "SUCCESS",
-    });
-    setOpen(false);
-    setComment("");
-    onDone?.();
-  },
-  onError: () => {
-    showToast({
-      title: "Could not submit review",
-      description: "You may have already reviewed this booking.",
-      type: "ERROR",
-    });
-  },
+      await invalidateReviewQueries(queryClient);
+      showToast({
+        title: "Review submitted",
+        description: "Thanks for sharing your stay experience.",
+        type: "SUCCESS",
+      });
+      setOpen(false);
+      setComment("");
+      onDone?.();
+    },
+    onError: () => {
+      showToast({
+        title: "Could not submit review",
+        description: "You may have already reviewed this booking.",
+        type: "ERROR",
+      });
+    },
   });
 
   if (!open) {
     return (
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen(true)}
-      >
+      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
         Write a review
       </Button>
     );
@@ -88,20 +77,14 @@ const WriteReviewForm = ({ hotelId, bookingId, onDone }: Props) => {
       {/* shadcn Select — matches global control styling (no native <select>) */}
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-gray-700">Rating</label>
-        <Select
-          value={String(rating)}
-          onValueChange={(v) => setRating(Number(v))}
-        >
+        <Select value={String(rating)} onValueChange={(v) => setRating(Number(v))}>
           <SelectTrigger className="w-full bg-white">
             <SelectValue placeholder="Select rating" />
           </SelectTrigger>
           <SelectContent>
             {[5, 4, 3, 2, 1].map((n) => (
               <SelectItem key={n} value={String(n)}>
-                <SelectOptionLabel
-                  icon={Star}
-                  iconClassName="fill-amber-400 text-amber-500"
-                >
+                <SelectOptionLabel icon={Star} iconClassName="fill-amber-400 text-amber-500">
                   {n} stars
                 </SelectOptionLabel>
               </SelectItem>
@@ -110,9 +93,7 @@ const WriteReviewForm = ({ hotelId, bookingId, onDone }: Props) => {
         </Select>
       </div>
       <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-gray-700">
-          Comment
-        </label>
+        <label className="block text-sm font-medium text-gray-700">Comment</label>
         <Textarea
           rows={3}
           required
@@ -127,12 +108,7 @@ const WriteReviewForm = ({ hotelId, bookingId, onDone }: Props) => {
         <Button type="submit" disabled={isLoading || comment.trim().length < 3}>
           {isLoading ? "Submitting…" : "Submit review"}
         </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => setOpen(false)}
-          disabled={isLoading}
-        >
+        <Button type="button" variant="ghost" onClick={() => setOpen(false)} disabled={isLoading}>
           Cancel
         </Button>
       </div>
