@@ -17,6 +17,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
+import { HotelFormDto } from "./dto/hotel-form.dto";
 import { MyHotelsService } from "./my-hotels.service";
 
 const uploadOptions = {
@@ -32,11 +33,11 @@ export class MyHotelsController {
   @Post()
   @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
   create(
-    @Body() body: Record<string, any>,
+    @Body() dto: HotelFormDto,
     @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.myHotelsService.create(body, files, user.userId);
+    return this.myHotelsService.create(dto, files, user.userId);
   }
 
   @Get()
@@ -65,10 +66,10 @@ export class MyHotelsController {
   @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
   update(
     @Param("hotelId", MongoIdPipe) hotelId: string,
-    @Body() body: Record<string, any>,
+    @Body() dto: HotelFormDto,
     @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    return this.myHotelsService.update(hotelId, body, files, user.userId);
+    return this.myHotelsService.update(hotelId, dto, files, user.userId);
   }
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { HotelType } from "@hotel-booking/types";
@@ -6,12 +6,7 @@ import { BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models"
 import { CloudinaryService } from "../../integrations/cloudinary/cloudinary.service";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { IReview } from "../reviews/schemas/review.schema";
-
-const toArray = (value: unknown): string[] => {
-  if (Array.isArray(value)) return value;
-  if (typeof value === "string" && value.length > 0) return [value];
-  return [];
-};
+import { HotelFormDto } from "./dto/hotel-form.dto";
 
 const classifyBookingCounts = (
   bookings: Array<{ status?: string; checkIn: Date; checkOut: Date }>,
@@ -46,66 +41,43 @@ export class MyHotelsService {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  private parseContact(body: Record<string, any>) {
+  /** The owner-editable fields, copied one by one so nothing else can be written. */
+  private editableFields(dto: HotelFormDto) {
     return {
-      phone: body["contact.phone"] || "",
-      email: body["contact.email"] || "",
-      website: body["contact.website"] || "",
+      name: dto.name,
+      city: dto.city,
+      country: dto.country,
+      description: dto.description,
+      type: dto.type,
+      facilities: dto.facilities,
+      pricePerNight: dto.pricePerNight,
+      starRating: dto.starRating,
+      adultCount: dto.adultCount,
+      childCount: dto.childCount,
+      contact: {
+        phone: dto["contact.phone"] || "",
+        email: dto["contact.email"] || "",
+        website: dto["contact.website"] || "",
+      },
+      policies: {
+        checkInTime: dto["policies.checkInTime"] || "",
+        checkOutTime: dto["policies.checkOutTime"] || "",
+        cancellationPolicy: dto["policies.cancellationPolicy"] || "",
+        petPolicy: dto["policies.petPolicy"] || "",
+        smokingPolicy: dto["policies.smokingPolicy"] || "",
+      },
     };
   }
 
-  private parsePolicies(body: Record<string, any>) {
-    return {
-      checkInTime: body["policies.checkInTime"] || "",
-      checkOutTime: body["policies.checkOutTime"] || "",
-      cancellationPolicy: body["policies.cancellationPolicy"] || "",
-      petPolicy: body["policies.petPolicy"] || "",
-      smokingPolicy: body["policies.smokingPolicy"] || "",
-    };
-  }
-
-  private validateHotelBody(body: Record<string, any>) {
-    const required = ["name", "city", "country", "description"];
-    for (const field of required) {
-      if (!body[field]) {
-        throw new BadRequestException(`${field} is required`);
-      }
-    }
-
-    if (!body.type || toArray(body.type).length === 0) {
-      throw new BadRequestException("Select at least one hotel type");
-    }
-
-    if (body.pricePerNight === undefined || Number.isNaN(Number(body.pricePerNight))) {
-      throw new BadRequestException("Price per night is required and must be a number");
-    }
-
-    if (!body.facilities) {
-      throw new BadRequestException("Facilities are required");
-    }
-  }
-
-  async create(body: Record<string, any>, files: Express.Multer.File[], userId: string) {
-    this.validateHotelBody(body);
-
+  async create(dto: HotelFormDto, files: Express.Multer.File[], userId: string) {
     const imageUrls = await this.cloudinaryService.uploadImages(files || []);
 
-    const newHotel: Record<string, any> = {
-      ...body,
-      type: toArray(body.type),
-      facilities: toArray(body.facilities),
-      pricePerNight: Number(body.pricePerNight),
-      starRating: body.starRating !== undefined ? Number(body.starRating) : undefined,
-      adultCount: body.adultCount !== undefined ? Number(body.adultCount) : undefined,
-      childCount: body.childCount !== undefined ? Number(body.childCount) : undefined,
-      contact: this.parseContact(body),
-      policies: this.parsePolicies(body),
+    const hotel = new this.hotelModel({
+      ...this.editableFields(dto),
       imageUrls,
       lastUpdated: new Date(),
       userId,
-    };
-
-    const hotel = new this.hotelModel(newHotel);
+    });
     await hotel.save();
     return hotel;
   }
@@ -186,12 +158,7 @@ export class MyHotelsService {
     return hotel;
   }
 
-  async update(
-    hotelId: string,
-    body: Record<string, any>,
-    files: Express.Multer.File[],
-    userId: string,
-  ) {
+  async update(hotelId: string, dto: HotelFormDto, files: Express.Multer.File[], userId: string) {
     const existingHotel = await this.hotelModel.findOne({
       _id: hotelId,
       userId,
@@ -201,25 +168,11 @@ export class MyHotelsService {
       throw new NotFoundException("Hotel not found");
     }
 
-    const updateData: Record<string, any> = {
-      name: body.name,
-      city: body.city,
-      country: body.country,
-      description: body.description,
-      type: toArray(body.type),
-      pricePerNight: Number(body.pricePerNight),
-      starRating: Number(body.starRating),
-      adultCount: Number(body.adultCount),
-      childCount: Number(body.childCount),
-      facilities: toArray(body.facilities),
-      lastUpdated: new Date(),
-      contact: this.parseContact(body),
-      policies: this.parsePolicies(body),
-    };
-
-    const updatedHotel = await this.hotelModel.findByIdAndUpdate(hotelId, updateData, {
-      new: true,
-    });
+    const updatedHotel = await this.hotelModel.findByIdAndUpdate(
+      hotelId,
+      { ...this.editableFields(dto), lastUpdated: new Date() },
+      { new: true },
+    );
 
     if (!updatedHotel) {
       throw new NotFoundException("Hotel not found");
@@ -227,7 +180,7 @@ export class MyHotelsService {
 
     if (files && files.length > 0) {
       const updatedImageUrls = await this.cloudinaryService.uploadImages(files);
-      updatedHotel.imageUrls = [...updatedImageUrls, ...toArray(body.imageUrls)];
+      updatedHotel.imageUrls = [...updatedImageUrls, ...(dto.imageUrls ?? [])];
       await updatedHotel.save();
     }
 
