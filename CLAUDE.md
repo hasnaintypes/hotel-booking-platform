@@ -63,6 +63,7 @@ Setup: copy each app's `.env.example` to `.env`. The API refuses to start withou
 - **No `Co-Authored-By` trailers and no "Generated with" lines** in commits or PR descriptions.
 - PR descriptions: summary of behaviour and affected apps, the verification commands actually run with their results, screenshots for UI changes, and linked issues if any.
 - Before opening a PR run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm check:bundle`, and report any you skipped.
+- After a PR merges, delete its remote and local branch and prune (`gh pr merge --delete-branch`, `git branch -d <branch>`, `git remote prune origin`). Do not leave merged branches behind.
 
 ## Conventions
 
