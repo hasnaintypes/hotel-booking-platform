@@ -20,14 +20,29 @@ const HotelsPage = () => {
   const mutation = useMutation({
     mutationFn: ({ hotelId, isActive }: { hotelId: string; isActive: boolean }) =>
       updateHotelActive(hotelId, isActive),
-    onSuccess: async () => {
-      await invalidateAdminCatalogs(queryClient);
-      toast.success("Hotel status updated");
+    onMutate: async ({ hotelId, isActive }) => {
+      await queryClient.cancelQueries({ queryKey: adminKeys.hotels });
+      const previous = queryClient.getQueryData<HotelType[]>(adminKeys.hotels);
+
+      queryClient.setQueryData<HotelType[]>(adminKeys.hotels, (hotels) =>
+        hotels?.map((hotel) => (hotel._id === hotelId ? { ...hotel, isActive } : hotel)),
+      );
+
+      return { previous };
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(adminKeys.hotels, context.previous);
+      }
       toast.error("Failed to update hotel", {
         description: getErrorMessage(error, "Please try again in a moment."),
       });
+    },
+    onSuccess: () => {
+      toast.success("Hotel status updated");
+    },
+    onSettled: async () => {
+      await invalidateAdminCatalogs(queryClient);
     },
   });
 

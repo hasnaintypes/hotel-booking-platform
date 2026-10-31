@@ -37,14 +37,29 @@ const UsersPage = () => {
   const mutation = useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: AdminRole }) =>
       updateUserRole(userId, role),
-    onSuccess: async () => {
-      await invalidateAdminCatalogs(queryClient);
-      toast.success("Role updated");
+    onMutate: async ({ userId, role }) => {
+      await queryClient.cancelQueries({ queryKey: adminKeys.users });
+      const previous = queryClient.getQueryData<UserType[]>(adminKeys.users);
+
+      queryClient.setQueryData<UserType[]>(adminKeys.users, (users) =>
+        users?.map((user) => (user._id === userId ? { ...user, role } : user)),
+      );
+
+      return { previous };
     },
-    onError: (error) => {
+    onError: (error, _variables, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(adminKeys.users, context.previous);
+      }
       toast.error("Failed to update role", {
         description: getErrorMessage(error, "Please try again in a moment."),
       });
+    },
+    onSuccess: () => {
+      toast.success("Role updated");
+    },
+    onSettled: async () => {
+      await invalidateAdminCatalogs(queryClient);
     },
   });
 
