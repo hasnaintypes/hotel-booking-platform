@@ -21,7 +21,6 @@ import { HotelsModule } from "./modules/hotels/hotels.module";
 import { MyHotelsModule } from "./modules/my-hotels/my-hotels.module";
 import { ReviewsModule } from "./modules/reviews/reviews.module";
 import { UsersModule } from "./modules/users/users.module";
-import { AppController } from "./app.controller";
 
 @Module({
   imports: [
@@ -57,7 +56,6 @@ import { AppController } from "./app.controller";
     AiModule,
     HealthModule,
   ],
-  controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
