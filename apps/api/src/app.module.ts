@@ -33,7 +33,13 @@ import { AppController } from "./app.controller";
     }),
     LoggerModule.forRoot({
       pinoHttp: {
-        level: process.env.NODE_ENV === "production" ? "info" : "debug",
+        level:
+          process.env.LOG_LEVEL ??
+          (process.env.NODE_ENV === "production"
+            ? "info"
+            : process.env.NODE_ENV === "test"
+              ? "silent"
+              : "debug"),
         redact: ["req.headers.authorization", "req.headers.cookie"],
       },
     }),
