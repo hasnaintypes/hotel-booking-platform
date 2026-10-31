@@ -75,6 +75,7 @@ The API exits at startup if a required variable is missing. Browser apps only re
 | `STRIPE_API_KEY` | api | Yes | Stripe secret key (`sk_test_…` locally) |
 | `FRONTEND_URL`, `ADMIN_URL`, `BACKEND_URL` | api | No | CORS/origin allow-list and OAuth redirects (default to localhost) |
 | `PORT` | api | No | Default `5001` |
+| `BOOKING_MAX_NIGHTS` | api | No | Longest bookable stay in nights, 1 to 365 (default `30`) |
 | `GOOGLE_ID`, `GOOGLE_SECRET` | api | No | Google sign-in; register `{BACKEND_URL}/api/auth/callback/google` |
 | `AI_ASSIST_ENABLED`, `GROQ_*`, `OPENAI_*`, `OPENROUTER_*` | api | No | Optional LLM drafts |
 | `VITE_API_BASE_URL` | web, admin | Recommended | API origin (falls back to `http://localhost:5001`) |
@@ -106,6 +107,10 @@ Run a single test file with `pnpm --filter @hotel-booking/admin exec vitest run 
 GitHub Actions (`.github/workflows/ci.yml`) runs install, lint, typecheck, test, build and the bundle check on every pull request and push to `main`. Unit tests currently cover the shared auth-session store and the admin guard and booking rules; the API, payment and refund flows have no automated tests yet.
 
 ## Deployment
+
+> **Do not deploy to production before milestone M2.** Payments and bookings are not production-ready: the charged amount is not reconciled with the booked dates, a payment can be replayed to create duplicate bookings, and there is no payment webhook or reconciliation. The API therefore refuses to start with `NODE_ENV=production` and a live Stripe key (`sk_live_…` or `rk_live_…`); use `sk_test_…`. The guard is removed when M2 completes.
+>
+> Priority principle: payment and booking correctness (M0 to M2) is delivered before advanced features (M3 onwards).
 
 - **API:** Docker image built from the **repository root** (`docker build -f apps/api/Dockerfile .`), exposing port 5001 with a `/api/health` healthcheck. Set all required variables, `NODE_ENV=production`, and `FRONTEND_URL`, `ADMIN_URL` and `BACKEND_URL` to the public origins.
 - **Web and admin:** deployed as two Vercel projects (root directories `apps/web` and `apps/admin`) using each app's `vercel.json`, which sets the SPA rewrite, security headers and a Content-Security-Policy. Any new script, frame or connect origin must be added to the CSP.
