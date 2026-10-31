@@ -123,7 +123,7 @@ This repository is designed as a **teaching project**. By reading and running it
 - **JWT (JSON Web Token):** signed string proving “this user is logged in.” Frontend stores it in `localStorage.session_id` and sends `Authorization: Bearer …`.
 - **CORS:** browser rule; API must allow your frontend origin (`FRONTEND_URL`, Vercel, etc.).
 - **PaymentIntent:** Stripe object that represents a payment attempt; booking is created only if status is `succeeded`.
-- **React Query key:** string/array identity for a cached request (e.g. `validateToken`). Invalidate after login/logout.
+- **React Query key:** typed key-factory identity for a cached request (e.g. `authKeys.currentUser()`). Invalidate after login/logout.
 - **SPA rewrite:** host (Vercel) serves `index.html` for all routes so `/search` works on refresh.
 
 ---
@@ -275,7 +275,7 @@ cp .env.example .env
 | Variable              | Required?           | Purpose                                                       |
 | --------------------- | ------------------- | ------------------------------------------------------------- |
 | `VITE_API_BASE_URL`   | Recommended locally | Backend origin, e.g. `http://localhost:5001`                  |
-| `VITE_STRIPE_PUB_KEY` | For payments        | Stripe **publishable** key `pk_test_…` (used in `AppContext`) |
+| `VITE_STRIPE_PUB_KEY` | For payments        | Stripe **publishable** key `pk_test_…` (used in `shared/lib/stripe.ts`) |
 | `VITE_ADMIN_URL`      | For admin link      | Admin SPA origin, e.g. `http://localhost:5175`                |
 
 ### Frontend — `apps/admin/.env`
@@ -364,7 +364,9 @@ From the repository root:
 ```bash
 pnpm typecheck
 pnpm lint
+pnpm test
 pnpm build
+pnpm check:bundle
 ```
 
 ---
@@ -375,12 +377,13 @@ pnpm build
 
 ```text
 QueryClientProvider
-  └── AppContextProvider      (auth, Stripe, toasts, global loading)
-        └── SearchContextProvider   (search criteria → sessionStorage)
-              └── App (React Router)
+  └── ToastProvider           (Sonner notification API)
+        └── AuthProvider      (current-user query + auth storage)
+              └── SearchContextProvider   (search criteria → sessionStorage)
+                    └── App (React Router)
 ```
 
-**React Query** caches API responses. After login/logout the app invalidates the `validateToken` query so `isLoggedIn` updates.
+**React Query** caches API responses. After login/logout the app invalidates the `authKeys.currentUser()` query so `isLoggedIn` updates. Global loading overlays were removed; pages use local query/mutation state instead.
 
 ### Routes (`App.tsx`)
 
@@ -404,7 +407,7 @@ Layouts: `Layout` (chrome) · `AuthLayout` (centered auth).
 | File                          | Job                                                        |
 | ----------------------------- | ---------------------------------------------------------- |
 | `packages/api-client`         | Axios instance, base URL, Bearer interceptor, 401 cleanup  |
-| `features/auth/api.ts`        | `signIn`, `register`, `validateToken`, `signOut`           |
+| `features/auth/api.ts`        | `signIn`, `register`, `fetchCurrentUser`, `signOut`        |
 | `features/hotels/api.ts`      | `searchHotels`, `fetchHotels`, `fetchHotelById`            |
 | `features/bookings/api.ts`    | `createPaymentIntent`, `createRoomBooking`, `cancelBooking`|
 | `features/analytics/api.ts`   | business-insights + rollups                                |
@@ -539,7 +542,7 @@ Interactive docs: **`/api-docs`** (Swagger UI).
 2. Backend verifies with **bcrypt**, returns JWT
 3. Frontend stores `localStorage.session_id` (+ user fields)
 4. Axios sends Bearer token on later calls
-5. `GET /api/auth/validate-token` drives `isLoggedIn`
+5. `GET /api/users/me` (`authKeys.currentUser()`) drives `isLoggedIn` and role
 
 ### Google OAuth
 
@@ -550,7 +553,7 @@ Interactive docs: **`/api-docs`** (Swagger UI).
 
 ### Logout
 
-`POST /api/auth/logout` + clear `localStorage` + invalidate `validateToken`.
+`POST /api/auth/logout` + clear `localStorage` + drop the `authKeys.currentUser()` query.
 
 ---
 
@@ -585,8 +588,9 @@ Amount ≈ `pricePerNight × nights × 100` (pence). Use Stripe **test cards** i
 
 ### Contexts you can port
 
-**AppContext** — “am I logged in?”, toasts, Stripe promise, global loading spinner.  
-**SearchContext** — persist search criteria in `sessionStorage` so detail/booking keep dates/guests.
+- **AuthContext** — current user, role, and login state from React Query plus auth storage.
+- **ToastContext** — stable Sonner notification API shared across features.
+- **SearchContext** — persist search criteria in `sessionStorage` so detail/booking keep dates/guests.
 
 ### Example: attaching JWT (portable)
 
@@ -606,8 +610,8 @@ Use the same pattern in any Axios/React project.
 ### Example: invalidate after auth
 
 ```ts
-queryClient.invalidateQueries("validateToken");
-queryClient.refetchQueries("validateToken");
+queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
+queryClient.refetchQueries({ queryKey: authKeys.currentUser() });
 ```
 
 ---

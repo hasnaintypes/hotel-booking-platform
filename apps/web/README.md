@@ -139,9 +139,8 @@ apps/web/
 │   ├── shared/                   # Cross-feature building blocks
 │   │   ├── api/                  # web-only AI endpoint
 │   │   ├── components/layout/    # Header, Footer, nav, layouts
-│   │   ├── context/AppContext.tsx
-│   │   ├── hooks/                # useAppContext, useLoadingHooks
-│   │   └── lib/                  # utils, query invalidation, caches
+│   │   ├── context/ToastContext.tsx
+│   │   └── lib/                  # query keys, invalidation, caches, Stripe
 │   └── styles/
 │       └── index.css             # Tailwind 4 entry + config link
 ├── components.json               # shadcn generator config
@@ -354,20 +353,18 @@ const getAuthHeaders = () => {
 
 ### **Context Management**
 
+Auth and server state live in React Query; React Context is reserved for low-frequency shared UI state.
+
 ```typescript
-// App Context for global state
-const AppContext = createContext<AppContextType | undefined>(undefined);
+// Current user query feeds AuthContext; mutations invalidate the same factory key.
+const { data, isLoading, isError } = useQuery({
+  queryKey: authKeys.currentUser(),
+  queryFn: fetchCurrentUser,
+  enabled: hasStoredToken,
+});
 
-export const AppContextProvider = ({ children }: { children: ReactNode }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<UserType | null>(null);
-
-  return (
-    <AppContext.Provider value={{ isLoggedIn, setIsLoggedIn, user, setUser }}>
-      {children}
-    </AppContext.Provider>
-  );
-};
+// ToastContext exposes a stable showToast callback.
+const { showToast } = useToast();
 ```
 
 ---
@@ -644,6 +641,9 @@ pnpm preview
 
 # Type checking
 pnpm typecheck
+
+# Unit tests (Vitest)
+pnpm test
 
 # Lint code
 pnpm lint
