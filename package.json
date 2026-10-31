@@ -2,11 +2,13 @@
   "name": "hotel-booking-platform",
   "private": true,
   "version": "0.0.0",
+  "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "check:bundle": "node scripts/check-bundle-size.mjs",
+    "check:license": "node scripts/check-license.mjs",
     "lint": "turbo run lint",
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",

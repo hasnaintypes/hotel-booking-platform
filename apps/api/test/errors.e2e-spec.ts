@@ -39,6 +39,11 @@ describe("error responses (problem details)", () => {
     expectProblem(res, 404, "NOT_FOUND");
   });
 
+  it("serves nothing at the API root", async () => {
+    const res = await anonymous(t).get("/");
+    expectProblem(res, 404, "NOT_FOUND");
+  });
+
   it("returns 401 problem details for missing authentication", async () => {
     const res = await anonymous(t).get(routes.users.me);
     expectProblem(res, 401, "UNAUTHENTICATED");

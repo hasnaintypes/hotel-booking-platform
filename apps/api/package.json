@@ -1,6 +1,7 @@
 {
   "name": "@hotel-booking/api",
   "version": "0.2.0",
+  "license": "MIT",
   "private": true,
   "description": "Hotel booking platform API",
   "main": "./dist/apps/api/src/main.js",
