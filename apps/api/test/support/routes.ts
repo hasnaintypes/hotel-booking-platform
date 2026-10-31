@@ -21,6 +21,8 @@ export const routes = {
     list: "/api/hotels",
     search: "/api/hotels/search",
     byId: (id: string) => `/api/hotels/${id}`,
+    paymentIntent: (id: string) => `/api/hotels/${id}/bookings/payment-intent`,
+    bookings: (id: string) => `/api/hotels/${id}/bookings`,
   },
   ai: { suggest: "/api/ai/suggest" },
   myHotels: {
