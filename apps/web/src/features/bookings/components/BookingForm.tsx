@@ -3,7 +3,7 @@ import { PaymentIntentResponse, UserType } from "@hotel-booking/types";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { StripeCardElement } from "@stripe/stripe-js";
 import useSearchContext from "@/features/hotels/hooks/useSearchContext";
-import { useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as bookingsApi from "@/features/bookings/api";
 import { useToast } from "@/shared/context/ToastContext";
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { invalidateBookingQueries } from "@/shared/lib/query-invalidation";
+import { interpretPaymentResult, NETWORK_FAILURE } from "@/features/bookings/lib/payment-result";
 
 type Props = {
   currentUser: UserType;
@@ -46,8 +47,14 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const [phone, setPhone] = useState<string>("");
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  // Shown when Stripe did not take the payment; the guest can fix the card and submit again.
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  // Set once the card has been charged. From then on the form must not charge again.
+  const [paidReference, setPaidReference] = useState<string | null>(null);
+  const [bookingFailed, setBookingFailed] = useState<boolean>(false);
+  const [paymentPending, setPaymentPending] = useState<boolean>(false);
 
-  const { mutate: bookRoom, isPending: isLoading } = useMutation({
+  const { mutateAsync: bookRoom, isPending: isLoading } = useMutation({
     mutationFn: bookingsApi.createRoomBooking,
     onSuccess: async () => {
       // My Bookings + hotel lists update immediately without full page refresh
@@ -62,16 +69,13 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
         navigate("/my-bookings");
       }, 1500);
     },
-    onError: () => {
-      showToast({
-        title: "Booking Failed",
-        description: "There was an error processing your booking. Please try again.",
-        type: "ERROR",
-      });
-    },
   });
 
-  const { handleSubmit, register } = useForm<BookingFormData>({
+  const {
+    handleSubmit,
+    register,
+    formState: { isSubmitting },
+  } = useForm<BookingFormData>({
     defaultValues: {
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
@@ -113,19 +117,43 @@ MM/YY: 12/35 CVC: 123`;
       specialRequests,
     };
 
-    const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
-      payment_method: {
-        card: elements.getElement(CardElement) as StripeCardElement,
-      },
-    });
+    setPaymentError(null);
 
-    if (result.paymentIntent?.status === "succeeded") {
-      bookRoom({
-        ...completeFormData,
-        paymentIntentId: result.paymentIntent.id,
+    const card = elements.getElement(CardElement) as StripeCardElement | null;
+    if (!card) {
+      setPaymentError("The card form isn't ready yet. Please wait a moment and try again.");
+      return;
+    }
+
+    let outcome;
+    try {
+      const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
+        payment_method: { card },
       });
+      outcome = interpretPaymentResult(result);
+    } catch {
+      setPaymentError(NETWORK_FAILURE);
+      return;
+    }
+
+    if (outcome.kind !== "succeeded") {
+      setPaymentError(outcome.message);
+      // A pending payment may still be charged, so don't invite another attempt.
+      if (outcome.kind === "pending") setPaymentPending(true);
+      return;
+    }
+
+    // The card has been charged. Remember the reference before anything else can fail.
+    setPaidReference(outcome.paymentIntentId);
+    try {
+      await bookRoom({ ...completeFormData, paymentIntentId: outcome.paymentIntentId });
+    } catch {
+      setBookingFailed(true);
     }
   };
+
+  const paymentTaken = paidReference !== null;
+  const submitLocked = isSubmitting || isLoading || paymentTaken || paymentPending;
 
   return (
     <div className="p-6">
@@ -313,14 +341,48 @@ MM/YY: 12/35 CVC: 123`;
             </div>
           </div>
 
+          {paymentError && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800"
+            >
+              <AlertTriangle className="h-5 w-5 flex-shrink-0 text-red-600" />
+              <p>{paymentError}</p>
+            </div>
+          )}
+
+          {paymentTaken && bookingFailed && (
+            <div
+              role="alert"
+              className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900"
+            >
+              <p className="font-medium">
+                Your payment went through, but we couldn't confirm your booking.
+              </p>
+              <p>
+                Please don't pay again. Check{" "}
+                <Link to="/my-bookings" className="font-medium underline">
+                  My Bookings
+                </Link>{" "}
+                to see whether it was created. If it isn't there, contact support and quote this
+                payment reference:
+              </p>
+              <p>
+                <code className="select-all rounded bg-white px-2 py-1 font-mono">
+                  {paidReference}
+                </code>
+              </p>
+            </div>
+          )}
+
           {/* Submit Button */}
           <div className="pt-4">
             <Button
-              disabled={isLoading}
+              disabled={submitLocked}
               type="submit"
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium py-3 px-6 rounded-xl shadow-xl transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isSubmitting || isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   Processing...

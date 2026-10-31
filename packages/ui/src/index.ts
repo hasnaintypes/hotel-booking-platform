@@ -5,6 +5,7 @@ export * from "./components/checkbox";
 export * from "./components/data-table";
 export * from "./components/dialog";
 export * from "./components/dropdown-menu";
+export * from "./components/error-boundary";
 export * from "./components/input";
 export * from "./components/label";
 export * from "./components/safe-image";
