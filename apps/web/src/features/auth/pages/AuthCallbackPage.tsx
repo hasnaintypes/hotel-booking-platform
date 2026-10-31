@@ -1,8 +1,10 @@
 import { useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import { welcomeBackToast } from "@/shared/lib/toast-messages";
+import { setSessionToken } from "@/features/auth/auth-storage";
+import { authKeys } from "@/shared/lib/query-keys";
 import { Loader2 } from "lucide-react";
 
 /**
@@ -12,7 +14,7 @@ const AuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const token = searchParams.get("token");
@@ -39,14 +41,14 @@ const AuthCallback = () => {
     }
 
     if (token && userId) {
-      localStorage.setItem("session_id", token);
+      setSessionToken(token);
       localStorage.setItem("user_id", userId);
       if (email) localStorage.setItem("user_email", email);
       const name = [firstName, lastName].filter(Boolean).join(" ") || email;
       if (name) localStorage.setItem("user_name", name);
       if (image) localStorage.setItem("user_image", image);
 
-      queryClient.invalidateQueries({ queryKey: ["validateToken"] });
+      queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
       showToast(welcomeBackToast(name || undefined));
       navigate("/");
     } else {

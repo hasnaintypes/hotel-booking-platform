@@ -1,7 +1,7 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useMutationWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as authApi from "@/features/auth/api";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { authKeys } from "@/shared/lib/query-keys";
+import { useToast } from "@/shared/context/ToastContext";
 import { goodbyeToast, getStoredDisplayName } from "@/shared/lib/toast-messages";
 import { useNavigate } from "react-router-dom";
 import { LogOut, Trash2, RefreshCw } from "lucide-react";
@@ -26,17 +26,14 @@ const getAvatarUrl = () => {
 
 const SignOutButton = () => {
   const queryClient = useQueryClient();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const mutation = useMutationWithLoading(authApi.signOut, {
-    onSuccess: async () => {
-      // Soft logout: invalidate auth queries; no hard reload so Sonner can show
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["validateToken"] }),
-        queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
-      ]);
-      queryClient.removeQueries({ queryKey: ["fetchCurrentUser"] });
+  const mutation = useMutation({
+    mutationFn: authApi.signOut,
+    onSuccess: () => {
+      // Soft logout: drop cached identity; no hard reload so Sonner can show
+      queryClient.removeQueries({ queryKey: authKeys.currentUser() });
       navigate("/sign-in");
     },
     onError: (error: Error) => {
@@ -46,16 +43,12 @@ const SignOutButton = () => {
         type: "ERROR",
       });
     },
-    loadingMessage: "Signing out...",
   });
 
-  const clearAuthMutation = useMutationWithLoading(authApi.signOut, {
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["validateToken"] }),
-        queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
-      ]);
-      queryClient.removeQueries({ queryKey: ["fetchCurrentUser"] });
+  const clearAuthMutation = useMutation({
+    mutationFn: authApi.signOut,
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: authKeys.currentUser() });
       showToast({
         title: "Auth State Cleared",
         description:
@@ -71,7 +64,6 @@ const SignOutButton = () => {
         type: "ERROR",
       });
     },
-    loadingMessage: "Clearing auth state...",
   });
 
   /** Dev util: wipe browser storage + RQ cache, soft-nav to sign-in (no hard reload) */

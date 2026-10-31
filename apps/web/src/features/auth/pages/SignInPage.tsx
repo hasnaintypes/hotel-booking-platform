@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
-import { useMutationWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { authKeys } from "@/shared/lib/query-keys";
 import * as authApi from "@/features/auth/api";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import type { SignInFormData } from "@/features/auth/types";
 import { welcomeBackToast } from "@/shared/lib/toast-messages";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -66,7 +66,7 @@ function TestAccountOptionLabel({
 }
 
 const SignIn = () => {
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
@@ -97,10 +97,10 @@ const SignIn = () => {
     }
   };
 
-  const mutation = useMutationWithLoading(authApi.signIn, {
+  const mutation = useMutation({ mutationFn: authApi.signIn,
     onSuccess: async () => {
       showToast(welcomeBackToast());
-      await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
+      await queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
       navigate(location.state?.from?.pathname || "/");
     },
     onError: (error: Error) => {
@@ -110,7 +110,6 @@ const SignIn = () => {
         type: "ERROR",
       });
     },
-    loadingMessage: "Signing you in...",
   });
 
   const onSubmit = handleSubmit((data) => {

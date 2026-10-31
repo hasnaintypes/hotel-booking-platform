@@ -7,8 +7,9 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { Separator } from "@hotel-booking/ui";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import * as authApi from "@/features/auth/api";
+import { authKeys } from "@/shared/lib/query-keys";
 import {
   Plus,
   LogOut,
@@ -17,7 +18,7 @@ import {
   FileText,
   Activity,
 } from "lucide-react";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { goodbyeToast, getStoredDisplayName } from "@/shared/lib/toast-messages";
 import { getAdminUrl } from "@/shared/lib/app-urls";
@@ -38,18 +39,12 @@ const linkRowClass =
   "flex items-center gap-2 w-full text-sm font-normal leading-none text-gray-700 hover:text-primary-600";
 
 const UsernameMenu = () => {
-  const { showToast } = useAppContext();
-  const { isLoggedIn } = useAuth();
+  const { showToast } = useToast();
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
-
-  const { data: currentUser } = useQuery({
-    queryKey: ["fetchCurrentUser"],
-    queryFn: authApi.fetchCurrentUser,
-    enabled: isLoggedIn,
-  });
 
   const email = localStorage.getItem("user_email");
   const name = localStorage.getItem("user_name");
@@ -66,11 +61,7 @@ const UsernameMenu = () => {
     showToast(goodbyeToast(displayName));
     await authApi.signOut();
     setIsOpen(false);
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["validateToken"] }),
-      queryClient.invalidateQueries({ queryKey: ["fetchCurrentUser"] }),
-    ]);
-    queryClient.removeQueries({ queryKey: ["fetchCurrentUser"] });
+    queryClient.removeQueries({ queryKey: authKeys.currentUser() });
     navigate("/");
   };
 

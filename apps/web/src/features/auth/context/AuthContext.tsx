@@ -1,7 +1,9 @@
-import React, { createContext, useEffect } from "react";
+import React, { createContext, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { UserType } from "@hotel-booking/types";
-import { clearAuthStorage, validateToken } from "../api";
+import { clearAuthStorage, fetchCurrentUser } from "../api";
+import { getSessionToken, subscribeToAuth } from "../auth-storage";
+import { authKeys } from "@/shared/lib/query-keys";
 
 export type AuthContextValue = {
   isLoggedIn: boolean;
@@ -10,18 +12,19 @@ export type AuthContextValue = {
   isError: boolean;
 };
 
-export const AuthContext = createContext<AuthContextValue | undefined>(
-  undefined,
-);
+export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const hasStoredToken =
-    typeof window !== "undefined" && !!localStorage.getItem("session_id");
+  const hasStoredToken = useSyncExternalStore(
+    subscribeToAuth,
+    () => Boolean(getSessionToken()),
+    () => false,
+  );
 
-  // Guests: skip validate-token (avoids expected 401 noise in prod console)
-  const { isError, data, isLoading } = useQuery<UserType | null>({
-    queryKey: ["validateToken"],
-    queryFn: validateToken,
+  // Guests skip /users/me, avoiding expected 401 noise in production.
+  const { isError, data, isLoading, error } = useQuery<UserType>({
+    queryKey: authKeys.currentUser(),
+    queryFn: fetchCurrentUser,
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
@@ -29,19 +32,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   });
 
   useEffect(() => {
-    // Stale/expired JWT — clear storage so isLoggedIn stays false
-    if (isError) clearAuthStorage();
-  }, [isError]);
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    // Only an invalid/expired token should wipe storage; keep it on network/5xx.
+    if (isError && status === 401) clearAuthStorage();
+  }, [isError, error]);
 
-  // Optimistic nav chrome: JWT in localStorage → show profile until validate fails
-  // (avoids Log In flash on refresh while validateToken is loading)
-  const isLoggedIn = hasStoredToken ? !isError : Boolean(data) && !isError;
+  // Optimistic nav chrome: JWT in localStorage shows profile until validation fails.
+  const isLoggedIn = hasStoredToken && !isError;
 
-  return (
-    <AuthContext.Provider
-      value={{ isLoggedIn, user: data, isLoading, isError }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const value = useMemo(
+    () => ({
+      isLoggedIn,
+      user: data,
+      isLoading,
+      isError,
+    }),
+    [isLoggedIn, data, isLoading, isError],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

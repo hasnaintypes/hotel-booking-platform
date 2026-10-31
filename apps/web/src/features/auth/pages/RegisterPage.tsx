@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
-import { useQueryClient } from "@tanstack/react-query";
-import { useMutationWithLoading } from "@/shared/hooks/useLoadingHooks";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { authKeys } from "@/shared/lib/query-keys";
 import * as authApi from "@/features/auth/api";
-import useAppContext from "@/shared/hooks/useAppContext";
+import { useToast } from "@/shared/context/ToastContext";
 import type { RegisterFormData } from "@/features/auth/types";
 import { welcomeNewToast } from "@/shared/lib/toast-messages";
 import { StaggerItem } from "@hotel-booking/ui";
@@ -34,7 +34,7 @@ import { Badge } from "@hotel-booking/ui";
 const Register = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { showToast } = useAppContext();
+  const { showToast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,10 +46,10 @@ const Register = () => {
     formState: { errors },
   } = useForm<RegisterFormData>();
 
-  const mutation = useMutationWithLoading(authApi.register, {
+  const mutation = useMutation({ mutationFn: authApi.register,
     onSuccess: async () => {
       showToast(welcomeNewToast());
-      await queryClient.invalidateQueries({ queryKey: ["validateToken"] });
+      await queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
       navigate("/");
     },
     onError: (error: Error) => {
@@ -59,7 +59,6 @@ const Register = () => {
         type: "ERROR",
       });
     },
-    loadingMessage: "Creating your account...",
   });
 
   const onSubmit = handleSubmit((data) => {
