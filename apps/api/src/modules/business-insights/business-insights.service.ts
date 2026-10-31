@@ -420,8 +420,9 @@ export class BusinessInsightsService {
       const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
       return bookingDate >= weekAgo;
     }).length;
-    const avgResponseTime = Math.random() * 100 + 50;
 
+    // Only figures computed from the database. Request rates, response times and error rates are
+    // not measured by the application, so they are not reported.
     return {
       database: {
         totalHotels: allHotels.length,
@@ -429,10 +430,6 @@ export class BusinessInsightsService {
         totalRevenue: Math.round(totalRevenue * 100) / 100,
       },
       application: {
-        avgResponseTime: Math.round(avgResponseTime),
-        requestsPerMinute: Math.round(Math.random() * 50 + 20),
-        errorRate: Math.round(Math.random() * 5) / 100,
-        uptime: "99.9%",
         todayBookings,
         thisWeekBookings,
       },

@@ -588,7 +588,6 @@ async function seed() {
       totalUsers: 3,
       totalHotels: 3,
       averageBookingValue: 250,
-      conversionRate: 62.5,
       cancellationRate: 25,
       averageRating: 4.5,
     },

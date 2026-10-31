@@ -36,6 +36,12 @@ export const routes = {
     byHotel: (hotelId: string) => `/api/reviews/hotel/${hotelId}`,
     summary: (hotelId: string) => `/api/reviews/hotel/${hotelId}/summary`,
   },
+  insights: {
+    dashboard: "/api/business-insights/dashboard",
+    forecast: "/api/business-insights/forecast",
+    systemStats: "/api/business-insights/system-stats",
+    rollups: "/api/business-insights/rollups",
+  },
   ai: { suggest: "/api/ai/suggest" },
   myHotels: {
     list: "/api/my-hotels",
