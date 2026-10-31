@@ -1,5 +1,5 @@
 import axios, { InternalAxiosRequestConfig } from "axios";
-import Cookies from "js-cookie";
+import { authSession } from "./auth-session";
 
 // API origin: copy .env.local.example → .env.local. Canonical local backend port is 5001 (see backend PORT).
 const viteEnv = (import.meta as ImportMeta & { env?: { VITE_API_BASE_URL?: string } }).env;
@@ -30,18 +30,9 @@ const axiosInstance = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
-// Request interceptor to add Authorization header with JWT token
+// Session auth travels in the httpOnly cookie; no bearer token is attached here.
 axiosInstance.interceptors.request.use((config: CustomAxiosRequestConfig) => {
-  // Get JWT token from localStorage (no more cookie dependency)
-  const token = localStorage.getItem("session_id");
-
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-
-  // Add retry count to track retries
   config.metadata = { retryCount: 0 };
-
   return config;
 });
 
@@ -51,11 +42,9 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     const { config } = error;
 
-    // Handle 401 errors by clearing session
+    // Handle 401 errors by clearing the local session hint; components handle redirects.
     if (error.response?.status === 401) {
-      Cookies.remove("session_id");
-      localStorage.removeItem("session_id");
-      // Don't redirect automatically - let components handle it
+      authSession.clear();
     }
 
     // Handle rate limiting (429) with retry logic
