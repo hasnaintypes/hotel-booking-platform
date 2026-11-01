@@ -18,7 +18,6 @@ const MyBookings = lazy(() => import("@/features/bookings/pages/MyBookingsPage")
 const Home = lazy(() => import("@/features/hotels/pages/HomePage"));
 const ApiDocs = lazy(() => import("@/features/status/pages/ApiDocsPage"));
 const ApiStatus = lazy(() => import("@/features/status/pages/ApiStatusPage"));
-const AnalyticsDashboard = lazy(() => import("@/features/analytics/pages/AnalyticsDashboardPage"));
 const AuthCallback = lazy(() => import("@/features/auth/pages/AuthCallbackPage"));
 
 const App = () => {
@@ -71,14 +70,6 @@ const App = () => {
             element={
               <Layout>
                 <ApiStatus />
-              </Layout>
-            }
-          />
-          <Route
-            path="/business-insights"
-            element={
-              <Layout>
-                <AnalyticsDashboard />
               </Layout>
             }
           />

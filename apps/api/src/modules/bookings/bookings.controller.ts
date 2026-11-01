@@ -14,6 +14,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { BookingsService } from "./bookings.service";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
@@ -33,7 +34,10 @@ export class BookingsController {
 
   @Get("hotel/:hotelId")
   @UseGuards(JwtAuthGuard)
-  findForHotel(@Param("hotelId") hotelId: string, @CurrentUser() user: AuthenticatedUser) {
+  findForHotel(
+    @Param("hotelId", MongoIdPipe) hotelId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
     return this.bookingsService.findForHotel(hotelId, user.userId);
   }
 
@@ -41,7 +45,7 @@ export class BookingsController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   cancel(
-    @Param("id") id: string,
+    @Param("id", MongoIdPipe) id: string,
     @Body() dto: CancelBookingDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -50,14 +54,14 @@ export class BookingsController {
 
   @Get(":id")
   @UseGuards(JwtAuthGuard)
-  findOne(@Param("id") id: string, @CurrentUser() user: AuthenticatedUser) {
+  findOne(@Param("id", MongoIdPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.bookingsService.findOne(id, user.userId);
   }
 
   @Patch(":id/status")
   @UseGuards(JwtAuthGuard)
   updateStatus(
-    @Param("id") id: string,
+    @Param("id", MongoIdPipe) id: string,
     @Body() dto: UpdateStatusDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -67,7 +71,7 @@ export class BookingsController {
   @Patch(":id/payment")
   @UseGuards(JwtAuthGuard)
   updatePayment(
-    @Param("id") id: string,
+    @Param("id", MongoIdPipe) id: string,
     @Body() dto: UpdatePaymentDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -77,7 +81,7 @@ export class BookingsController {
   @Delete(":id")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
-  remove(@Param("id") id: string) {
+  remove(@Param("id", MongoIdPipe) id: string) {
     return this.bookingsService.remove(id);
   }
 }

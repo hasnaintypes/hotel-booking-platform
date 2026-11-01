@@ -3,13 +3,11 @@ import UsernameMenu from "@/features/auth/components/UsernameMenu";
 import { Link } from "react-router-dom";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { getHotelsSearchUrl } from "@/shared/lib/nav-utils";
-import { prefetchBusinessInsightsQueries } from "@/features/analytics/lib/prefetch";
 import { queryClient } from "@hotel-booking/api-client";
 import * as bookingsApi from "@/features/bookings/api";
 import * as hotelManagementApi from "@/features/hotel-management/api";
 import { bookingKeys, hotelKeys } from "@/shared/lib/query-keys";
 import {
-  prefetchAnalyticsRoute,
   prefetchMyBookingsRoute,
   prefetchMyHotelsRoute,
   prefetchSearchRoute,
@@ -42,11 +40,6 @@ const MainNav = () => {
     });
   };
 
-  const prefetchInsights = () => {
-    prefetchAnalyticsRoute();
-    prefetchBusinessInsightsQueries(queryClient);
-  };
-
   return (
     <nav className="flex items-center gap-1 lg:gap-2">
       <Link
@@ -64,14 +57,6 @@ const MainNav = () => {
         onFocus={prefetchMyBookings}
       >
         My Bookings
-      </Link>
-      <Link
-        to="/business-insights"
-        className={navLinkClass}
-        onMouseEnter={prefetchInsights}
-        onFocus={prefetchInsights}
-      >
-        Business Insights
       </Link>
       <Link
         to="/my-hotels"

@@ -9,7 +9,3 @@ export const prefetchMyBookingsRoute = () => {
 export const prefetchMyHotelsRoute = () => {
   void import("@/features/hotel-management/pages/MyHotelsPage");
 };
-
-export const prefetchAnalyticsRoute = () => {
-  void import("@/features/analytics/pages/AnalyticsDashboardPage");
-};

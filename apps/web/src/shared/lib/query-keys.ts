@@ -20,10 +20,3 @@ export const bookingKeys = {
   paymentIntent: (hotelId: string, nights: string) =>
     [...bookingKeys.all, "paymentIntent", hotelId, nights] as const,
 };
-
-export const analyticsKeys = {
-  all: ["analytics"] as const,
-  dashboard: () => [...analyticsKeys.all, "dashboard"] as const,
-  forecast: () => [...analyticsKeys.all, "forecast"] as const,
-  ops: () => [...analyticsKeys.all, "ops"] as const,
-};

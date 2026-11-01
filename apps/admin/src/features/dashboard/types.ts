@@ -7,7 +7,6 @@ export type BusinessInsightsRollup = {
     totalUsers: number;
     totalHotels: number;
     averageBookingValue: number;
-    conversionRate: number;
     cancellationRate: number;
     averageRating: number;
   };

@@ -14,7 +14,9 @@ import { Throttle } from "@nestjs/throttler";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { OptionalJwtAuthGuard } from "../../common/guards/optional-jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { CreateBookingDto } from "./dto/create-booking.dto";
 import { PaymentIntentDto } from "./dto/payment-intent.dto";
@@ -32,20 +34,25 @@ export class HotelsController {
   }
 
   @Get()
-  findAll() {
-    return this.hotelsService.findAll();
+  @UseGuards(OptionalJwtAuthGuard)
+  findAll(@CurrentUser() viewer: AuthenticatedUser | undefined) {
+    return this.hotelsService.findAll(viewer);
   }
 
   @Patch(":id/active")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
-  setActive(@Param("id") id: string, @Body() dto: ToggleActiveDto) {
+  setActive(@Param("id", MongoIdPipe) id: string, @Body() dto: ToggleActiveDto) {
     return this.hotelsService.setActive(id, dto);
   }
 
   @Get(":id")
-  findOne(@Param("id") id: string) {
-    return this.hotelsService.findOne(id);
+  @UseGuards(OptionalJwtAuthGuard)
+  findOne(
+    @Param("id", MongoIdPipe) id: string,
+    @CurrentUser() viewer: AuthenticatedUser | undefined,
+  ) {
+    return this.hotelsService.findOne(id, viewer);
   }
 
   @Post(":hotelId/bookings/payment-intent")
@@ -53,7 +60,7 @@ export class HotelsController {
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 50, ttl: 900000 } })
   createPaymentIntent(
-    @Param("hotelId") hotelId: string,
+    @Param("hotelId", MongoIdPipe) hotelId: string,
     @Body() dto: PaymentIntentDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -64,7 +71,7 @@ export class HotelsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
   createBooking(
-    @Param("hotelId") hotelId: string,
+    @Param("hotelId", MongoIdPipe) hotelId: string,
     @Body() dto: CreateBookingDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {

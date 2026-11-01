@@ -9,7 +9,6 @@ export interface IAnalytics extends Omit<Document, "_id"> {
     totalUsers: number;
     totalHotels: number;
     averageBookingValue: number;
-    conversionRate: number;
     cancellationRate: number;
     averageRating: number;
   };
@@ -51,7 +50,6 @@ export const AnalyticsSchema = new mongoose.Schema(
       totalUsers: { type: Number, default: 0 },
       totalHotels: { type: Number, default: 0 },
       averageBookingValue: { type: Number, default: 0 },
-      conversionRate: { type: Number, default: 0 },
       cancellationRate: { type: Number, default: 0 },
       averageRating: { type: Number, default: 0 },
     },

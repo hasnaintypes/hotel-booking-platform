@@ -21,10 +21,31 @@ export const routes = {
     list: "/api/hotels",
     search: "/api/hotels/search",
     byId: (id: string) => `/api/hotels/${id}`,
+    paymentIntent: (id: string) => `/api/hotels/${id}/bookings/payment-intent`,
+    bookings: (id: string) => `/api/hotels/${id}/bookings`,
+    active: (id: string) => `/api/hotels/${id}/active`,
+  },
+  bookings: {
+    byId: (id: string) => `/api/bookings/${id}`,
+    status: (id: string) => `/api/bookings/${id}/status`,
+    payment: (id: string) => `/api/bookings/${id}/payment`,
+    forHotel: (hotelId: string) => `/api/bookings/hotel/${hotelId}`,
+  },
+  reviews: {
+    create: "/api/reviews",
+    byHotel: (hotelId: string) => `/api/reviews/hotel/${hotelId}`,
+    summary: (hotelId: string) => `/api/reviews/hotel/${hotelId}/summary`,
+  },
+  insights: {
+    dashboard: "/api/business-insights/dashboard",
+    forecast: "/api/business-insights/forecast",
+    systemStats: "/api/business-insights/system-stats",
+    rollups: "/api/business-insights/rollups",
   },
   ai: { suggest: "/api/ai/suggest" },
   myHotels: {
     list: "/api/my-hotels",
     byId: (id: string) => `/api/my-hotels/${id}`,
+    active: (id: string) => `/api/my-hotels/${id}/active`,
   },
 } as const;

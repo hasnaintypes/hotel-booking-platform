@@ -15,6 +15,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
+import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { SESSION_COOKIE_NAME, authCookieOptions } from "../../common/auth-cookie";
 import { RegisterDto } from "./dto/register.dto";
@@ -42,7 +43,7 @@ export class UsersController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
   updateRole(
-    @Param("id") id: string,
+    @Param("id", MongoIdPipe) id: string,
     @Body() dto: UpdateRoleDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {

@@ -42,3 +42,38 @@ export async function promoteToAdmin(t: TestApp, userId: string) {
 export function anonymous(t: TestApp) {
   return request(t.app.getHttpServer());
 }
+
+/** A signed-in admin. */
+export async function registerAdmin(t: TestApp) {
+  const admin = await registerUser(t);
+  await promoteToAdmin(t, admin.user._id);
+  return admin;
+}
+
+let hotelCounter = 0;
+
+/** Inserts a hotel straight into the database (through the model, so the schema still applies). */
+export async function insertHotel(
+  t: TestApp,
+  ownerId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  hotelCounter += 1;
+  const hotel = (await t.connection.model("Hotel").create({
+    userId: ownerId,
+    name: `Test Hotel ${hotelCounter}`,
+    city: "London",
+    country: "United Kingdom",
+    description: "A hotel used by the integration tests.",
+    type: ["Hotel"],
+    adultCount: 2,
+    childCount: 1,
+    facilities: ["Free WiFi"],
+    pricePerNight: 100,
+    starRating: 4,
+    imageUrls: ["https://res.cloudinary.test/image-0.jpg"],
+    lastUpdated: new Date(),
+    ...overrides,
+  })) as unknown as { _id: unknown; name: string };
+  return { id: String(hotel._id), name: hotel.name };
+}

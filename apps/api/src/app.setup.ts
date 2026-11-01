@@ -103,8 +103,10 @@ export function configureApp(app: NestExpressApplication): void {
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
+      // No implicit conversion: it turns any object, and even the string "false", into `true` for a
+      // boolean, and coerces objects to the text "[object Object]". DTOs that accept text input
+      // (query strings, multipart forms) convert explicitly with @Transform.
       transform: true,
-      transformOptions: { enableImplicitConversion: true },
       exceptionFactory: (errors) => new ValidationFailedException(flattenValidationErrors(errors)),
     }),
   );

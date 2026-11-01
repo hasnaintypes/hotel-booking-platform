@@ -113,7 +113,6 @@ export class AnalyticsService {
         totalUsers,
         totalHotels,
         averageBookingValue: Math.round(averageBookingValue * 100) / 100,
-        conversionRate: 0,
         cancellationRate: Math.round(cancellationRate * 10) / 10,
         averageRating,
       },
