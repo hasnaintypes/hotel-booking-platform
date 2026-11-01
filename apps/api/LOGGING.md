@@ -50,4 +50,7 @@ All errors are produced by the single global filter (`src/common/errors/global-e
 - 5xx responses carry a generic `detail`; the real cause is logged server-side with the same `requestId`. No stack traces, SQL, Mongo or Stripe internals reach clients.
 - Throw Nest `HttpException` subclasses (`NotFoundException`, `ConflictException`, …) from services. Do not build error bodies in controllers.
 - Success status codes: `201` for creates (with the created resource), `204` for empty success (for example logout), `200` otherwise.
+- Every mutating handler declares its status with `@HttpCode`; `controller-status.spec.ts` fails when one does not.
+- A known path requested with the wrong method is `405` plus an `Allow` header, not `404`. `route-table.ts` derives the allowed methods from controller metadata.
+- `test/route-matrix.e2e-spec.ts` records the anonymous status of every route; update it when the surface changes.
 - Mapping of body-parser, upload, database, Stripe and unknown errors lives in `exception-mapper.ts` (pure, unit-tested).

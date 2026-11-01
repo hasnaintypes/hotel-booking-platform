@@ -71,6 +71,13 @@ const make = (
   ...extra,
 });
 
+/** A known path requested with a method it does not support. */
+export function methodNotAllowed(allowed: string[]): MappedError {
+  return make(405, "METHOD_NOT_ALLOWED", "The method is not allowed for this resource.", {
+    headers: { Allow: allowed.join(", ") },
+  });
+}
+
 type ErrorLike = {
   name?: string;
   code?: unknown;
