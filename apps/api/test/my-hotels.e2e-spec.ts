@@ -39,6 +39,7 @@ describe("owner hotel create and update", () => {
       );
 
       expect(res.status).toBe(201);
+      expect(res.headers.location).toBe(`/api/my-hotels/${res.body._id}`);
       expect(res.body).toMatchObject({
         name: "Harbour View",
         city: "Bristol",

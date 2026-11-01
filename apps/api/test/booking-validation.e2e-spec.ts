@@ -56,6 +56,7 @@ describe("booking input validation", () => {
   it("accepts a valid booking and trims the text fields", async () => {
     const res = await book({ firstName: "  Gus  ", specialRequests: "  Quiet room  " });
     expect(res.status).toBe(201);
+    expect(res.headers.location).toBe(`/api/bookings/${res.body._id}`);
     expect(res.body).toMatchObject({
       firstName: "Gus",
       specialRequests: "Quiet room",
