@@ -42,11 +42,14 @@ describe("business insights", () => {
     });
   });
 
-  it.each([
+  // Removed public routes are intentionally absent from routes.ts; the test asserts they stay gone.
+  const removedPublicRoutes = [
     "/api/business-insights/dashboard/public",
     "/api/business-insights/forecast/public",
     "/api/business-insights/system-stats/public",
-  ])("no longer serves %s", async (path) => {
+  ];
+
+  it.each(removedPublicRoutes)("no longer serves %s", async (path) => {
     expect((await anonymous(t).get(path)).status).toBe(404);
     expect((await admin.agent.get(path)).status).toBe(404);
   });

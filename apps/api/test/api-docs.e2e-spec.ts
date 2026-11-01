@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, registerUser, withEnv } from "./support/helpers";
+import { routes } from "./support/routes";
 
 const JSON_DOC = "/api-docs-json";
 const UI = "/api-docs/";
@@ -49,7 +50,7 @@ describe("API documentation", () => {
       const doc = await anonymous(app).get(JSON_DOC);
       expect(doc.status).toBe(200);
       expect(doc.body.openapi).toMatch(/^3\./);
-      expect(Object.keys(doc.body.paths)).toContain("/api/hotels");
+      expect(Object.keys(doc.body.paths)).toContain(routes.hotels.list);
 
       expect((await anonymous(app).get(UI)).status).toBe(200);
     });
@@ -139,7 +140,7 @@ describe("API documentation", () => {
 
       it("leaves the product API unaffected", async () => {
         const app = await boot(enabled);
-        expect((await anonymous(app).get("/api/health")).status).toBe(200);
+        expect((await anonymous(app).get(routes.health)).status).toBe(200);
       });
     });
   });

@@ -24,8 +24,8 @@ describe("structured logging", () => {
       level: "info",
       service: "hotel-booking-api",
       method: "GET",
-      path: "/api/hotels",
-      route: "/api/hotels",
+      path: routes.hotels.list,
+      route: routes.hotels.list,
       res: { statusCode: 200 },
     });
     expect(typeof line.responseTime).toBe("number");
@@ -62,8 +62,8 @@ describe("structured logging", () => {
     const raw = t.logs.raw();
     expect(raw).not.toContain("SECRET-QUERY-VALUE");
     expect(accessLogs(t)[0]).toMatchObject({
-      path: "/api/hotels/search",
-      route: "/api/hotels/search",
+      path: routes.hotels.search,
+      route: routes.hotels.search,
     });
   });
 
