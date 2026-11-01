@@ -4,7 +4,9 @@ import { getConnectionToken } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
 import { Connection } from "mongoose";
 import { AppModule } from "../../src/app.module";
+import { ConfigService } from "@nestjs/config";
 import { configureApp } from "../../src/app.setup";
+import { setupSwagger } from "../../src/config/swagger.config";
 import { CloudinaryService } from "../../src/integrations/cloudinary/cloudinary.service";
 import { StripeService } from "../../src/integrations/stripe/stripe.service";
 import { LOG_DESTINATION } from "../../src/common/logging/logging.module";
@@ -25,6 +27,8 @@ export type CreateTestAppOptions = {
   /** Adds the test-only controller that raises each error class. */
   faults?: boolean;
   controllers?: Type<unknown>[];
+  /** Mounts the API documentation the way main.ts does. */
+  docs?: boolean;
 };
 
 /**
@@ -52,6 +56,7 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
 
   const app = moduleRef.createNestApplication<NestExpressApplication>();
   configureApp(app);
+  if (options.docs) setupSwagger(app, app.get(ConfigService));
   await app.init();
 
   const connection = app.get<Connection>(getConnectionToken());

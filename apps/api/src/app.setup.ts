@@ -18,7 +18,7 @@ import { isAllowedOrigin } from "./common/security/allowed-origins";
 const BODY_LIMIT = "100kb";
 
 // The API only returns JSON, so the default policy denies everything. The Swagger UI
-// (served under /api-docs, development only) needs inline scripts and styles, so only
+// (served under /api-docs; off in production unless ENABLE_API_DOCS=true) needs inline scripts and styles, so only
 // that path gets a relaxed policy.
 const strictHeaders = helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
