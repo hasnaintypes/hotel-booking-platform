@@ -28,13 +28,17 @@ export const routes = {
     active: (id: string) => `/api/hotels/${id}/active`,
   },
   bookings: {
+    list: "/api/bookings",
+    myBookings: "/api/my-bookings",
     byId: (id: string) => `/api/bookings/${id}`,
+    cancel: (id: string) => `/api/bookings/${id}/cancel`,
     status: (id: string) => `/api/bookings/${id}/status`,
     payment: (id: string) => `/api/bookings/${id}/payment`,
     forHotel: (hotelId: string) => `/api/bookings/hotel/${hotelId}`,
   },
   reviews: {
     create: "/api/reviews",
+    list: "/api/reviews",
     byHotel: (hotelId: string) => `/api/reviews/hotel/${hotelId}`,
     summary: (hotelId: string) => `/api/reviews/hotel/${hotelId}/summary`,
   },
