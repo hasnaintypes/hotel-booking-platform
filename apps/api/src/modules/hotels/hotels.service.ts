@@ -167,9 +167,16 @@ export class HotelsService {
   }
 
   async setActive(id: string, dto: ToggleActiveDto) {
+    // ToggleActiveDto already guarantees a boolean. Checked again here so that a caller that
+    // bypasses the DTO can never write anything but a boolean into the update.
+    const isActive: unknown = dto.isActive;
+    if (typeof isActive !== "boolean") {
+      throw new BadRequestException("isActive boolean required");
+    }
+
     const hotel = await this.hotelModel.findByIdAndUpdate(
       id,
-      { isActive: dto.isActive, lastUpdated: new Date() },
+      { isActive, lastUpdated: new Date() },
       { new: true },
     );
 
