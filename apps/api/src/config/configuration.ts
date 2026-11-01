@@ -17,6 +17,13 @@ export const configuration = () => {
       environment: nodeEnv,
     },
     port,
+    apiDocs: {
+      // On outside production; in production only when ENABLE_API_DOCS=true (and then admin-only).
+      enabled:
+        process.env.ENABLE_API_DOCS !== undefined
+          ? process.env.ENABLE_API_DOCS === "true"
+          : nodeEnv !== "production",
+    },
     frontendUrl: stripTrailingSlash(process.env.FRONTEND_URL) || "http://localhost:5174",
     adminUrl: stripTrailingSlash(process.env.ADMIN_URL) || "http://localhost:5175",
     backendUrl: stripTrailingSlash(process.env.BACKEND_URL) || `http://localhost:${port}`,
@@ -41,6 +48,10 @@ export const configuration = () => {
     },
     stripe: {
       apiKey: process.env.STRIPE_API_KEY,
+    },
+    auth: {
+      // Failed sign-ins per account before it is locked for 15 minutes.
+      maxFailedLogins: parseInt(process.env.AUTH_MAX_FAILED_LOGINS || "5", 10),
     },
     booking: {
       maxNights: parseInt(process.env.BOOKING_MAX_NIGHTS || "30", 10),

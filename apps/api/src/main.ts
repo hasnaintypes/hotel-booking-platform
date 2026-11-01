@@ -36,14 +36,18 @@ async function bootstrap() {
 
   configureApp(app);
 
-  setupSwagger(app, config);
+  const docsMounted = setupSwagger(app, config);
   app.enableShutdownHooks();
 
   await app.listen(port, "0.0.0.0");
 
   const logger = new Logger("Bootstrap");
   logger.log(`Server listening on port ${port} (public URL ${backendUrl})`);
-  logger.log(`API docs: ${backendUrl}/api-docs, health: ${backendUrl}/api/health`);
+  logger.log(
+    docsMounted
+      ? `API docs: ${backendUrl}/api-docs, health: ${backendUrl}/api/health`
+      : `API docs are disabled (set ENABLE_API_DOCS=true to enable), health: ${backendUrl}/api/health`,
+  );
 }
 
 bootstrap();

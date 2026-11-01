@@ -5,10 +5,12 @@ import * as authApi from "@/features/auth/api";
 import { useToast } from "@/shared/context/ToastContext";
 import type { SignInFormData } from "@/features/auth/types";
 import { welcomeBackToast } from "@/shared/lib/toast-messages";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { StaggerItem } from "@hotel-booking/ui";
 import { Mail, Lock, Eye, EyeOff, Sparkles, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { oauthErrorMessage } from "@/features/auth/lib/oauth-errors";
+import { apiErrorMessage } from "@/shared/lib/api-error";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
@@ -56,6 +58,7 @@ const SignIn = () => {
   const [selectedRole, setSelectedRole] = useState<string>("");
 
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     register,
@@ -89,11 +92,19 @@ const SignIn = () => {
     onError: (error: Error) => {
       showToast({
         title: "Sign In Failed",
-        description: error.message,
+        description: apiErrorMessage(error),
         type: "ERROR",
       });
     },
   });
+
+  // The API sends people back here with ?error=<reason> when Google sign-in did not complete.
+  useEffect(() => {
+    const code = searchParams.get("error");
+    if (!code) return;
+    showToast({ title: "Sign-in failed", description: oauthErrorMessage(code), type: "ERROR" });
+    setSearchParams({}, { replace: true });
+  }, [searchParams, setSearchParams, showToast]);
 
   const onSubmit = handleSubmit((data) => {
     setIsLoading(true);

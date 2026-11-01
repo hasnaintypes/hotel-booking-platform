@@ -10,6 +10,9 @@ const REQUIRED_ENV_VARS = [
 /** Optional whole-number settings and the range each may take: [name, min, max]. */
 const INTEGER_SETTINGS: Array<[string, number, number]> = [
   ["BOOKING_MAX_NIGHTS", 1, 365],
+  ["BCRYPT_COST", 4, 15],
+  ["AUTH_RATE_LIMIT", 1, 10_000],
+  ["AUTH_MAX_FAILED_LOGINS", 1, 100],
   ["AI_DAILY_QUOTA", 1, 10_000],
   ["AI_PER_MINUTE_LIMIT", 1, 600],
   ["AI_REQUEST_DEADLINE_MS", 1_000, 120_000],
@@ -38,6 +41,11 @@ export const validateEnv = (config: Record<string, unknown>) => {
     );
   }
 
+  const apiDocs = config.ENABLE_API_DOCS;
+  if (apiDocs !== undefined && apiDocs !== "true" && apiDocs !== "false") {
+    throw new Error(`Invalid ENABLE_API_DOCS "${String(apiDocs)}". Use "true" or "false"`);
+  }
+
   for (const [name, min, max] of INTEGER_SETTINGS) {
     const value = config[name];
     if (value === undefined || value === "") continue;
@@ -45,6 +53,16 @@ export const validateEnv = (config: Record<string, unknown>) => {
     if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
       throw new Error(
         `Invalid ${name} "${String(value)}". Use a whole number from ${min} to ${max}`,
+      );
+    }
+  }
+
+  // BCRYPT_COST exists so tests can hash quickly. A production server must not be weakened by it.
+  const bcryptCost = config.BCRYPT_COST;
+  if (config.NODE_ENV === "production" && bcryptCost !== undefined && bcryptCost !== "") {
+    if (Number(bcryptCost) < 12) {
+      throw new Error(
+        `BCRYPT_COST "${String(bcryptCost)}" is too low for production; use 12 or more`,
       );
     }
   }

@@ -10,12 +10,14 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
 import { Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
+import { authRateLimit } from "../../common/security/auth-rate-limit";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { SESSION_COOKIE_NAME, authCookieOptions } from "../../common/auth-cookie";
 import { RegisterDto } from "./dto/register.dto";
@@ -51,6 +53,7 @@ export class UsersController {
   }
 
   @Post("register")
+  @Throttle(authRateLimit)
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { token } = await this.usersService.register(dto);

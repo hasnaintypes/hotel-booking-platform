@@ -5,6 +5,7 @@ import * as authApi from "@/features/auth/api";
 import { useToast } from "@/shared/context/ToastContext";
 import type { RegisterFormData } from "@/features/auth/types";
 import { welcomeNewToast } from "@/shared/lib/toast-messages";
+import { apiErrorMessage } from "@/shared/lib/api-error";
 import { StaggerItem } from "@hotel-booking/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, User, Sparkles, CheckCircle, Sparkle } from "lucide-react";
@@ -41,7 +42,7 @@ const Register = () => {
     onError: (error: Error) => {
       showToast({
         title: "Registration Failed",
-        description: error.message,
+        description: apiErrorMessage(error),
         type: "ERROR",
       });
     },
@@ -188,8 +189,12 @@ const Register = () => {
                       {...register("password", {
                         required: "Password is required",
                         minLength: {
-                          value: 6,
-                          message: "Password must be at least 6 characters",
+                          value: 10,
+                          message: "Password must be at least 10 characters",
+                        },
+                        maxLength: {
+                          value: 72,
+                          message: "Password must be at most 72 characters",
                         },
                       })}
                     />
@@ -207,6 +212,9 @@ const Register = () => {
                       )}
                     </Button>
                   </div>
+                  <p className="text-xs text-gray-500">
+                    Use at least 10 characters and avoid common passwords such as “password123”.
+                  </p>
                   {errors.password && (
                     <div className="flex items-center mt-1">
                       <Badge variant="outline" className="text-red-500 border-red-200 bg-red-50">

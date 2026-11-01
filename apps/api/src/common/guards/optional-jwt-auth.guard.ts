@@ -1,27 +1,28 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { JwtPayload } from "../types/jwt-payload.interface";
-import { extractToken } from "./jwt-auth.guard";
+import { InjectConnection } from "@nestjs/mongoose";
+import { Connection } from "mongoose";
+import { activeUserIdFromToken, extractToken } from "./jwt-auth.guard";
 
 /**
  * For public routes whose response depends on who is asking. It identifies the caller when a valid
- * session is present and never rejects: a missing or invalid session is simply anonymous.
+ * session of an active account is present and never rejects: a missing, invalid or deactivated
+ * session is simply anonymous.
  */
 @Injectable()
 export class OptionalJwtAuthGuard implements CanActivate {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    @InjectConnection() private readonly connection: Connection,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = extractToken(request);
 
     if (token) {
-      try {
-        const payload = this.jwtService.verify<JwtPayload>(token);
-        request.user = { userId: payload.userId };
-      } catch {
-        // Treated as anonymous.
-      }
+      const userId = await activeUserIdFromToken(this.jwtService, this.connection, token);
+      if (userId) request.user = { userId };
     }
 
     return true;

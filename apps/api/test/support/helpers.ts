@@ -43,6 +43,24 @@ export function anonymous(t: TestApp) {
   return request(t.app.getHttpServer());
 }
 
+/**
+ * Sets environment variables for the app a test is about to create (configuration is read when the
+ * app boots). Returns a function that puts the previous values back.
+ */
+export function withEnv(values: Record<string, string>): () => void {
+  const previous: Record<string, string | undefined> = {};
+  for (const [key, value] of Object.entries(values)) {
+    previous[key] = process.env[key];
+    process.env[key] = value;
+  }
+  return () => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  };
+}
+
 /** A signed-in admin. */
 export async function registerAdmin(t: TestApp) {
   const admin = await registerUser(t);
