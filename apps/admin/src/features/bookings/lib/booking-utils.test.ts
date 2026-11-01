@@ -1,6 +1,6 @@
 import type { BookingType } from "@hotel-booking/types";
 import { describe, expect, it } from "vitest";
-import { isBookingCancellable } from "./booking-utils";
+import { isBookingCancellable } from "@hotel-booking/types";
 
 const booking = (overrides: Partial<BookingType> = {}): BookingType =>
   ({
