@@ -4,7 +4,11 @@ import { insertHotel, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
 const DAY = 24 * 60 * 60 * 1000;
-const inDays = (days: number) => new Date(Date.now() + days * DAY).toISOString();
+// One fixed reference time, so two dates built from it differ by exactly whole days. Calling
+// Date.now() separately for check-in and check-out could add a millisecond to a stay, which
+// rounds up to an extra night.
+const NOW = Date.now();
+const inDays = (days: number) => new Date(NOW + days * DAY).toISOString();
 
 describe("booking input validation", () => {
   let t: TestApp;
