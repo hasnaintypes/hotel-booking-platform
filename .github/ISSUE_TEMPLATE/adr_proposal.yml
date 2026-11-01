@@ -1,0 +1,59 @@
+name: ADR proposal
+description: Propose an architecture decision record before implementation
+title: "adr: "
+labels: ["type:docs", "status:needs-decision"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for decisions that constrain future work: data platforms, routing contracts, payments,
+        supplier integration or anything that is expensive to reverse.
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: The forces at play, current state and why a decision is needed now.
+    validations:
+      required: true
+  - type: textarea
+    id: decision
+    attributes:
+      label: Proposed decision
+      description: State the decision in one or two sentences, then the details.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include the option of doing nothing and why it was rejected.
+    validations:
+      required: true
+  - type: textarea
+    id: consequences
+    attributes:
+      label: Consequences
+      description: What becomes easier, what becomes harder, and what must change in code, docs or CI.
+    validations:
+      required: true
+  - type: dropdown
+    id: areas
+    attributes:
+      label: Affected areas
+      multiple: true
+      options:
+        - API contracts and routing
+        - Data platform and migrations
+        - Payments and refunds
+        - Supplier integration
+        - Security and identity
+        - Observability
+        - Frontend architecture
+        - CI and deployment
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Linked issues, audit findings, prior ADRs or external documentation.

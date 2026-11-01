@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/hasnaintypes/hotel-booking-platform/security/advisories/new
+    about: Report vulnerabilities privately; do not open a public issue with exploit details.
+  - name: Setup and troubleshooting
+    url: https://github.com/hasnaintypes/hotel-booking-platform/blob/main/README.md
+    about: Check the README and CONTRIBUTING before opening a general question.

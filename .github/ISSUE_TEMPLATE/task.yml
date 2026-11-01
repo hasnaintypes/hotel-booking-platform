@@ -1,0 +1,66 @@
+name: Task
+description: Propose a scoped piece of work with clear acceptance criteria
+title: "task: "
+labels: []
+body:
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Why is this needed now? Link the roadmap item, audit finding or ADR.
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: The concrete steps this issue covers.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Observable conditions that let us close the issue. Keep these testable.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: areas
+    attributes:
+      label: Affected areas
+      multiple: true
+      options:
+        - API (apps/api)
+        - Web (apps/web)
+        - Admin (apps/admin)
+        - Shared packages
+        - Database
+        - Payments
+        - Infrastructure or CI
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: tests
+    attributes:
+      label: Tests required
+      description: Unit, e2e, real-database or manual verification. Write "n/a" with a reason if none.
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Other issues or external decisions this depends on, or "none".
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: This issue is scoped to one change and does not include implementation that needs a milestone plan approval.
+          required: true

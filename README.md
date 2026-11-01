@@ -132,9 +132,9 @@ The API has an end-to-end harness that boots the real application against a disp
 
 ## Contributing
 
-- Never push to `main`. Create a branch (`feat/…`, `fix/…`, `docs/…`), keep commits small with a Conventional Commit subject such as `feat(web): …`, and open a pull request. `main` is protected and requires the `verify` check to pass.
-- Before opening a PR run `pnpm check:license`, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm check:bundle`.
-- Style: TypeScript, two-space indent, double quotes, 100-column Prettier.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit and pull request rules, the labels, the verification commands and the Definition of Done. In short: never push to `main`; work on a short-lived branch, keep commits small and open a pull request through the template. `main` is protected and requires the `verify` check to pass.
+
+Style: TypeScript, two-space indent, double quotes, 100-column Prettier.
 
 ## Troubleshooting
 

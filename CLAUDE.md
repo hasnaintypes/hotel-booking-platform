@@ -58,6 +58,8 @@ Setup: copy each app's `.env.example` to `.env`. The API refuses to start withou
 
 ## Git workflow
 
+Contributor-facing rules live in `CONTRIBUTING.md`; keep that file and this section in sync.
+
 - **Never commit or push directly to `main`.** Create a branch first (`feat/...`, `fix/...`, `chore/...`, `docs/...`, `refactor/...`), push it, and open a PR into `main` with `gh pr create`. Merge only through the PR.
 - Keep commits small and modular: one logical change per commit, never a single commit for unrelated work. Format: a one-line Conventional Commit subject with a scope (`feat(web): ...`), then, when the change needs explaining, a blank line and 2–3 bullets saying what changed and why.
 - **No `Co-Authored-By` trailers and no "Generated with" lines** in commits or PR descriptions.
