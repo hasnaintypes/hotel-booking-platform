@@ -1,5 +1,6 @@
+import pino from "pino";
 import { describe, expect, it } from "vitest";
-import { pathOnly, scrubSecrets } from "./redaction";
+import { REDACT_CENSOR, REDACT_PATHS, pathOnly, scrubSecrets } from "./redaction";
 import { resolveRequestId } from "./request-id";
 
 describe("scrubSecrets", () => {
@@ -40,5 +41,67 @@ describe("resolveRequestId", () => {
     ]) {
       expect(resolveRequestId(bad as string)).toMatch(/^[0-9a-f-]{36}$/);
     }
+  });
+});
+
+describe("redaction config", () => {
+  it("covers the sensitive headers and fields we promise never to log", () => {
+    expect(REDACT_PATHS).toEqual(
+      expect.arrayContaining([
+        "req.headers.authorization",
+        "req.headers.cookie",
+        "req.headers['x-api-key']",
+        "req.headers['stripe-signature']",
+        "res.headers['set-cookie']",
+        "*.password",
+        "*.token",
+        "*.secret",
+        "*.cardNumber",
+        "*.cvc",
+      ]),
+    );
+  });
+
+  it("redacts representative values with pino", () => {
+    let output = "";
+    const stream = { write: (chunk: string) => void (output += chunk) };
+    const logger = pino({ redact: { paths: REDACT_PATHS, censor: REDACT_CENSOR } }, stream);
+
+    logger.info(
+      {
+        req: {
+          headers: {
+            authorization: "Bearer bearer-secret",
+            cookie: "sid=cookie-secret",
+            "x-api-key": "api-key-secret",
+            "stripe-signature": "signature-secret",
+          },
+        },
+        res: { headers: { "set-cookie": ["sid=set-cookie-secret"] } },
+        user: {
+          password: "password-secret",
+          token: "token-secret",
+          secret: "client-secret",
+          cardNumber: "4242424242424242",
+          cvc: "123",
+        },
+      },
+      "redaction check",
+    );
+
+    for (const secret of [
+      "bearer-secret",
+      "cookie-secret",
+      "api-key-secret",
+      "signature-secret",
+      "set-cookie-secret",
+      "password-secret",
+      "token-secret",
+      "client-secret",
+      "4242424242424242",
+    ]) {
+      expect(output).not.toContain(secret);
+    }
+    expect(output).toContain(REDACT_CENSOR);
   });
 });
