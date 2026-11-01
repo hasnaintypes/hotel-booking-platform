@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button, Input, Label } from "@hotel-booking/ui";
-import { getErrorMessage } from "@/shared/lib/api-error";
+import { apiErrorMessage } from "@hotel-booking/api-client";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { signIn } from "../api";
 import useAuth from "../hooks/useAuth";
@@ -32,7 +32,7 @@ const SignInPage = () => {
       navigate(from, { replace: true });
     },
     onError: (err) => {
-      setError(getErrorMessage(err, "Sign in failed. Check your credentials."));
+      setError(apiErrorMessage(err, "Sign in failed. Check your credentials."));
     },
   });
 

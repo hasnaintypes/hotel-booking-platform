@@ -5,7 +5,6 @@ import * as authApi from "@/features/auth/api";
 import { useToast } from "@/shared/context/ToastContext";
 import type { RegisterFormData } from "@/features/auth/types";
 import { welcomeNewToast } from "@/shared/lib/toast-messages";
-import { apiErrorMessage } from "@/shared/lib/api-error";
 import { StaggerItem } from "@hotel-booking/ui";
 import { useNavigate, Link } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, User, Sparkles, CheckCircle, Sparkle } from "lucide-react";
@@ -16,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hote
 import { Label } from "@hotel-booking/ui";
 import { Separator } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
+import { apiErrorMessage } from "@hotel-booking/api-client";
 
 const Register = () => {
   const queryClient = useQueryClient();

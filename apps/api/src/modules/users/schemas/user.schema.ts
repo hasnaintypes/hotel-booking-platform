@@ -32,8 +32,11 @@ export const UserSchema = new mongoose.Schema(
     },
     totalBookings: { type: Number, default: 0 },
     totalSpent: { type: Number, default: 0 },
+    // Dead field: no application code writes it (only the seed does). Kept until the M1/M2
+    // schema redesign decides whether login tracking belongs on the user at all.
     lastLogin: { type: Date },
     isActive: { type: Boolean, default: true },
+    // Also unused today: no code path sets it (Google sign-in checks `verified_email` instead).
     emailVerified: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

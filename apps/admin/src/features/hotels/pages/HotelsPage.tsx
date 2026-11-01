@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import type { HotelType } from "@hotel-booking/types";
 import { Badge, Button, DataTable } from "@hotel-booking/ui";
+import { apiErrorMessage } from "@hotel-booking/api-client";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/shared/lib/api-error";
 import { getHotelUrl } from "@/shared/lib/app-urls";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminCatalogs } from "@/shared/lib/query-invalidation";
@@ -35,7 +35,7 @@ const HotelsPage = () => {
         queryClient.setQueryData(adminKeys.hotels, context.previous);
       }
       toast.error("Failed to update hotel", {
-        description: getErrorMessage(error, "Please try again in a moment."),
+        description: apiErrorMessage(error, "Please try again in a moment."),
       });
     },
     onSuccess: () => {

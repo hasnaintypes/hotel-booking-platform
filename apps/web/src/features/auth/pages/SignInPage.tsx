@@ -10,7 +10,6 @@ import { StaggerItem } from "@hotel-booking/ui";
 import { Mail, Lock, Eye, EyeOff, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { oauthErrorMessage } from "@/features/auth/lib/oauth-errors";
-import { apiErrorMessage } from "@/shared/lib/api-error";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
@@ -18,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hote
 import { Label } from "@hotel-booking/ui";
 import { Separator } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
+import { apiErrorMessage } from "@hotel-booking/api-client";
 
 /** Matches seed.ts: test@user.com → Test Admin (role=admin) */
 const testAccounts = {

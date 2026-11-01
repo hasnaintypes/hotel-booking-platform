@@ -18,12 +18,12 @@ pnpm --filter @hotel-booking/admin dev     # :5175
 
 pnpm lint            # eslint --max-warnings 0
 pnpm typecheck
-pnpm test            # vitest in web + admin only; the API has no tests
+pnpm test            # vitest in every workspace, including API unit + e2e
 pnpm build
 pnpm check:bundle    # run after build; entry chunks capped at 430 kB raw / 140 kB gzip
 ```
 
-CI (`.github/workflows/ci.yml`) runs install → lint → typecheck → test → build → check:bundle. It does not run `format:check`, which currently fails on ~50 files; use `pnpm format:code` (apps/packages only) rather than `pnpm format` (whole repo) so you don't reformat unrelated files.
+CI (`.github/workflows/ci.yml`) runs install → check:license → check:unused → format:check → audit → lint → typecheck → test → build → check:bundle, plus a `container` job that builds the API image and checks non-root, read-only, health and no API docs. Use `pnpm format:code` (apps/packages only) rather than `pnpm format` (whole repo) so you don't reformat unrelated files.
 
 Single test file or name:
 

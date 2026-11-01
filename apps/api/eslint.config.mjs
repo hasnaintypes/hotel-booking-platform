@@ -23,6 +23,8 @@ export default [
     rules: {
       ...tseslint.configs.recommended.rules,
       "no-undef": "off",
+      // Use the Nest/pino logger in application code; the seed script and tests may use console.
+      "no-console": "error",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/no-unused-vars": [
@@ -30,5 +32,9 @@ export default [
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
     },
+  },
+  {
+    files: ["src/database/seeds/**/*.ts", "test/**/*.ts", "src/**/*.spec.ts"],
+    rules: { "no-console": "off" },
   },
 ];

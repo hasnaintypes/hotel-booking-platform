@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as bookingsApi from "@/features/bookings/api";
 import { invalidateBookingQueries } from "@/shared/lib/query-invalidation";
-import { isBookingCancellable } from "@/features/bookings/lib/booking-utils";
-import type { BookingType } from "@hotel-booking/types";
+
+import { isBookingCancellable, type BookingType } from "@hotel-booking/types";
 import { Button } from "@hotel-booking/ui";
 import { useToast } from "@/shared/context/ToastContext";
 

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Badge, Button } from "@hotel-booking/ui";
+import { getErrorStatus } from "@hotel-booking/api-client";
 import { toast } from "sonner";
-import { getErrorStatus } from "@/shared/lib/api-error";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminInsights } from "@/shared/lib/query-invalidation";
 import { createRollup, fetchInsightsDashboard, fetchRollups, suggestInsightsCopy } from "../api";

@@ -1,7 +1,7 @@
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@hotel-booking/ui";
-import { getErrorStatus } from "@/shared/lib/api-error";
+import { getErrorStatus } from "@hotel-booking/api-client";
 import { getWebUrl } from "@/shared/lib/app-urls";
 import { signOut } from "../api";
 import useAuth from "../hooks/useAuth";

@@ -12,6 +12,11 @@ type ProblemBody = {
 const isText = (value: unknown): value is string =>
   typeof value === "string" && value.trim() !== "";
 
+/** The HTTP status of a failed API call, or `undefined` when there is no response. */
+export function getErrorStatus(error: unknown): number | undefined {
+  return (error as { response?: { status?: number } })?.response?.status;
+}
+
 /**
  * The most helpful text for a failed API call: the server's field messages (for example the
  * password rule), otherwise its summary, otherwise a neutral fallback. Axios' own message
