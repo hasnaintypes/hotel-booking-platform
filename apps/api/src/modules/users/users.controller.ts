@@ -42,6 +42,7 @@ export class UsersController {
   }
 
   @Patch(":id/role")
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
   updateRole(
@@ -56,8 +57,9 @@ export class UsersController {
   @Throttle(authRateLimit)
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const { token } = await this.usersService.register(dto);
+    const { token, user } = await this.usersService.register(dto);
     res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());
-    return { message: "User registered OK" };
+    res.setHeader("Location", "/api/users/me");
+    return user;
   }
 }

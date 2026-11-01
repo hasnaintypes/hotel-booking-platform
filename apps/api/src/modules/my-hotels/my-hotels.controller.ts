@@ -3,15 +3,19 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
   Put,
+  Res,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
+import type { Response } from "express";
 import multer from "multer";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -33,13 +37,17 @@ export class MyHotelsController {
   constructor(private readonly myHotelsService: MyHotelsService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
-  create(
+  async create(
     @Body() dto: HotelFormDto,
     @UploadedFiles() files: Express.Multer.File[],
     @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.myHotelsService.create(dto, files, user.userId);
+    const hotel = await this.myHotelsService.create(dto, files, user.userId);
+    res.setHeader("Location", `/api/my-hotels/${hotel._id}`);
+    return hotel;
   }
 
   @Get()
@@ -53,6 +61,7 @@ export class MyHotelsController {
   }
 
   @Patch(":id/active")
+  @HttpCode(HttpStatus.OK)
   setActive(
     @Param("id", MongoIdPipe) id: string,
     @Body("isActive") isActive: unknown,
@@ -65,6 +74,7 @@ export class MyHotelsController {
   }
 
   @Put(":hotelId")
+  @HttpCode(HttpStatus.OK)
   @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
   update(
     @Param("hotelId", MongoIdPipe) hotelId: string,

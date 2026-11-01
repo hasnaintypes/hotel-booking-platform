@@ -59,6 +59,7 @@ export class BookingsController {
   }
 
   @Patch(":id/status")
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   updateStatus(
     @Param("id", MongoIdPipe) id: string,
@@ -69,6 +70,7 @@ export class BookingsController {
   }
 
   @Patch(":id/payment")
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   updatePayment(
     @Param("id", MongoIdPipe) id: string,
@@ -79,6 +81,7 @@ export class BookingsController {
   }
 
   @Delete(":id")
+  @HttpCode(HttpStatus.NO_CONTENT)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
   remove(@Param("id", MongoIdPipe) id: string) {
