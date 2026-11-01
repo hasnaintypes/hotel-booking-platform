@@ -70,6 +70,34 @@ export async function registerAdmin(t: TestApp) {
 
 let hotelCounter = 0;
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Inserts a booking straight into the database, bypassing the Stripe payment flow. */
+export async function insertBooking(
+  t: TestApp,
+  userId: string,
+  hotelId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  const now = Date.now();
+  const booking = (await t.connection.model("Booking").create({
+    userId,
+    hotelId,
+    firstName: "Gus",
+    lastName: "Guest",
+    email: "guest@example.test",
+    adultCount: 1,
+    childCount: 0,
+    checkIn: new Date(now + 10 * DAY_MS),
+    checkOut: new Date(now + 12 * DAY_MS),
+    totalCost: 200,
+    status: "confirmed",
+    paymentStatus: "paid",
+    ...overrides,
+  })) as unknown as { _id: unknown };
+  return { id: String(booking._id) };
+}
+
 /** Inserts a hotel straight into the database (through the model, so the schema still applies). */
 export async function insertHotel(
   t: TestApp,
