@@ -7,6 +7,14 @@ const REQUIRED_ENV_VARS = [
   "STRIPE_API_KEY",
 ] as const;
 
+/** Optional whole-number settings and the range each may take: [name, min, max]. */
+const INTEGER_SETTINGS: Array<[string, number, number]> = [
+  ["BOOKING_MAX_NIGHTS", 1, 365],
+  ["AI_DAILY_QUOTA", 1, 10_000],
+  ["AI_PER_MINUTE_LIMIT", 1, 600],
+  ["AI_REQUEST_DEADLINE_MS", 1_000, 120_000],
+];
+
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"];
 const LOG_FORMATS = ["json", "pretty"];
 
@@ -30,12 +38,13 @@ export const validateEnv = (config: Record<string, unknown>) => {
     );
   }
 
-  const maxNights = config.BOOKING_MAX_NIGHTS;
-  if (maxNights !== undefined && maxNights !== "") {
-    const parsed = Number(maxNights);
-    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 365) {
+  for (const [name, min, max] of INTEGER_SETTINGS) {
+    const value = config[name];
+    if (value === undefined || value === "") continue;
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
       throw new Error(
-        `Invalid BOOKING_MAX_NIGHTS "${String(maxNights)}". Use a whole number from 1 to 365`,
+        `Invalid ${name} "${String(value)}". Use a whole number from ${min} to ${max}`,
       );
     }
   }
