@@ -268,8 +268,8 @@ describe("bookings", () => {
         .findOne({ _id: new Types.ObjectId(hotelId) });
 
       const res = await admin.agent.delete(routes.bookings.byId(fresh.id));
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual({ message: "Booking deleted successfully" });
+      expect(res.status).toBe(204);
+      expect(res.text).toBe("");
 
       const afterHotel = await t.connection
         .collection("hotels")
@@ -286,7 +286,7 @@ describe("bookings", () => {
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });
 
-      expect((await admin.agent.delete(routes.bookings.byId(fresh.id))).status).toBe(200);
+      expect((await admin.agent.delete(routes.bookings.byId(fresh.id))).status).toBe(204);
       const afterHotel = await t.connection
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });

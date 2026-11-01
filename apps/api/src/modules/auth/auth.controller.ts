@@ -87,6 +87,7 @@ export class AuthController {
   }
 
   @Post("logout")
+  @HttpCode(HttpStatus.NO_CONTENT)
   logout(@Res() res: Response) {
     res.cookie(SESSION_COOKIE_NAME, "", {
       ...clearAuthCookieOptions(),

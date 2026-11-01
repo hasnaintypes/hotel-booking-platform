@@ -18,9 +18,16 @@ describe("auth and sessions", () => {
   });
 
   it("registers a user and starts a cookie session", async () => {
-    const res = await anonymous(t).post(routes.auth.register).send(newCredentials());
+    const credentials = newCredentials();
+    const res = await anonymous(t).post(routes.auth.register).send(credentials);
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ message: "User registered OK" });
+    expect(res.body).toMatchObject({
+      email: credentials.email,
+      firstName: credentials.firstName,
+      lastName: credentials.lastName,
+    });
+    expect(res.body).not.toHaveProperty("password");
+    expect(res.headers.location).toBe("/api/users/me");
     const cookie = sessionCookie(res);
     expect(cookie).toBeDefined();
     expect(cookie).toMatch(/HttpOnly/i);

@@ -40,6 +40,12 @@ describe("error responses (problem details)", () => {
     expectProblem(res, 404, "NOT_FOUND");
   });
 
+  it("returns 405 with Allow when the path exists under another method", async () => {
+    const res = await anonymous(t).post(routes.health);
+    expectProblem(res, 405, "METHOD_NOT_ALLOWED");
+    expect(res.headers.allow).toBe("GET");
+  });
+
   it("serves nothing at the API root", async () => {
     const res = await anonymous(t).get("/");
     expectProblem(res, 404, "NOT_FOUND");

@@ -8,9 +8,11 @@ import {
   Patch,
   Post,
   Query,
+  Res,
   UseGuards,
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
+import type { Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
@@ -40,6 +42,7 @@ export class HotelsController {
   }
 
   @Patch(":id/active")
+  @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
   setActive(@Param("id", MongoIdPipe) id: string, @Body() dto: ToggleActiveDto) {
@@ -70,11 +73,14 @@ export class HotelsController {
   @Post(":hotelId/bookings")
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
-  createBooking(
+  async createBooking(
     @Param("hotelId", MongoIdPipe) hotelId: string,
     @Body() dto: CreateBookingDto,
     @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.hotelsService.createBooking(hotelId, dto, user.userId);
+    const booking = await this.hotelsService.createBooking(hotelId, dto, user.userId);
+    res.setHeader("Location", `/api/bookings/${booking._id}`);
+    return booking;
   }
 }

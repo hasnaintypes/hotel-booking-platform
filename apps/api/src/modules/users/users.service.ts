@@ -61,6 +61,8 @@ export class UsersService {
     await user.save();
 
     const token = this.jwtService.sign({ userId: user.id });
-    return { token };
+    const created = user.toObject() as Record<string, unknown>;
+    delete created.password;
+    return { token, user: created };
   }
 }
