@@ -18,6 +18,10 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
+      # @types/node majors track the Node runtime major, which is pinned to 22
+      # (.nvmrc, CI); a newer types major would type APIs the runtime lacks.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
