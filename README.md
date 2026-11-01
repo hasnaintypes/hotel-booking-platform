@@ -42,16 +42,17 @@ Deeper documentation (architecture, API, data model, patterns, deployment) is in
 
 ## Getting started
 
-**Prerequisites:** Node 22, pnpm 10.15 (`corepack enable`), Docker (or a MongoDB Atlas URI), and Stripe and Cloudinary test accounts.
+**Prerequisites:** Node 22, pnpm 10.15 (`corepack enable`), Docker (PostgreSQL 17 and MongoDB 7 locally, or a MongoDB Atlas URI), and Stripe and Cloudinary test accounts.
 
 ```bash
 pnpm install --frozen-lockfile
-docker compose up -d mongo            # local MongoDB on :27017
+docker compose up -d mongo postgres   # MongoDB on :27017 and PostgreSQL on :5432
 
 cp apps/api/.env.example   apps/api/.env      # fill in the required values
 cp apps/web/.env.example   apps/web/.env
 cp apps/admin/.env.example apps/admin/.env
 
+pnpm db:migrate                       # apply PostgreSQL migrations
 pnpm dev                              # API, web and admin together
 ```
 
@@ -69,7 +70,8 @@ The API exits at startup if a required variable is missing. Browser apps only re
 
 | Variable | App | Required | Purpose |
 | --- | --- | --- | --- |
-| `MONGODB_CONNECTION_STRING` | api | Yes | MongoDB URI |
+| `MONGODB_CONNECTION_STRING` | api | Yes | MongoDB URI (runtime store until the M1 port completes) |
+| `DATABASE_URL` | api | For `db:*` | PostgreSQL connection string |
 | `JWT_SECRET_KEY` | api | Yes | JWT signing secret (`openssl rand -base64 64`) |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | api | Yes | Image uploads |
 | `STRIPE_API_KEY` | api | Yes | Stripe secret key (`sk_test_…` locally) |
