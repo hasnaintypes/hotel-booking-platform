@@ -5,18 +5,21 @@
   "license": "MIT",
   "packageManager": "pnpm@10.15.0",
   "scripts": {
-    "dev": "turbo run dev",
     "build": "turbo run build",
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "check:license": "node scripts/check-license.mjs",
     "check:unused": "knip",
+    "clean": "turbo run clean",
+    "db:check": "turbo run db:check",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "turbo run db:migrate",
+    "dev": "turbo run dev",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:code": "prettier --write \"{apps,packages}/**/*.{ts,tsx,js,jsx,mjs,cjs,css,html}\"",
     "lint": "turbo run lint",
     "test": "turbo run test",
-    "typecheck": "turbo run typecheck",
-    "format": "prettier --write .",
-    "format:code": "prettier --write \"{apps,packages}/**/*.{ts,tsx,js,jsx,mjs,cjs,css,html}\"",
-    "format:check": "prettier --check .",
-    "clean": "turbo run clean"
+    "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
     "knip": "^6.44.1",

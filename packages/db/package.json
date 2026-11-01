@@ -1,0 +1,40 @@
+{
+  "name": "@hotel-booking/db",
+  "version": "0.0.0",
+  "license": "MIT",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "scripts": {
+    "db:check": "drizzle-kit check && node scripts/check-drift.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "lint": "eslint . --max-warnings 0",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.18.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.15.6",
+    "@typescript-eslint/eslint-plugin": "^8.72.1",
+    "@typescript-eslint/parser": "^8.72.1",
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^10.14.0",
+    "globals": "^17.13.0",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  },
+  "sideEffects": false
+}

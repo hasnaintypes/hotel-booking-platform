@@ -21,6 +21,16 @@
     },
     "clean": {
       "cache": false
+    },
+    "db:generate": {
+      "cache": false
+    },
+    "db:migrate": {
+      "cache": false
+    },
+    "db:check": {
+      "cache": false
     }
-  }
+  },
+  "globalEnv": ["DATABASE_URL", "TEST_DATABASE_URL"]
 }
