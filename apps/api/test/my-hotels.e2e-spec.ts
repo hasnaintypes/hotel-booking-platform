@@ -3,46 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertHotel, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
-
-type FieldValue = string | string[] | undefined;
-
-/** The fields the web form sends, as multipart text. */
-function hotelFields(overrides: Record<string, FieldValue> = {}): Record<string, FieldValue> {
-  return {
-    name: "Harbour View",
-    city: "Bristol",
-    country: "United Kingdom",
-    description: "A calm hotel by the water.",
-    type: ["Hotel"],
-    facilities: ["Free WiFi", "Pool"],
-    pricePerNight: "120",
-    starRating: "4",
-    adultCount: "2",
-    childCount: "1",
-    "contact.phone": "+44 117 000 000",
-    "contact.email": "info@harbour.test",
-    "contact.website": "https://harbour.test",
-    "policies.checkInTime": "15:00",
-    "policies.checkOutTime": "11:00",
-    "policies.cancellationPolicy": "Free cancellation for 24 hours",
-    "policies.petPolicy": "",
-    "policies.smokingPolicy": "",
-    ...overrides,
-  };
-}
-
-/** Adds fields the way the browser does: arrays become `key[0]`, `key[1]`, ... */
-function applyFields<T extends { field: (name: string, value: string) => unknown }>(
-  request: T,
-  fields: Record<string, FieldValue>,
-): T {
-  for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined) continue;
-    if (Array.isArray(value)) value.forEach((item, i) => request.field(`${key}[${i}]`, item));
-    else request.field(key, value);
-  }
-  return request;
-}
+import { applyFields, hotelFields, jpegBytes, type FieldValue } from "./support/hotel-form";
 
 // Plain JSON equivalent of hotelFields, for requests that are not multipart.
 const jsonFields = (overrides: Record<string, unknown> = {}) => ({
@@ -73,8 +34,8 @@ describe("owner hotel create and update", () => {
     it("creates a hotel from the form the web app sends", async () => {
       const res = await applyFields(owner.agent.post(routes.myHotels.list), hotelFields()).attach(
         "imageFiles",
-        Buffer.from("pretend image"),
-        "photo.jpg",
+        jpegBytes(),
+        { filename: "photo.jpg", contentType: "image/jpeg" },
       );
 
       expect(res.status).toBe(201);

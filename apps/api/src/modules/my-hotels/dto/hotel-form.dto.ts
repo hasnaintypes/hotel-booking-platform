@@ -38,6 +38,13 @@ const toList = (params: TransformFnParams) => {
   return Array.isArray(value) ? value : [value];
 };
 
+/** Like toList, but "not sent" stays undefined so it can be told apart from an empty list. */
+const toOptionalList = (params: TransformFnParams) => {
+  const value = raw(params);
+  if (value === undefined || value === null || value === "") return undefined;
+  return Array.isArray(value) ? value : [value];
+};
+
 /** Optional text that may be sent empty: validated only when something was actually entered. */
 const IfEntered = () => ValidateIf((_, value) => value !== undefined && value !== "");
 
@@ -115,7 +122,7 @@ export class HotelFormDto {
 
   /** Images the owner keeps when editing; new uploads arrive as files. */
   @IsOptional()
-  @Transform(toList)
+  @Transform(toOptionalList)
   @IsArray()
   @ArrayMaxSize(6)
   @IsUrl(URL_OPTIONS, { each: true })

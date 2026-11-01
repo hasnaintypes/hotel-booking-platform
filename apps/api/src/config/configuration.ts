@@ -35,6 +35,9 @@ export const configuration = () => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
       apiSecret: process.env.CLOUDINARY_API_SECRET,
+      // Keeps each environment's uploads apart so test images never mix with production ones.
+      folder: process.env.CLOUDINARY_FOLDER || `hotel-booking/${nodeEnv}`,
+      tags: ["hotel-booking", nodeEnv],
     },
     stripe: {
       apiKey: process.env.STRIPE_API_KEY,

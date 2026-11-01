@@ -2,6 +2,12 @@ import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { HotelType } from "@hotel-booking/types";
+import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
+import {
+  assertValidImages,
+  HOTEL_MAX_IMAGES,
+  IMAGE_FIELD,
+} from "../../common/uploads/image-validation";
 import { BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models";
 import { CloudinaryService } from "../../integrations/cloudinary/cloudinary.service";
 import { IBooking } from "../bookings/schemas/booking.schema";
@@ -70,16 +76,33 @@ export class MyHotelsService {
   }
 
   async create(dto: HotelFormDto, files: Express.Multer.File[], userId: string) {
-    const imageUrls = await this.cloudinaryService.uploadImages(files || []);
+    // The body is already validated. Check the files before anything is uploaded.
+    assertValidImages(files);
+    this.assertImageCount(files?.length ?? 0);
 
-    const hotel = new this.hotelModel({
-      ...this.editableFields(dto),
-      imageUrls,
-      lastUpdated: new Date(),
-      userId,
-    });
-    await hotel.save();
-    return hotel;
+    const uploaded = await this.cloudinaryService.uploadImages(files ?? []);
+
+    try {
+      const hotel = new this.hotelModel({
+        ...this.editableFields(dto),
+        imageUrls: uploaded.map((image) => image.url),
+        lastUpdated: new Date(),
+        userId,
+      });
+      await hotel.save();
+      return hotel;
+    } catch (error) {
+      await this.cloudinaryService.deleteImages(uploaded.map((image) => image.publicId));
+      throw error;
+    }
+  }
+
+  private assertImageCount(total: number) {
+    if (total > HOTEL_MAX_IMAGES) {
+      throw new ValidationFailedException([
+        { field: IMAGE_FIELD, message: `a hotel can have at most ${HOTEL_MAX_IMAGES} images` },
+      ]);
+    }
   }
 
   async findAll(userId: string) {
@@ -168,22 +191,49 @@ export class MyHotelsService {
       throw new NotFoundException("Hotel not found");
     }
 
-    const updatedHotel = await this.hotelModel.findByIdAndUpdate(
-      hotelId,
-      { ...this.editableFields(dto), lastUpdated: new Date() },
-      { new: true },
-    );
+    // Images: `imageUrls` lists the existing images to keep (it is absent when the form sent none)
+    // and `files` the new ones. Validate everything before uploading.
+    assertValidImages(files);
+    const kept = dto.imageUrls;
+    const newCount = files?.length ?? 0;
 
-    if (!updatedHotel) {
-      throw new NotFoundException("Hotel not found");
+    if (kept) {
+      const owned = new Set(existingHotel.imageUrls);
+      if (kept.some((url) => !owned.has(url))) {
+        throw new ValidationFailedException([
+          { field: "imageUrls", message: "contains an image that does not belong to this hotel" },
+        ]);
+      }
     }
 
-    if (files && files.length > 0) {
-      const updatedImageUrls = await this.cloudinaryService.uploadImages(files);
-      updatedHotel.imageUrls = [...updatedImageUrls, ...(dto.imageUrls ?? [])];
-      await updatedHotel.save();
+    const changesImages = kept !== undefined || newCount > 0;
+    if (changesImages) {
+      this.assertImageCount((kept?.length ?? 0) + newCount);
     }
 
-    return updatedHotel;
+    const uploaded = await this.cloudinaryService.uploadImages(files ?? []);
+
+    try {
+      const updatedHotel = await this.hotelModel.findByIdAndUpdate(
+        hotelId,
+        {
+          ...this.editableFields(dto),
+          lastUpdated: new Date(),
+          ...(changesImages
+            ? { imageUrls: [...uploaded.map((image) => image.url), ...(kept ?? [])] }
+            : {}),
+        },
+        { new: true },
+      );
+
+      if (!updatedHotel) {
+        throw new NotFoundException("Hotel not found");
+      }
+
+      return updatedHotel;
+    } catch (error) {
+      await this.cloudinaryService.deleteImages(uploaded.map((image) => image.publicId));
+      throw error;
+    }
   }
 }
