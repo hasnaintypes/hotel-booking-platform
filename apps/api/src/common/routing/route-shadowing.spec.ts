@@ -2,17 +2,7 @@ import "reflect-metadata";
 import { RequestMethod } from "@nestjs/common";
 import { METHOD_METADATA, PATH_METADATA } from "@nestjs/common/constants";
 import { describe, expect, it } from "vitest";
-import { AiController } from "../../modules/ai/ai.controller";
-import { AnalyticsController } from "../../modules/analytics/analytics.controller";
-import { AuthController } from "../../modules/auth/auth.controller";
-import { BookingsController } from "../../modules/bookings/bookings.controller";
-import { MyBookingsController } from "../../modules/bookings/my-bookings.controller";
-import { BusinessInsightsController } from "../../modules/business-insights/business-insights.controller";
-import { HealthController } from "../../modules/health/health.controller";
-import { HotelsController } from "../../modules/hotels/hotels.controller";
-import { MyHotelsController } from "../../modules/my-hotels/my-hotels.controller";
-import { ReviewsController } from "../../modules/reviews/reviews.controller";
-import { UsersController } from "../../modules/users/users.controller";
+import { CONTROLLERS } from "./controllers";
 
 /**
  * Two routes with the same HTTP method overlap when a request could match both, for example
@@ -25,20 +15,6 @@ import { UsersController } from "../../modules/users/users.controller";
  */
 const KNOWN_ORDER_DEPENDENT: Array<[string, string]> = [
   ["GET /api/hotels/search", "GET /api/hotels/:id"],
-];
-
-const CONTROLLERS = [
-  AiController,
-  AnalyticsController,
-  AuthController,
-  BookingsController,
-  MyBookingsController,
-  BusinessInsightsController,
-  HealthController,
-  HotelsController,
-  MyHotelsController,
-  ReviewsController,
-  UsersController,
 ];
 
 interface RouteInfo {
