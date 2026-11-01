@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-pnpm 10.15.0 / Turborepo monorepo, Node 22. Three apps (`apps/api` NestJS + MongoDB, `apps/web` guest/owner React SPA, `apps/admin` admin React SPA) share `packages/types`, `packages/api-client`, `packages/ui`. `docs/` holds a source-based map (start at `docs/INDEX.md`); it is git-ignored, as are `AGENTS.md` and `.claude/`.
+pnpm 10.15.0 / Turborepo monorepo, Node 22. Three apps (`apps/api` NestJS + MongoDB, `apps/web` guest/owner React SPA, `apps/admin` admin React SPA) share `packages/types`, `packages/api-client`, `packages/ui`, and the new `packages/db` (PostgreSQL + Drizzle). `docs/` holds a source-based map (start at `docs/INDEX.md`); it is git-ignored, as are `AGENTS.md` and `.claude/`.
 
 ## Commands
 
@@ -10,7 +10,8 @@ Run from the repo root.
 
 ```bash
 pnpm install --frozen-lockfile
-docker compose up -d mongo                 # local MongoDB 7 on :27017
+docker compose up -d mongo postgres        # MongoDB 7 on :27017, PostgreSQL 17 on :5432
+pnpm db:migrate                            # apply PostgreSQL migrations (reads DATABASE_URL)
 pnpm dev                                   # all apps; or filter:
 pnpm --filter @hotel-booking/api dev       # :5001 (Swagger at /api-docs, health at /api/health)
 pnpm --filter @hotel-booking/web dev       # :5174
@@ -20,6 +21,7 @@ pnpm lint            # eslint --max-warnings 0
 pnpm typecheck
 pnpm test            # vitest in every workspace, including API unit + e2e
 pnpm build
+pnpm db:check        # migration consistency + schema drift
 pnpm check:bundle    # run after build; entry chunks capped at 430 kB raw / 140 kB gzip
 ```
 
