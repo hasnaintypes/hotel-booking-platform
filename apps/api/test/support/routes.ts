@@ -11,6 +11,8 @@ export const routes = {
     login: "/api/auth/login",
     logout: "/api/auth/logout",
     validateToken: "/api/auth/validate-token",
+    google: "/api/auth/google",
+    googleCallback: "/api/auth/callback/google",
   },
   users: {
     me: "/api/users/me",

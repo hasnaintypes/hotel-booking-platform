@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 import { UserType } from "@hotel-booking/types";
+import { hashPassword } from "../../../common/security/password";
 
 export const UserSchema = new mongoose.Schema(
   {
@@ -45,7 +45,7 @@ export const UserSchema = new mongoose.Schema(
 
 UserSchema.pre("save", async function () {
   if (this.isModified("password") && this.password) {
-    this.password = await bcrypt.hash(this.password, 8);
+    this.password = await hashPassword(this.password);
   }
 });
 

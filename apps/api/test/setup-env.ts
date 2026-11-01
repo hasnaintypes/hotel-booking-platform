@@ -11,6 +11,11 @@ process.env.FRONTEND_URL = "http://localhost:5174";
 process.env.ADMIN_URL = "http://localhost:5175";
 process.env.BACKEND_URL = "http://localhost:5001";
 process.env.AI_ASSIST_ENABLED = "false";
+// Fast hashing, and limits high enough that ordinary tests never meet them. The tests of those
+// limits lower them for the app they create.
+process.env.BCRYPT_COST = "4";
+process.env.AUTH_RATE_LIMIT = "1000";
+process.env.AUTH_MAX_FAILED_LOGINS = "100";
 
 const base = process.env.TEST_MONGO_BASE_URI ?? "mongodb://127.0.0.1:27017";
 process.env.MONGODB_CONNECTION_STRING = `${base}/test_${randomUUID().replace(/-/g, "")}`;
