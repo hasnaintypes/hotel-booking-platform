@@ -1,0 +1,28 @@
+# Review is requested automatically for changes to sensitive paths. Keep this list small enough
+# that routine app and documentation changes do not need an owner review.
+#
+# Owners must be users or teams with write access to the repository.
+
+# Payments, bookings and Stripe integration
+/apps/api/src/integrations/stripe/     @hasnaintypes
+/apps/api/src/modules/bookings/        @hasnaintypes
+
+# Authentication, authorization and secrets
+/apps/api/src/modules/auth/            @hasnaintypes
+/apps/api/src/modules/users/           @hasnaintypes
+/apps/api/src/common/security/         @hasnaintypes
+/apps/api/src/common/guards/           @hasnaintypes
+/apps/api/src/common/auth-cookie.ts    @hasnaintypes
+/apps/api/src/config/                  @hasnaintypes
+
+# Database and migrations
+/apps/api/src/database/                @hasnaintypes
+
+# Shared contracts
+/packages/types/                       @hasnaintypes
+/packages/api-client/                  @hasnaintypes
+
+# CI, deployment and dependency policy
+/.github/                              @hasnaintypes
+/docker-compose.yml                    @hasnaintypes
+/apps/api/Dockerfile                   @hasnaintypes

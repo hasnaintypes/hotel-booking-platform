@@ -1,0 +1,73 @@
+name: Bug report
+description: Report a defect in existing behaviour
+title: "bug: "
+labels: ["type:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include secrets, real customer data or live Stripe keys. Report vulnerabilities privately
+        through the security link instead of this form.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, and where?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as ...
+        2. Open ...
+        3. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+  - type: dropdown
+    id: app
+    attributes:
+      label: Affected app
+      multiple: true
+      options:
+        - API (apps/api)
+        - Web (apps/web)
+        - Admin (apps/admin)
+        - Shared package
+        - CI or tooling
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Branch or commit, Node/pnpm version, browser, and whether you used a disposable database.
+      placeholder: main @ 17ed1e9, Node 22, pnpm 10.15.0, Chrome 141
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Paste relevant log lines with secrets and personal data removed.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and pull requests for duplicates.
+          required: true
+        - label: This report contains no credentials, tokens or real customer data.
+          required: true
