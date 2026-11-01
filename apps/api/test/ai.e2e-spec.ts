@@ -1,25 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
-import { anonymous, registerAdmin, registerUser } from "./support/helpers";
+import { anonymous, registerAdmin, registerUser, withEnv } from "./support/helpers";
 import { routes } from "./support/routes";
 
 // Built from code points so this file contains no invisible characters.
 const NUL = String.fromCharCode(0x00);
 const RLO = String.fromCharCode(0x202e);
-
-const withEnv = (values: Record<string, string>) => {
-  const previous: Record<string, string | undefined> = {};
-  for (const [key, value] of Object.entries(values)) {
-    previous[key] = process.env[key];
-    process.env[key] = value;
-  }
-  return () => {
-    for (const [key, value] of Object.entries(previous)) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  };
-};
 
 const draft = (kind: string, input: unknown) => ({ kind, input });
 
