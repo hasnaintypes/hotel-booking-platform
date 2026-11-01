@@ -96,6 +96,16 @@ Use the existing taxonomy instead of inventing labels:
 Paths are labelled automatically by `.github/labeler.yml`; add a type and priority label when
 triage is not obvious.
 
+## Logging and errors
+
+API logging follows ADR-023; the full guide is [apps/api/LOGGING.md](apps/api/LOGGING.md). In short:
+
+- use the Nest logger (`new Logger(MyService.name)`), never `console.*`; the lint rule fails the build;
+- access logs are single-line JSON with `requestId`, method, route template, status and duration. Never add bodies, headers, cookies, query strings, tokens or card data;
+- levels by outcome: 5xx `error`, 4xx `warn`, business events `info`, diagnostics `debug`; `fatal` is reserved for process-fatal handlers;
+- prefer identifiers (`bookingId`, `userId`) over personal data, and update `src/common/logging/redaction.ts` (with a test) when adding a field that could carry sensitive data;
+- errors are shaped only by the global exception filter (RFC 9457 problem details). Throw Nest `HttpException` subclasses from services and do not build error bodies in controllers.
+
 ## Security and data
 
 - Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md). Do not open a public
