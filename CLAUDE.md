@@ -63,7 +63,8 @@ Setup: copy each app's `.env.example` to `.env`. The API refuses to start withou
 - **No `Co-Authored-By` trailers and no "Generated with" lines** in commits or PR descriptions.
 - PR descriptions: summary of behaviour and affected apps, the verification commands actually run with their results, screenshots for UI changes, and linked issues if any.
 - Before opening a PR run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm check:bundle`, and report any you skipped.
-- After a PR merges, delete its remote and local branch and prune (`gh pr merge --delete-branch`, `git branch -d <branch>`, `git remote prune origin`). Do not leave merged branches behind.
+- After a PR merges, delete its remote and local branch and prune (`gh pr merge --delete-branch`, `git branch -d <branch>`, `git remote prune origin`). Do not leave merged branches behind. Also periodically check for old abandoned branches with no open PR and flag or delete them, instead of letting stale branches sit unresolved across a session.
+- **Close issues whose acceptance criteria are met.** When a PR fully satisfies an issue, put `Closes #N` / `Fixes #N` in the PR description so GitHub closes it on merge. When a PR only partially satisfies an issue (scope changed, or some criteria unmet), do NOT use `Closes`; leave the issue open and comment on it listing exactly which acceptance criteria are unmet and why, so issues never end up closed by accident or silently incomplete.
 
 ## Conventions
 
