@@ -14,6 +14,10 @@ import { IBooking } from "../bookings/schemas/booking.schema";
 import { IReview } from "../reviews/schemas/review.schema";
 import { HotelFormDto } from "./dto/hotel-form.dto";
 
+/** Multer provides an array of files, or nothing when the request was not multipart. */
+const asFileList = (files: unknown): Express.Multer.File[] =>
+  Array.isArray(files) ? (files as Express.Multer.File[]) : [];
+
 const classifyBookingCounts = (
   bookings: Array<{ status?: string; checkIn: Date; checkOut: Date }>,
 ) => {
@@ -77,10 +81,11 @@ export class MyHotelsService {
 
   async create(dto: HotelFormDto, files: Express.Multer.File[], userId: string) {
     // The body is already validated. Check the files before anything is uploaded.
-    assertValidImages(files);
-    this.assertImageCount(files?.length ?? 0);
+    const fileList = asFileList(files);
+    assertValidImages(fileList);
+    this.assertImageCount(fileList.length);
 
-    const uploaded = await this.cloudinaryService.uploadImages(files ?? []);
+    const uploaded = await this.cloudinaryService.uploadImages(fileList);
 
     try {
       const hotel = new this.hotelModel({
@@ -193,9 +198,10 @@ export class MyHotelsService {
 
     // Images: `imageUrls` lists the existing images to keep (it is absent when the form sent none)
     // and `files` the new ones. Validate everything before uploading.
-    assertValidImages(files);
+    const fileList = asFileList(files);
+    assertValidImages(fileList);
     const kept = dto.imageUrls;
-    const newCount = files?.length ?? 0;
+    const newCount = fileList.length;
 
     if (kept) {
       const owned = new Set(existingHotel.imageUrls);
@@ -211,7 +217,7 @@ export class MyHotelsService {
       this.assertImageCount((kept?.length ?? 0) + newCount);
     }
 
-    const uploaded = await this.cloudinaryService.uploadImages(files ?? []);
+    const uploaded = await this.cloudinaryService.uploadImages(fileList);
 
     try {
       const updatedHotel = await this.hotelModel.findByIdAndUpdate(
