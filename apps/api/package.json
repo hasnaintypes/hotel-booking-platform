@@ -17,6 +17,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@hotel-booking/db": "workspace:*",
     "@hotel-booking/types": "workspace:*",
     "@nestjs/common": "^11.2.8",
     "@nestjs/config": "^4.0.4",
