@@ -21,3 +21,23 @@ export const clearAuthCookieOptions = () => {
     path: "/",
   };
 };
+
+/** Holds the Google sign-in `state` and PKCE verifier between leaving for Google and coming back. */
+export const OAUTH_STATE_COOKIE_NAME = "oauth_state";
+
+// Lax (not None): Google sends the browser back with a top-level GET, which Lax allows. The cookie
+// is only ever read by the callback route, so it is limited to that path.
+export const oauthStateCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  maxAge: 10 * 60 * 1000,
+  path: "/api/auth",
+});
+
+export const clearOauthStateCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/api/auth",
+});

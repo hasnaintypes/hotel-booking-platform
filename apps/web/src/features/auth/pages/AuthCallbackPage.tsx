@@ -4,11 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/shared/context/ToastContext";
 import { welcomeBackToast } from "@/shared/lib/toast-messages";
 import { authSession } from "@hotel-booking/api-client";
+import * as authApi from "@/features/auth/api";
+import { oauthErrorMessage } from "@/features/auth/lib/oauth-errors";
 import { authKeys } from "@/shared/lib/query-keys";
 import { Loader2 } from "lucide-react";
 
 /**
- * Google OAuth return — mark the cookie session, invalidate auth queries, soft-nav home.
+ * Google sign-in return. The API has already set the session cookie and sends only
+ * `?authenticated=1` (or `?error=<reason>`); nothing about the person is in the URL. The profile is
+ * read from the API instead.
  */
 const AuthCallback = () => {
   const [searchParams] = useSearchParams();
@@ -17,43 +21,53 @@ const AuthCallback = () => {
   const { showToast } = useToast();
 
   useEffect(() => {
-    const authenticated = searchParams.get("authenticated");
-    const userId = searchParams.get("userId");
     const error = searchParams.get("error");
-    const email = searchParams.get("email");
-    const firstName = searchParams.get("firstName");
-    const lastName = searchParams.get("lastName");
-    const image = searchParams.get("image");
-
     if (error) {
       showToast({
         title: "Sign-in failed",
-        description:
-          error === "oauth_config"
-            ? "Google sign-in is not configured."
-            : error === "token_exchange"
-              ? "Could not complete Google sign-in."
-              : "Something went wrong. Please try again.",
+        description: oauthErrorMessage(error),
         type: "ERROR",
       });
-      navigate("/sign-in");
+      navigate("/sign-in", { replace: true });
       return;
     }
 
-    if (authenticated || userId) {
-      authSession.set();
-      if (userId) localStorage.setItem("user_id", userId);
-      if (email) localStorage.setItem("user_email", email);
-      const name = [firstName, lastName].filter(Boolean).join(" ") || email;
-      if (name) localStorage.setItem("user_name", name);
-      if (image) localStorage.setItem("user_image", image);
-
-      queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
-      showToast(welcomeBackToast(name || undefined));
-      navigate("/");
-    } else {
-      navigate("/sign-in");
+    if (!searchParams.get("authenticated")) {
+      navigate("/sign-in", { replace: true });
+      return;
     }
+
+    let cancelled = false;
+    authSession.set();
+
+    authApi
+      .fetchCurrentUser()
+      .then((user) => {
+        if (cancelled) return;
+        const name = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.email;
+        localStorage.setItem("user_id", user._id);
+        localStorage.setItem("user_email", user.email);
+        if (name) localStorage.setItem("user_name", name);
+        if (user.image) localStorage.setItem("user_image", user.image);
+
+        void queryClient.invalidateQueries({ queryKey: authKeys.currentUser() });
+        showToast(welcomeBackToast(name));
+        navigate("/", { replace: true });
+      })
+      .catch(() => {
+        if (cancelled) return;
+        authApi.clearAuthStorage();
+        showToast({
+          title: "Sign-in failed",
+          description: oauthErrorMessage(undefined),
+          type: "ERROR",
+        });
+        navigate("/sign-in", { replace: true });
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams, navigate, queryClient, showToast]);
 
   return (
