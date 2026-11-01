@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { BookingType } from "@hotel-booking/types";
 import { Button } from "@hotel-booking/ui";
+import { apiErrorMessage } from "@hotel-booking/api-client";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/shared/lib/api-error";
 import { invalidateAdminBookings } from "@/shared/lib/query-invalidation";
 import { cancelBooking } from "../api";
 import { isBookingCancellable } from "../lib/booking-utils";
@@ -27,7 +27,7 @@ const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
     },
     onError: (error) => {
       toast.error("Cancel failed", {
-        description: getErrorMessage(error, "Could not cancel booking"),
+        description: apiErrorMessage(error, "Could not cancel booking"),
       });
     },
   });

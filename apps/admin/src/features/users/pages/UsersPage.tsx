@@ -14,7 +14,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Crown, Shield, User } from "lucide-react";
 import { toast } from "sonner";
-import { getErrorMessage } from "@/shared/lib/api-error";
+import { apiErrorMessage } from "@hotel-booking/api-client";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminCatalogs } from "@/shared/lib/query-invalidation";
 import { fetchUsers, updateUserRole, type AdminRole } from "../api";
@@ -52,7 +52,7 @@ const UsersPage = () => {
         queryClient.setQueryData(adminKeys.users, context.previous);
       }
       toast.error("Failed to update role", {
-        description: getErrorMessage(error, "Please try again in a moment."),
+        description: apiErrorMessage(error, "Please try again in a moment."),
       });
     },
     onSuccess: () => {

@@ -1,8 +1,7 @@
 import { createContext, useEffect, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { authSession } from "@hotel-booking/api-client";
+import { authSession, getErrorStatus } from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
-import { getErrorStatus } from "@/shared/lib/api-error";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchCurrentUser } from "../api";
 import { clearUserDetails } from "../auth-storage";
