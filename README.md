@@ -105,8 +105,9 @@ Run from the repository root.
 | `pnpm build` | Build all workspaces |
 | `pnpm lint` | ESLint with zero warnings allowed |
 | `pnpm typecheck` | `tsc --noEmit` in every workspace |
-| `pnpm test` | Vitest (web and admin) |
+| `pnpm test` | Vitest across the workspace, including API unit and e2e specs |
 | `pnpm check:bundle` | Enforce the entry-bundle budget (run after `build`) |
+| `pnpm check:unused` | Knip: fail on unused or missing workspace dependencies |
 | `pnpm format:check` / `pnpm format:code` | Prettier check / write for `apps` and `packages` |
 
 Run a single test file with `pnpm --filter @hotel-booking/admin exec vitest run <path>`.
@@ -115,7 +116,9 @@ Run a single test file with `pnpm --filter @hotel-booking/admin exec vitest run 
 
 ## Quality and CI
 
-GitHub Actions (`.github/workflows/ci.yml`) runs install, lint, typecheck, test, build and the bundle check on every pull request and push to `main`. Unit tests currently cover the shared auth-session store and the admin guard and booking rules; the API, payment and refund flows have no automated tests yet.
+GitHub Actions (`.github/workflows/ci.yml`) runs install, licence and formatting checks, a high-severity dependency audit, the unused-dependency check, lint, typecheck, the full test suite, build and the bundle check on every pull request and push to `main`. A second job builds the API image and checks that it runs as non-root, starts read-only, passes its health check and serves no API docs. CodeQL, secret scanning and push protection are enabled.
+
+The API has an end-to-end harness that boots the real application against a disposable MongoDB and fakes Stripe, Cloudinary and logging; see `apps/api/test/`. The SPAs and shared packages have unit and component tests.
 
 ## Deployment
 
@@ -130,7 +133,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs install, lint, typecheck, test,
 ## Contributing
 
 - Never push to `main`. Create a branch (`feat/…`, `fix/…`, `docs/…`), keep commits small with a Conventional Commit subject such as `feat(web): …`, and open a pull request. `main` is protected and requires the `verify` check to pass.
-- Before opening a PR run `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm check:bundle`.
+- Before opening a PR run `pnpm check:license`, `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build` and `pnpm check:bundle`.
 - Style: TypeScript, two-space indent, double quotes, 100-column Prettier.
 
 ## Troubleshooting
