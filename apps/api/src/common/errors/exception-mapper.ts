@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
 import type { ErrorCode, FieldError } from "./problem";
 import { InvalidJsonException } from "./invalid-json.exception";
+import { RateLimitedException } from "./rate-limited.exception";
 import { ValidationFailedException } from "./validation-failed.exception";
 
 export type MappedError = {
@@ -108,6 +109,12 @@ export function mapException(exception: unknown): MappedError {
   }
   if (exception instanceof InvalidJsonException) {
     return make(400, "INVALID_JSON", exception.message);
+  }
+  if (exception instanceof RateLimitedException) {
+    const seconds = Math.max(1, Math.ceil(exception.retryAfterSeconds));
+    return make(429, "TOO_MANY_REQUESTS", exception.message, {
+      headers: { "Retry-After": String(seconds) },
+    });
   }
   if (exception instanceof HttpException) {
     const status = exception.getStatus();
