@@ -35,6 +35,7 @@ describe("error responses (problem details)", () => {
   };
 
   it("returns 404 problem details for unmatched routes", async () => {
+    // Deliberately not in routes.ts: this path must never be registered.
     const res = await anonymous(t).get("/api/does-not-exist");
     expectProblem(res, 404, "NOT_FOUND");
   });
