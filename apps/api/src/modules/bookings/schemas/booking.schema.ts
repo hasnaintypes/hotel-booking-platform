@@ -39,6 +39,9 @@ export const BookingSchema = new mongoose.Schema(
     totalCost: { type: Number, required: true },
     status: {
       type: String,
+      // `refunded` is unreachable: cancellation sets status `cancelled` and only the payment
+      // status becomes `refunded`. Kept for the current contract and seed data until the M1/M2
+      // redesign collapses booking and payment state.
       enum: ["pending", "confirmed", "cancelled", "completed", "refunded"],
       default: "pending",
       index: true,
