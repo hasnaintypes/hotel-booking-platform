@@ -27,7 +27,13 @@ RUN pnpm install --frozen-lockfile --prod --filter @hotel-booking/api...
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 
 WORKDIR /app/apps/api
+ENV NODE_ENV=production
 EXPOSE 5001
+
+# Run as the unprivileged user that ships with the base image. The API writes nothing to disk
+# (logs go to stdout and uploads stay in memory), so the container also works with
+# `docker run --read-only --tmpfs /tmp`.
+USER node
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 5001) + '/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
