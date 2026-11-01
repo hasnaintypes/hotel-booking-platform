@@ -77,12 +77,23 @@ The API exits at startup if a required variable is missing. Browser apps only re
 | `PORT` | api | No | Default `5001` |
 | `BOOKING_MAX_NIGHTS` | api | No | Longest bookable stay in nights, 1 to 365 (default `30`) |
 | `GOOGLE_ID`, `GOOGLE_SECRET` | api | No | Google sign-in; register `{BACKEND_URL}/api/auth/callback/google` |
-| `AI_ASSIST_ENABLED`, `GROQ_*`, `OPENAI_*`, `OPENROUTER_*` | api | No | Optional LLM drafts |
+| `CLOUDINARY_FOLDER` | api | No | Cloudinary folder for hotel images (default `hotel-booking/<NODE_ENV>`) |
+| `AI_ASSIST_ENABLED`, `GROQ_*`, `OPENAI_*`, `OPENROUTER_*` | api | No | Optional LLM drafts; off unless `AI_ASSIST_ENABLED=true` (see below) |
+| `AI_DAILY_QUOTA`, `AI_PER_MINUTE_LIMIT`, `AI_REQUEST_DEADLINE_MS` | api | No | Per-user AI limits (defaults `20` a day, `5` a minute) and the time allowed for one request across all providers (default `30000`) |
 | `VITE_API_BASE_URL` | web, admin | Recommended | API origin (falls back to `http://localhost:5001`) |
 | `VITE_STRIPE_PUB_KEY` | web | For payments | Stripe publishable key |
 | `VITE_ADMIN_URL` / `VITE_WEB_URL` | web / admin | No | Cross-links between the apps |
 
 See each app's `.env.example` for the full template.
+
+### AI draft assist (optional, off by default)
+
+`POST /api/ai/suggest` drafts a hotel description (any signed-in user) or a short insights blurb (admins only). It only returns text for a person to review; nothing is saved automatically.
+
+- **Cost:** each request calls a paid provider (Groq, OpenAI or OpenRouter, in that order) when a key is configured. Input is limited to 2,000 characters, each user is limited per minute and per day, a request makes at most three provider calls, and one deadline covers the whole request. The daily and per-minute counters are kept in memory, so they reset when the server restarts and are not shared between instances.
+- **Privacy:** the text a user enters is sent to the configured provider. Prompts and drafts are never written to the application logs, which record only the provider, model, latency and outcome. Do not enter personal data.
+- **Failure:** if a provider rejects the request (HTTP 400, 401 or 403) the other providers are not tried, and the response is a local stub draft; the rejection is logged at `error` so a bad key is visible.
+- **Output:** treated as untrusted text: control and invisible characters are removed, the length is capped, and it is never rendered as HTML.
 
 ## Scripts
 

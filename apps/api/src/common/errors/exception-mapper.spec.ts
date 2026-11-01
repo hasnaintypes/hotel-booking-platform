@@ -8,6 +8,7 @@ import {
 } from "@nestjs/common";
 import { describe, expect, it } from "vitest";
 import { CORS_REJECTION_MESSAGE, mapException } from "./exception-mapper";
+import { RateLimitedException } from "./rate-limited.exception";
 import { ValidationFailedException } from "./validation-failed.exception";
 
 const tagged = (props: Record<string, unknown>, message = "internal detail") =>
@@ -27,6 +28,22 @@ describe("mapException", () => {
     ["teapot (unmapped http status)", new HttpException("brew", 418), 418, "BAD_REQUEST", "brew"],
   ])("maps %s with its own message", (_name, error, status, code, detail) => {
     expect(mapException(error)).toMatchObject({ status, code, detail });
+  });
+
+  it("maps a rate-limit exception to 429 with a Retry-After header", () => {
+    const mapped = mapException(new RateLimitedException("Slow down", 12.2));
+    expect(mapped).toMatchObject({
+      status: 429,
+      code: "TOO_MANY_REQUESTS",
+      detail: "Slow down",
+      headers: { "Retry-After": "13" },
+    });
+  });
+
+  it("never reports a Retry-After of less than one second", () => {
+    expect(mapException(new RateLimitedException("Slow down", 0)).headers).toEqual({
+      "Retry-After": "1",
+    });
   });
 
   it("maps the CORS rejection to 403 with its own code", () => {

@@ -53,6 +53,32 @@ describe("validateEnv", () => {
     });
   });
 
+  describe("AI limits", () => {
+    it("accepts values inside the allowed ranges", () => {
+      expect(() =>
+        validateEnv({
+          ...base,
+          AI_DAILY_QUOTA: "20",
+          AI_PER_MINUTE_LIMIT: "5",
+          AI_REQUEST_DEADLINE_MS: "30000",
+        }),
+      ).not.toThrow();
+    });
+
+    it.each([
+      ["AI_DAILY_QUOTA", "0"],
+      ["AI_DAILY_QUOTA", "10001"],
+      ["AI_DAILY_QUOTA", "many"],
+      ["AI_PER_MINUTE_LIMIT", "0"],
+      ["AI_PER_MINUTE_LIMIT", "601"],
+      ["AI_REQUEST_DEADLINE_MS", "500"],
+      ["AI_REQUEST_DEADLINE_MS", "120001"],
+      ["AI_REQUEST_DEADLINE_MS", "30s"],
+    ])("rejects %s=%s", (name, value) => {
+      expect(() => validateEnv({ ...base, [name]: value })).toThrow(new RegExp(name));
+    });
+  });
+
   it("still validates the log settings", () => {
     expect(() => validateEnv({ ...base, LOG_LEVEL: "loud" })).toThrow(/LOG_LEVEL/);
     expect(() => validateEnv({ ...base, LOG_FORMAT: "xml" })).toThrow(/LOG_FORMAT/);

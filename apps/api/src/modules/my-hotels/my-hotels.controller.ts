@@ -17,12 +17,14 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
+import { imageFileFilter, MAX_IMAGE_BYTES } from "../../common/uploads/image-validation";
 import { HotelFormDto } from "./dto/hotel-form.dto";
 import { MyHotelsService } from "./my-hotels.service";
 
 const uploadOptions = {
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: MAX_IMAGE_BYTES },
+  fileFilter: imageFileFilter,
 };
 
 @Controller("api/my-hotels")

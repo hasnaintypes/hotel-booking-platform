@@ -35,6 +35,9 @@ export const configuration = () => {
       cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       apiKey: process.env.CLOUDINARY_API_KEY,
       apiSecret: process.env.CLOUDINARY_API_SECRET,
+      // Keeps each environment's uploads apart so test images never mix with production ones.
+      folder: process.env.CLOUDINARY_FOLDER || `hotel-booking/${nodeEnv}`,
+      tags: ["hotel-booking", nodeEnv],
     },
     stripe: {
       apiKey: process.env.STRIPE_API_KEY,
@@ -50,6 +53,11 @@ export const configuration = () => {
       openaiModel: process.env.OPENAI_MODEL,
       openrouterApiKey: process.env.OPENROUTER_API_KEY,
       openrouterModel: process.env.OPENROUTER_MODEL,
+      // Per user. Counters are in memory, so they reset when the server restarts.
+      dailyQuota: parseInt(process.env.AI_DAILY_QUOTA || "20", 10),
+      perMinuteLimit: parseInt(process.env.AI_PER_MINUTE_LIMIT || "5", 10),
+      // One deadline for the whole request, however many providers are tried.
+      deadlineMs: parseInt(process.env.AI_REQUEST_DEADLINE_MS || "30000", 10),
     },
   };
 };
