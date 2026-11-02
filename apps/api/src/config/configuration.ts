@@ -30,6 +30,9 @@ export const configuration = () => {
     mongodb: {
       uri: process.env.MONGODB_CONNECTION_STRING,
     },
+    database: {
+      url: process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/hotel_booking",
+    },
     jwt: {
       secret: process.env.JWT_SECRET_KEY,
       expiresIn: "1d",

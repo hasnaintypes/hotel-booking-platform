@@ -3,15 +3,16 @@
   "version": "0.0.0",
   "license": "MIT",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./dist/index.js",
   "types": "./src/index.ts",
   "exports": {
     ".": {
       "types": "./src/index.ts",
-      "default": "./src/index.ts"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "db:check": "drizzle-kit check && node scripts/check-drift.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -36,5 +37,8 @@
     "typescript": "^6.0.3",
     "vitest": "^5.0.5"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ]
 }

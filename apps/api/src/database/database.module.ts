@@ -7,6 +7,7 @@ import { HotelSchema } from "../modules/hotels/schemas/hotel.schema";
 import { ReviewSchema } from "../modules/reviews/schemas/review.schema";
 import { UserSchema } from "../modules/users/schemas/user.schema";
 import { ANALYTICS_MODEL, BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL, USER_MODEL } from "./models";
+import { DATABASE, PostgresDatabase } from "./postgres.database";
 
 @Global()
 @Module({
@@ -25,6 +26,14 @@ import { ANALYTICS_MODEL, BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL, USER_MODEL }
       { name: ANALYTICS_MODEL, schema: AnalyticsSchema },
     ]),
   ],
-  exports: [MongooseModule],
+  providers: [
+    PostgresDatabase,
+    {
+      provide: DATABASE,
+      inject: [PostgresDatabase],
+      useFactory: (postgres: PostgresDatabase) => postgres.db,
+    },
+  ],
+  exports: [MongooseModule, DATABASE, PostgresDatabase],
 })
 export class DatabaseModule {}

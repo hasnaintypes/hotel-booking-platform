@@ -1,5 +1,5 @@
 # Build context must be the repository root.
-# pnpm workspace: api depends on @hotel-booking/types.
+# pnpm workspace: api depends on @hotel-booking/types and @hotel-booking/db.
 
 FROM node:22-alpine AS builder
 RUN corepack enable
@@ -8,11 +8,14 @@ WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/types/package.json ./packages/types/
+COPY packages/db/package.json ./packages/db/
 RUN pnpm install --frozen-lockfile --filter @hotel-booking/api...
 
 COPY tsconfig.base.json ./
 COPY apps/api ./apps/api
 COPY packages/types ./packages/types
+COPY packages/db ./packages/db
+RUN pnpm --filter @hotel-booking/db build
 RUN pnpm --filter @hotel-booking/api build
 
 FROM node:22-alpine AS runner
@@ -22,9 +25,11 @@ WORKDIR /app
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/types/package.json ./packages/types/
+COPY packages/db/package.json ./packages/db/
 RUN pnpm install --frozen-lockfile --prod --filter @hotel-booking/api...
 
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/packages/db/dist ./packages/db/dist
 
 WORKDIR /app/apps/api
 ENV NODE_ENV=production
