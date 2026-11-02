@@ -99,6 +99,32 @@ describe("mapException", () => {
     expect(mapException(tagged(props))).toMatchObject({ status, code });
   });
 
+  it.each([
+    ["unique violation", "23505", 409, "CONFLICT"],
+    ["foreign key violation", "23503", 422, "UNPROCESSABLE"],
+    ["not-null violation", "23502", 422, "UNPROCESSABLE"],
+    ["check violation", "23514", 422, "UNPROCESSABLE"],
+    ["invalid text representation", "22P02", 400, "BAD_REQUEST"],
+    ["serialization failure", "40001", 409, "CONFLICT"],
+    ["deadlock", "40P01", 409, "CONFLICT"],
+  ])("maps a postgres %s from the cause chain", (_name, code, status, errorCode) => {
+    const mapped = mapException(
+      new Error("query failed", {
+        cause: tagged({
+          code,
+          constraint: "users_email_unique",
+          table: "users",
+          detail: "Key (email)=(secret@example.com) already exists",
+        }),
+      }),
+    );
+
+    expect(mapped).toMatchObject({ status, code: errorCode });
+    expect(JSON.stringify(mapped)).not.toMatch(
+      /users_email_unique|secret@example.com|query failed/,
+    );
+  });
+
   it("maps mongoose validation errors to 422 with fields", () => {
     const mapped = mapException(
       tagged({

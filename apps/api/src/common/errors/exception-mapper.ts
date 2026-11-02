@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
 import type { ErrorCode, FieldError } from "./problem";
 import { InvalidJsonException } from "./invalid-json.exception";
+import { mapPostgresError } from "./postgres-errors";
 import { RateLimitedException } from "./rate-limited.exception";
 import { ValidationFailedException } from "./validation-failed.exception";
 
@@ -132,6 +133,9 @@ export function mapException(exception: unknown): MappedError {
     }
     return make(status, codeFor(status), detail);
   }
+
+  const databaseError = mapPostgresError(exception);
+  if (databaseError) return mapException(databaseError);
 
   const err = asError(exception);
 

@@ -34,6 +34,27 @@ export default [
     },
   },
   {
+    files: ["src/database/**/*.ts"],
+    rules: { "@typescript-eslint/no-explicit-any": "error" },
+  },
+  {
+    files: ["src/modules/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@hotel-booking/db",
+              message:
+                "Use a repository under src/database/repositories instead of importing the database package directly.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["src/database/seeds/**/*.ts", "test/**/*.ts", "src/**/*.spec.ts"],
     rules: { "no-console": "off" },
   },
