@@ -1,5 +1,19 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { users, type NewUser, type User } from "../src/index";
+import {
+  bookings,
+  credentials,
+  facilities,
+  hotelFacilities,
+  hotelHotelTypes,
+  hotelImages,
+  hotels,
+  hotelTypes,
+  oauthAccounts,
+  reviews,
+  users,
+  type NewUser,
+  type User,
+} from "../src/index";
 
 describe("schema types", () => {
   it("infers the users row and insert types", () => {
@@ -7,10 +21,28 @@ describe("schema types", () => {
     expectTypeOf<User>().toMatchTypeOf<{
       id: string;
       email: string;
+      role: "user" | "admin";
+      status: "active" | "suspended";
       createdAt: Date;
       updatedAt: Date;
     }>();
     expectTypeOf<NewUser>().toMatchTypeOf<{ email: string }>();
     expectTypeOf<NewUser["id"]>().toEqualTypeOf<string | undefined>();
+  });
+
+  it("exposes every schema-v1 table", () => {
+    expect([
+      users,
+      credentials,
+      oauthAccounts,
+      hotels,
+      hotelImages,
+      facilities,
+      hotelFacilities,
+      hotelHotelTypes,
+      hotelTypes,
+      bookings,
+      reviews,
+    ]).toHaveLength(11);
   });
 });
