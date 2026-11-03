@@ -4,7 +4,9 @@ import { facilities, hotelFacilities } from "./facilities.js";
 import { hotelImages } from "./hotel-images.js";
 import { hotelHotelTypes, hotelTypes } from "./hotel-types.js";
 import { hotels } from "./hotels.js";
+import { memberships } from "./memberships.js";
 import { oauthAccounts } from "./oauth-accounts.js";
+import { organisationRoles, organisations, rolePermissions } from "./organisations.js";
 import { reviews } from "./reviews.js";
 import { users } from "./users.js";
 
@@ -19,6 +21,21 @@ export type { NewOAuthAccount, OAuthAccount } from "./oauth-accounts.js";
 
 export { hotels };
 export type { Hotel, NewHotel } from "./hotels.js";
+
+export { organisationRoles, organisations, rolePermissions };
+export type {
+  NewOrganisation,
+  NewOrganisationRole,
+  NewRolePermission,
+  Organisation,
+  OrganisationRole,
+  RolePermission,
+} from "./organisations.js";
+
+export { organisationStatus } from "./organisations.js";
+
+export { memberships };
+export type { Membership, NewMembership } from "./memberships.js";
 
 export { hotelImages };
 export type { HotelImage, NewHotelImage } from "./hotel-images.js";
@@ -41,6 +58,7 @@ export { reviews };
 export type { NewReview, Review } from "./reviews.js";
 
 export { bookingStatus, hotelSource, hotelStatus, userRole, userStatus } from "./enums.js";
+export type { BookingStatus, HotelSource, HotelStatus, UserRole, UserStatus } from "./enums.js";
 
 export const schema = {
   users,
@@ -48,6 +66,10 @@ export const schema = {
   oauthAccounts,
   hotels,
   hotelImages,
+  organisations,
+  organisationRoles,
+  rolePermissions,
+  memberships,
   facilities,
   hotelFacilities,
   hotelTypes,

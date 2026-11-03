@@ -8,8 +8,12 @@ import {
   hotelImages,
   hotels,
   hotelTypes,
+  memberships,
   oauthAccounts,
+  organisationRoles,
+  organisations,
   reviews,
+  rolePermissions,
   users,
   type NewUser,
   type User,
@@ -41,8 +45,12 @@ describe("schema types", () => {
       hotelFacilities,
       hotelHotelTypes,
       hotelTypes,
+      organisations,
+      organisationRoles,
+      rolePermissions,
+      memberships,
       bookings,
       reviews,
-    ]).toHaveLength(11);
+    ]).toHaveLength(15);
   });
 });

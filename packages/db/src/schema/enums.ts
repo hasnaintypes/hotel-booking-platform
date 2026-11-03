@@ -1,6 +1,6 @@
 import { pgEnum } from "drizzle-orm/pg-core";
 
-/** Account role. Membership-based organisation permissions arrive in M1-16 (#101). */
+/** Account role. Organisation permissions come from memberships, not from this enum. */
 export const userRole = pgEnum("user_role", ["user", "admin"]);
 
 /** Account lifecycle. Accounts are suspended, not hard-deleted. */
@@ -19,3 +19,9 @@ export const bookingStatus = pgEnum("booking_status", [
   "cancelled",
   "completed",
 ]);
+
+export type UserRole = (typeof userRole.enumValues)[number];
+export type UserStatus = (typeof userStatus.enumValues)[number];
+export type HotelSource = (typeof hotelSource.enumValues)[number];
+export type HotelStatus = (typeof hotelStatus.enumValues)[number];
+export type BookingStatus = (typeof bookingStatus.enumValues)[number];

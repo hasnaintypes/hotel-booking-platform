@@ -61,21 +61,30 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
   const insertHotel = async (ownerUserId: string) => {
     const result = await client.query<{ id: string }>(
       `insert into hotels
-        (owner_user_id, name, description, city, country, country_code, star_rating,
-         price_per_night_minor)
-       values ($1, 'Harbour Hotel', 'A test hotel', 'Bristol', 'United Kingdom', 'GB', 4, 12500)
+        (owner_user_id, created_by_user_id, name, description, city, country, country_code,
+         star_rating, price_per_night_minor)
+       values ($1, $1, 'Harbour Hotel', 'A test hotel', 'Bristol', 'United Kingdom', 'GB', 4,
+         12500)
        returning id`,
       [ownerUserId],
     );
     return result.rows[0]!.id;
   };
 
-  const insertBooking = async (userId: string, hotelId: string) => {
+  const insertOrganisation = async (slug = `org-${randomUUID()}`) => {
     const result = await client.query<{ id: string }>(
-      `insert into bookings (user_id, hotel_id, check_in, check_out)
-       values ($1, $2, '2026-12-01', '2026-12-03')
+      "insert into organisations (name, slug) values ('Test Agency', $1) returning id",
+      [slug],
+    );
+    return result.rows[0]!.id;
+  };
+
+  const insertBooking = async (userId: string, hotelId: string, organisationId?: string) => {
+    const result = await client.query<{ id: string }>(
+      `insert into bookings (user_id, hotel_id, organisation_id, created_by_user_id, check_in, check_out)
+       values ($1, $2, $3, $1, '2026-12-01', '2026-12-03')
        returning id`,
-      [userId, hotelId],
+      [userId, hotelId, organisationId ?? null],
     );
     return result.rows[0]!.id;
   };
@@ -130,8 +139,8 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
     await expectDatabaseError(
       () =>
         client.query(
-          `insert into bookings (user_id, hotel_id, check_in, check_out)
-           values ($1, $2, '2026-12-03', '2026-12-01')`,
+          `insert into bookings (user_id, hotel_id, created_by_user_id, check_in, check_out)
+           values ($1, $2, $1, '2026-12-03', '2026-12-01')`,
           [userId, hotelId],
         ),
       "23514",
@@ -145,9 +154,9 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
       () =>
         client.query(
           `insert into hotels
-            (owner_user_id, name, description, city, country, country_code, star_rating,
-             price_per_night_minor)
-           values ($1, 'Bad Stars', 'Test', 'Bristol', 'United Kingdom', 'GB', 6, 1000)`,
+            (owner_user_id, created_by_user_id, name, description, city, country, country_code,
+             star_rating, price_per_night_minor)
+           values ($1, $1, 'Bad Stars', 'Test', 'Bristol', 'United Kingdom', 'GB', 6, 1000)`,
           [userId],
         ),
       "23514",
@@ -157,9 +166,9 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
       () =>
         client.query(
           `insert into hotels
-            (owner_user_id, name, description, city, country, country_code, star_rating,
-             price_per_night_minor)
-           values ($1, 'Bad Country', 'Test', 'Bristol', 'United Kingdom', 'gb', 4, 1000)`,
+            (owner_user_id, created_by_user_id, name, description, city, country, country_code,
+             star_rating, price_per_night_minor)
+           values ($1, $1, 'Bad Country', 'Test', 'Bristol', 'United Kingdom', 'gb', 4, 1000)`,
           [userId],
         ),
       "23514",
@@ -167,12 +176,16 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
   });
 
   it("rejects a managed hotel without an owner", async () => {
+    const userId = await insertUser();
+
     await expectDatabaseError(
       () =>
         client.query(
           `insert into hotels
-            (name, description, city, country, country_code, star_rating, price_per_night_minor)
-           values ('Unowned', 'Test', 'Bristol', 'United Kingdom', 'GB', 4, 1000)`,
+            (created_by_user_id, name, description, city, country, country_code, star_rating,
+             price_per_night_minor)
+           values ($1, 'Unowned', 'Test', 'Bristol', 'United Kingdom', 'GB', 4, 1000)`,
+          [userId],
         ),
       "23514",
     );
@@ -194,6 +207,106 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
            values ($1, 'google', 'google-123')`,
           [randomUUID()],
         ),
+      "23503",
+    );
+  });
+
+  it("accepts organisation-owned hotels and bookings without a user owner", async () => {
+    const userId = await insertUser();
+    const organisationId = await insertOrganisation();
+    const hotelResult = await client.query<{ id: string }>(
+      `insert into hotels
+        (organisation_id, created_by_user_id, name, description, city, country, country_code,
+         star_rating, price_per_night_minor)
+       values ($1, $2, 'Agency Hotel', 'A test hotel', 'Bristol', 'United Kingdom', 'GB', 4, 12500)
+       returning id`,
+      [organisationId, userId],
+    );
+    const hotelId = hotelResult.rows[0]!.id;
+
+    const bookingId = await insertBooking(userId, hotelId, organisationId);
+    const booking = await client.query<{ organisation_id: string; created_by_user_id: string }>(
+      "select organisation_id, created_by_user_id from bookings where id = $1",
+      [bookingId],
+    );
+
+    expect(booking.rows[0]).toEqual({
+      organisation_id: organisationId,
+      created_by_user_id: userId,
+    });
+  });
+
+  it("requires a managed hotel to record who created it", async () => {
+    const userId = await insertUser();
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into hotels
+            (owner_user_id, name, description, city, country, country_code, star_rating,
+             price_per_night_minor)
+           values ($1, 'No Creator', 'Test', 'Bristol', 'United Kingdom', 'GB', 4, 1000)`,
+          [userId],
+        ),
+      "23514",
+    );
+  });
+
+  it("rejects duplicate organisation slugs and duplicate memberships", async () => {
+    const userId = await insertUser();
+    const organisationId = await insertOrganisation("duplicate-agency");
+
+    await expectDatabaseError(() => insertOrganisation("duplicate-agency"), "23505");
+
+    await client.query(
+      "insert into memberships (user_id, organisation_id, role_key) values ($1, $2, 'owner')",
+      [userId, organisationId],
+    );
+    await expectDatabaseError(
+      () =>
+        client.query(
+          "insert into memberships (user_id, organisation_id, role_key) values ($1, $2, 'viewer')",
+          [userId, organisationId],
+        ),
+      "23505",
+    );
+  });
+
+  it("rejects unknown roles and permissions", async () => {
+    const userId = await insertUser();
+    const organisationId = await insertOrganisation();
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          "insert into memberships (user_id, organisation_id, role_key) values ($1, $2, 'ghost')",
+          [userId, organisationId],
+        ),
+      "23503",
+    );
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          "insert into role_permissions (role_key, permission) values ('owner', 'hotel:explode')",
+        ),
+      "23514",
+    );
+  });
+
+  it("keeps organisation deletion blocked while owned hotels exist", async () => {
+    const userId = await insertUser();
+    const organisationId = await insertOrganisation();
+    await client.query(
+      `insert into hotels
+        (organisation_id, created_by_user_id, name, description, city, country, country_code,
+         star_rating, price_per_night_minor)
+       values ($1, $2, 'Agency Hotel', 'A test hotel', 'Bristol', 'United Kingdom', 'GB', 4, 12500)`,
+      [organisationId, userId],
+    );
+
+    await expectDatabaseError(
+      () => client.query("delete from organisations where id = $1", [organisationId]),
       "23503",
     );
   });
