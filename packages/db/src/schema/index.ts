@@ -1,5 +1,8 @@
 import { bookings } from "./bookings.js";
 import { credentials } from "./credentials.js";
+import { currencies } from "./currencies.js";
+import { exchangeRates } from "./exchange-rates.js";
+import { fxRateSnapshots } from "./fx-rate-snapshots.js";
 import { facilities, hotelFacilities } from "./facilities.js";
 import { hotelImages } from "./hotel-images.js";
 import { hotelHotelTypes, hotelTypes } from "./hotel-types.js";
@@ -15,6 +18,15 @@ export type { NewUser, User } from "./users.js";
 
 export { credentials };
 export type { Credential, NewCredential } from "./credentials.js";
+
+export { currencies };
+export type { Currency, NewCurrency } from "./currencies.js";
+
+export { exchangeRates };
+export type { ExchangeRate, NewExchangeRate } from "./exchange-rates.js";
+
+export { fxRateSnapshots };
+export type { FxRateSnapshot, NewFxRateSnapshot } from "./fx-rate-snapshots.js";
 
 export { oauthAccounts };
 export type { NewOAuthAccount, OAuthAccount } from "./oauth-accounts.js";
@@ -64,6 +76,9 @@ export const schema = {
   users,
   credentials,
   oauthAccounts,
+  currencies,
+  exchangeRates,
+  fxRateSnapshots,
   hotels,
   hotelImages,
   organisations,

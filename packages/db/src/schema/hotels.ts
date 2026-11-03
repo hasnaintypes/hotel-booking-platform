@@ -12,6 +12,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
+import { currencies } from "./currencies.js";
 import { hotelSource, hotelStatus } from "./enums.js";
 import { organisations } from "./organisations.js";
 import { users } from "./users.js";
@@ -46,7 +47,10 @@ export const hotels = pgTable(
     longitude: numeric("longitude", { precision: 9, scale: 6 }),
     starRating: smallint("star_rating").notNull(),
     pricePerNightMinor: integer("price_per_night_minor").notNull(),
-    currencyCode: char("currency_code", { length: 3 }).notNull().default("GBP"),
+    currencyCode: char("currency_code", { length: 3 })
+      .notNull()
+      .default("GBP")
+      .references(() => currencies.code, { onDelete: "restrict" }),
     status: hotelStatus("status").notNull().default("draft"),
     isFeatured: boolean("is_featured").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),

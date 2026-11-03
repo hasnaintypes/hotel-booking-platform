@@ -2,7 +2,10 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   bookings,
   credentials,
+  currencies,
+  exchangeRates,
   facilities,
+  fxRateSnapshots,
   hotelFacilities,
   hotelHotelTypes,
   hotelImages,
@@ -49,8 +52,11 @@ describe("schema types", () => {
       organisationRoles,
       rolePermissions,
       memberships,
+      currencies,
+      exchangeRates,
+      fxRateSnapshots,
       bookings,
       reviews,
-    ]).toHaveLength(15);
+    ]).toHaveLength(18);
   });
 });

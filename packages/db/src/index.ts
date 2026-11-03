@@ -5,7 +5,10 @@ export {
   bookings,
   bookingStatus,
   credentials,
+  currencies,
+  exchangeRates,
   facilities,
+  fxRateSnapshots,
   hotelFacilities,
   hotelHotelTypes,
   hotelImages,
@@ -28,7 +31,10 @@ export {
 export type {
   Booking,
   Credential,
+  Currency,
+  ExchangeRate,
   Facility,
+  FxRateSnapshot,
   Hotel,
   HotelFacility,
   HotelHotelType,
@@ -37,7 +43,10 @@ export type {
   Membership,
   NewBooking,
   NewCredential,
+  NewCurrency,
+  NewExchangeRate,
   NewFacility,
+  NewFxRateSnapshot,
   NewHotel,
   NewHotelFacility,
   NewHotelHotelType,
@@ -83,3 +92,14 @@ export type {
   Permission,
   Resource,
 } from "./authz.js";
+export {
+  DEFAULT_EXCHANGE_RATE_MAX_AGE_MS,
+  lookupExchangeRate,
+  selectApplicableRate,
+} from "./fx.js";
+export type {
+  ExchangeRateDatabase,
+  ExchangeRateLookup,
+  ExchangeRateResult,
+  RateCandidate,
+} from "./fx.js";
