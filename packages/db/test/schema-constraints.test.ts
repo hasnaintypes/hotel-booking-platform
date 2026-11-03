@@ -311,6 +311,139 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
     );
   });
 
+  it("accepts GBP but rejects unknown and disabled hotel currencies", async () => {
+    const userId = await insertUser();
+    await insertHotel(userId);
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into hotels
+            (owner_user_id, created_by_user_id, name, description, city, country, country_code,
+             star_rating, price_per_night_minor, currency_code)
+           values ($1, $1, 'Unknown Currency', 'Test', 'Bristol', 'United Kingdom', 'GB', 4,
+             1000, 'ZZZ')`,
+          [userId],
+        ),
+      "23503",
+    );
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into hotels
+            (owner_user_id, created_by_user_id, name, description, city, country, country_code,
+             star_rating, price_per_night_minor, currency_code)
+           values ($1, $1, 'Disabled Currency', 'Test', 'Bristol', 'United Kingdom', 'GB', 4,
+             1000, 'USD')`,
+          [userId],
+        ),
+      "23514",
+    );
+  });
+
+  it("rejects invalid currency reference data", async () => {
+    await expectDatabaseError(
+      () =>
+        client.query(
+          "insert into currencies (code, name, minor_unit_exponent) values ('gbp', 'Lower', 2)",
+        ),
+      "23514",
+    );
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          "insert into currencies (code, name, minor_unit_exponent) values ('ABC', 'Bad Exponent', 7)",
+        ),
+      "23514",
+    );
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          "insert into currencies (code, name, minor_unit_exponent) values ('GBP', 'Duplicate', 2)",
+        ),
+      "23505",
+    );
+  });
+
+  it("rejects malformed exchange-rate rows", async () => {
+    const insert = (values: string) =>
+      client.query(
+        `insert into exchange_rates (base_code, quote_code, rate, source, observed_at, valid_from, valid_to)
+         values (${values})`,
+      );
+
+    await expectDatabaseError(
+      () =>
+        insert("'GBP', 'GBP', 1.25, 'test', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', null"),
+      "23514",
+    );
+    await expectDatabaseError(
+      () => insert("'GBP', 'USD', 0, 'test', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', null"),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        insert(
+          "'GBP', 'USD', 1.25, 'test', '2026-01-01T00:00:00Z', '2026-01-02T00:00:00Z', '2026-01-02T00:00:00Z'",
+        ),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        insert("'GBP', 'USD', 1.25, 'test', '2026-01-03T00:00:00Z', '2026-01-02T00:00:00Z', null"),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        insert("'ZZZ', 'USD', 1.25, 'test', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z', null"),
+      "23503",
+    );
+  });
+
+  it("keeps fx rate snapshots immutable", async () => {
+    const rate = await client.query<{ id: string }>(
+      `insert into exchange_rates
+        (base_code, quote_code, rate, source, observed_at, valid_from)
+       values ('GBP', 'USD', 1.25, 'test', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+       returning id`,
+    );
+    const exchangeRateId = rate.rows[0]!.id;
+    const snapshot = await client.query<{ id: string }>(
+      `insert into fx_rate_snapshots
+        (exchange_rate_id, base_code, quote_code, rate, source, observed_at, valid_from)
+       values ($1, 'GBP', 'USD', 1.25, 'test', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')
+       returning id`,
+      [exchangeRateId],
+    );
+    const snapshotId = snapshot.rows[0]!.id;
+
+    await expectDatabaseError(
+      () => client.query("update fx_rate_snapshots set rate = 1.5 where id = $1", [snapshotId]),
+      "55000",
+    );
+    await expectDatabaseError(
+      () => client.query("delete from fx_rate_snapshots where id = $1", [snapshotId]),
+      "55000",
+    );
+  });
+
+  it("rejects an fx rate snapshot pointing at a missing exchange rate", async () => {
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into fx_rate_snapshots
+            (exchange_rate_id, base_code, quote_code, rate, source, observed_at, valid_from)
+           values ($1, 'GBP', 'USD', 1.25, 'test', '2026-01-01T00:00:00Z',
+             '2026-01-01T00:00:00Z')`,
+          [randomUUID()],
+        ),
+      "23503",
+    );
+  });
+
   it("keeps referential actions explicit: bookings block hotel deletion", async () => {
     const userId = await insertUser();
     const hotelId = await insertHotel(userId);
