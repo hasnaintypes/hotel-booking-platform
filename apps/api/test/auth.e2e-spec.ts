@@ -27,7 +27,7 @@ describe("auth and sessions", () => {
       lastName: credentials.lastName,
     });
     expect(res.body).not.toHaveProperty("password");
-    expect(res.headers.location).toBe("/api/users/me");
+    expect(res.headers.location).toBe("/api/v1/me");
     const cookie = sessionCookie(res);
     expect(cookie).toBeDefined();
     expect(cookie).toMatch(/HttpOnly/i);
@@ -93,10 +93,10 @@ describe("auth and sessions", () => {
   });
 
   it("validates a session token and clears the cookie on logout", async () => {
-    const { agent, user } = await registerUser(t);
-    const validate = await agent.get(routes.auth.validateToken);
+    const { agent, credentials } = await registerUser(t);
+    const validate = await agent.get(routes.users.me);
     expect(validate.status).toBe(200);
-    expect(validate.body.userId).toBe(user._id);
+    expect(validate.body.email).toBe(credentials.email);
 
     const logout = await agent.post(routes.auth.logout);
     expect(logout.status).toBe(204);

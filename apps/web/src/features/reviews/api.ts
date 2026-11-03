@@ -2,7 +2,7 @@ import axiosInstance from "@hotel-booking/api-client";
 
 /** Public list of reviews for a hotel */
 export const fetchHotelReviews = async (hotelId: string) => {
-  const response = await axiosInstance.get(`/api/reviews/hotel/${hotelId}`);
+  const response = await axiosInstance.get(`/api/v1/hotels/${hotelId}/reviews`);
   return response.data;
 };
 
@@ -20,6 +20,9 @@ export const createHotelReview = async (payload: {
     amenities: number;
   };
 }) => {
-  const response = await axiosInstance.post("/api/reviews", payload);
+  const response = await axiosInstance.post(
+    "/api/v1/bookings/${payload.bookingId}/reviews",
+    payload,
+  );
   return response.data;
 };

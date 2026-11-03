@@ -267,7 +267,7 @@ describe("bookings", () => {
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });
 
-      const res = await admin.agent.delete(routes.bookings.byId(fresh.id));
+      const res = await admin.agent.delete(routes.bookings.remove(fresh.id));
       expect(res.status).toBe(204);
       expect(res.text).toBe("");
 
@@ -277,7 +277,7 @@ describe("bookings", () => {
       expect(afterHotel?.totalBookings).toBe((hotel?.totalBookings ?? 0) - 1);
       expect(afterHotel?.totalRevenue).toBe((hotel?.totalRevenue ?? 0) - 120);
 
-      expect((await admin.agent.delete(routes.bookings.byId(fresh.id))).status).toBe(404);
+      expect((await admin.agent.delete(routes.bookings.remove(fresh.id))).status).toBe(404);
     });
 
     it("does not touch the counters twice for an already-cancelled booking", async () => {
@@ -286,7 +286,7 @@ describe("bookings", () => {
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });
 
-      expect((await admin.agent.delete(routes.bookings.byId(fresh.id))).status).toBe(204);
+      expect((await admin.agent.delete(routes.bookings.remove(fresh.id))).status).toBe(204);
       const afterHotel = await t.connection
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });
@@ -294,8 +294,8 @@ describe("bookings", () => {
     });
 
     it("is closed to non-admins and anonymous callers", async () => {
-      expect((await guest.agent.delete(routes.bookings.byId(bookingId))).status).toBe(403);
-      expect((await anonymous(t).delete(routes.bookings.byId(bookingId))).status).toBe(401);
+      expect((await guest.agent.delete(routes.bookings.remove(bookingId))).status).toBe(403);
+      expect((await anonymous(t).delete(routes.bookings.remove(bookingId))).status).toBe(401);
     });
   });
 

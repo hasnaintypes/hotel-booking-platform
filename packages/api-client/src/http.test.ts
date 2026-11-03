@@ -168,7 +168,7 @@ describe("401 handling", () => {
     expect(authSession.get()).toBe(true);
 
     useAdapter(status(401));
-    const result = await settle(axiosInstance.get("/api/users/me"));
+    const result = await settle(axiosInstance.get("/api/v1/me"));
 
     expect((result as { error: AxiosError }).error.response?.status).toBe(401);
     expect(authSession.get()).toBe(false);

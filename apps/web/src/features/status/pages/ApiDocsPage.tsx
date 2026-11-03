@@ -8,15 +8,15 @@ const ApiDocs = () => {
       category: "Authentication",
       icon: <Shield className="w-5 h-5" />,
       endpoints: [
-        { method: "POST", path: "/api/auth/login", description: "User login" },
+        { method: "POST", path: "/api/v1/auth/login", description: "User login" },
         {
           method: "GET",
-          path: "/api/auth/validate-token",
-          description: "Validate token",
+          path: "/api/v1/auth/oauth/google/authorize",
+          description: "Start Google sign-in",
         },
         {
           method: "POST",
-          path: "/api/auth/logout",
+          path: "/api/v1/auth/logout",
           description: "User logout",
         },
       ],
@@ -27,12 +27,12 @@ const ApiDocs = () => {
       endpoints: [
         {
           method: "POST",
-          path: "/api/users/register",
+          path: "/api/v1/auth/register",
           description: "Register new user",
         },
         {
           method: "GET",
-          path: "/api/users/me",
+          path: "/api/v1/me",
           description: "Get current user",
         },
       ],
@@ -41,32 +41,43 @@ const ApiDocs = () => {
       category: "Hotels",
       icon: <FileText className="w-5 h-5" />,
       endpoints: [
-        { method: "GET", path: "/api/hotels", description: "Get all hotels" },
+        { method: "GET", path: "/api/v1/hotels", description: "Get all hotels" },
         {
           method: "GET",
-          path: "/api/hotels/search",
+          path: "/api/v1/hotels/search",
           description: "Search hotels",
         },
         {
           method: "GET",
-          path: "/api/hotels/:id",
+          path: "/api/v1/hotels/:id",
           description: "Get hotel by ID",
         },
-        { method: "POST", path: "/api/my-hotels", description: "Add hotel" },
+      ],
+    },
+    {
+      category: "Hotel management",
+      icon: <FileText className="w-5 h-5" />,
+      endpoints: [
+        { method: "POST", path: "/api/v1/manage/hotels", description: "Add hotel" },
         {
           method: "GET",
-          path: "/api/my-hotels",
+          path: "/api/v1/manage/hotels",
           description: "Get user's hotels",
         },
         {
+          method: "GET",
+          path: "/api/v1/manage/hotels/:id",
+          description: "Get owned hotel",
+        },
+        {
           method: "PUT",
-          path: "/api/my-hotels/:id",
+          path: "/api/v1/manage/hotels/:hotelId",
           description: "Update hotel",
         },
         {
-          method: "DELETE",
-          path: "/api/my-hotels/:id",
-          description: "Delete hotel",
+          method: "PATCH",
+          path: "/api/v1/manage/hotels/:id/active",
+          description: "Show or hide hotel",
         },
       ],
     },
@@ -76,18 +87,28 @@ const ApiDocs = () => {
       endpoints: [
         {
           method: "POST",
-          path: "/api/hotels/:id/bookings",
+          path: "/api/v1/hotels/:hotelId/bookings",
           description: "Create booking",
         },
         {
           method: "GET",
-          path: "/api/my-bookings",
+          path: "/api/v1/bookings",
           description: "Get user's bookings",
         },
         {
           method: "POST",
-          path: "/api/hotels/:id/bookings/payment-intent",
+          path: "/api/v1/bookings/:id/cancellations",
+          description: "Cancel booking",
+        },
+        {
+          method: "POST",
+          path: "/api/v1/hotels/:hotelId/bookings/payment-intent",
           description: "Create payment intent",
+        },
+        {
+          method: "POST",
+          path: "/api/v1/bookings/:bookingId/reviews",
+          description: "Review a completed stay",
         },
       ],
     },
@@ -97,28 +118,28 @@ const ApiDocs = () => {
       endpoints: [
         {
           method: "GET",
-          path: "/api/health",
-          description: "Public liveness probe (minimal payload)",
+          path: "/health/live",
+          description: "Liveness probe (outside /api/v1)",
         },
         {
           method: "GET",
-          path: "/api/health/detailed",
-          description: "Sanitized metrics (JWT required)",
+          path: "/health/ready",
+          description: "Readiness probe with database and migration checks",
         },
         {
           method: "GET",
-          path: "/api/business-insights/dashboard",
+          path: "/api/v1/admin/system/health",
+          description: "Detailed diagnostics (admin only)",
+        },
+        {
+          method: "GET",
+          path: "/api/v1/admin/reports/overview",
           description: "Analytics dashboard (admin only)",
         },
         {
           method: "GET",
-          path: "/api/business-insights/forecast",
+          path: "/api/v1/admin/reports/forecast",
           description: "Booking forecasts (admin only)",
-        },
-        {
-          method: "GET",
-          path: "/api/business-insights/system-stats",
-          description: "System statistics (admin only)",
         },
       ],
     },
@@ -167,12 +188,13 @@ const ApiDocs = () => {
               Interactive API Documentation
             </h3>
             <p className="text-blue-700">
-              Explore our interactive Swagger UI documentation for detailed endpoint specifications,
-              request/response schemas, and testing capabilities.
+              Explore the public/customer Swagger UI for detailed endpoint specifications,
+              request/response schemas, and testing capabilities. Audience-specific documents are
+              available under <code>/api/docs/&lt;audience&gt;</code>.
             </p>
           </div>
           <a
-            href={`${apiBaseUrl}/api-docs`}
+            href={`${apiBaseUrl}/api/docs/public`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"

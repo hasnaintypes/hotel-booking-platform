@@ -13,12 +13,12 @@ type SignInResponse = {
 };
 
 export const fetchCurrentUser = async (): Promise<UserType> => {
-  const response = await apiClient.get("/api/users/me");
+  const response = await apiClient.get("/api/v1/me");
   return response.data;
 };
 
 export const signIn = async (payload: SignInPayload): Promise<SignInResponse> => {
-  const response = await apiClient.post<SignInResponse>("/api/auth/login", payload);
+  const response = await apiClient.post<SignInResponse>("/api/v1/auth/login", payload);
   const { userId, user } = response.data;
 
   authSession.set();
@@ -34,7 +34,7 @@ export const signIn = async (payload: SignInPayload): Promise<SignInResponse> =>
 
 export const signOut = async () => {
   try {
-    await apiClient.post("/api/auth/logout");
+    await apiClient.post("/api/v1/auth/logout");
   } finally {
     authSession.clear();
     clearUserDetails();

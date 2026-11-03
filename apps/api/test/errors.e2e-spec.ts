@@ -57,7 +57,7 @@ describe("error responses (problem details)", () => {
   });
 
   it("returns 400 with per-field errors for DTO validation failures", async () => {
-    const res = await anonymous(t).post("/__test__/echo").send({ email: "nope", count: 0 });
+    const res = await anonymous(t).post("/api/v1/__test__/echo").send({ email: "nope", count: 0 });
     expectProblem(res, 400, "VALIDATION_FAILED");
     const fields = res.body.errors.map((e: { field: string }) => e.field).sort();
     expect(fields).toEqual(["count", "email"]);
@@ -65,7 +65,7 @@ describe("error responses (problem details)", () => {
 
   it("returns 400 INVALID_JSON for a malformed JSON body", async () => {
     const res = await anonymous(t)
-      .post("/__test__/echo")
+      .post("/api/v1/__test__/echo")
       .set("Content-Type", "application/json")
       .send("{ not json");
     expectProblem(res, 400, "INVALID_JSON");
@@ -74,7 +74,7 @@ describe("error responses (problem details)", () => {
   it("correlates and logs requests rejected before routing (malformed JSON, CORS)", async () => {
     t.logs.clear();
     const json = await anonymous(t)
-      .post("/__test__/echo")
+      .post("/api/v1/__test__/echo")
       .set("Content-Type", "application/json")
       .send("{ not json");
     const cors = await anonymous(t).get(routes.health).set("Origin", "https://evil.example");
@@ -94,7 +94,7 @@ describe("error responses (problem details)", () => {
 
   it("returns 413 for oversized JSON bodies", async () => {
     const res = await anonymous(t)
-      .post("/__test__/echo")
+      .post("/api/v1/__test__/echo")
       .send({ email: "a@b.test", count: 1, padding: "x".repeat(300_000) });
     expectProblem(res, 413, "PAYLOAD_TOO_LARGE");
   });
@@ -108,19 +108,19 @@ describe("error responses (problem details)", () => {
   });
 
   it.each([
-    ["/__test__/mongo-duplicate", 409, "CONFLICT"],
-    ["/__test__/cast-error", 400, "INVALID_ID"],
-    ["/__test__/stripe-card", 402, "PAYMENT_DECLINED"],
-    ["/__test__/stripe-down", 502, "UPSTREAM_ERROR"],
-    ["/__test__/throttled", 429, "TOO_MANY_REQUESTS"],
-    ["/__test__/teapot", 418, "BAD_REQUEST"],
+    ["/api/v1/__test__/mongo-duplicate", 409, "CONFLICT"],
+    ["/api/v1/__test__/cast-error", 400, "INVALID_ID"],
+    ["/api/v1/__test__/stripe-card", 402, "PAYMENT_DECLINED"],
+    ["/api/v1/__test__/stripe-down", 502, "UPSTREAM_ERROR"],
+    ["/api/v1/__test__/throttled", 429, "TOO_MANY_REQUESTS"],
+    ["/api/v1/__test__/teapot", 418, "BAD_REQUEST"],
   ])("maps %s deliberately", async (path, status, code) => {
     expectProblem(await anonymous(t).get(path), status, code);
   });
 
   it("returns a generic 500 for unexpected errors without leaking internals", async () => {
     t.logs.clear();
-    const res = await anonymous(t).get("/__test__/boom");
+    const res = await anonymous(t).get("/api/v1/__test__/boom");
     expectProblem(res, 500, "INTERNAL_ERROR");
 
     const serialized = JSON.stringify(res.body);
@@ -139,7 +139,11 @@ describe("error responses (problem details)", () => {
   });
 
   it("does not return a stack trace for any error class", async () => {
-    for (const path of ["/__test__/boom", "/__test__/stripe-down", "/api/does-not-exist"]) {
+    for (const path of [
+      "/api/v1/__test__/boom",
+      "/api/v1/__test__/stripe-down",
+      "/api/does-not-exist",
+    ]) {
       const res = await anonymous(t).get(path);
       expect(JSON.stringify(res.body)).not.toMatch(/\bat \S+ \(/);
     }

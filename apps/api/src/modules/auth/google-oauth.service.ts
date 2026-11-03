@@ -57,7 +57,7 @@ export class GoogleOAuthService {
   ) {}
 
   private get redirectUri() {
-    return `${this.config.get<string>("backendUrl")}/api/auth/callback/google`;
+    return `${this.config.get<string>("backendUrl")}/api/v1/auth/oauth/google/callback`;
   }
 
   buildAuthRequest(): GoogleAuthRequest {

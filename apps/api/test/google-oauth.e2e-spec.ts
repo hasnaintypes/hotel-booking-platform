@@ -101,7 +101,7 @@ describe("Google sign-in", () => {
       );
       expect(location.searchParams.get("client_id")).toBe("test-client.apps.googleusercontent.com");
       expect(location.searchParams.get("redirect_uri")).toBe(
-        "http://localhost:5001/api/auth/callback/google",
+        "http://localhost:5001/api/v1/auth/oauth/google/callback",
       );
       expect(state).toMatch(/^[0-9a-f]{64}$/);
       expect(challenge).toMatch(/^[A-Za-z0-9_-]{43}$/);
@@ -109,7 +109,7 @@ describe("Google sign-in", () => {
 
       expect(rawCookie).toMatch(/HttpOnly/i);
       expect(rawCookie).toMatch(/SameSite=Lax/i);
-      expect(rawCookie).toMatch(/Path=\/api\/auth/);
+      expect(rawCookie).toMatch(/Path=\/api\/v1\/auth/);
       expect(rawCookie).toMatch(/Max-Age=600/);
       expect(sessionCookie(res)).toBeUndefined();
     });

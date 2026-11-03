@@ -55,6 +55,40 @@ describe("API documentation", () => {
       expect((await anonymous(app).get(UI)).status).toBe(200);
     });
 
+    it("serves one document per audience with only that audience's routes", async () => {
+      const app = await boot({});
+      const cases = [
+        {
+          audience: "public",
+          includes: routes.hotels.list,
+          excludes: routes.users.list,
+        },
+        {
+          audience: "manage",
+          includes: routes.myHotels.list,
+          excludes: routes.hotels.list,
+        },
+        {
+          audience: "admin",
+          includes: routes.users.list,
+          excludes: routes.hotels.list,
+        },
+        {
+          audience: "partner",
+          includes: routes.partner.capabilities,
+          excludes: routes.hotels.list,
+        },
+      ] as const;
+
+      for (const { audience, includes, excludes } of cases) {
+        const res = await anonymous(app).get(`/api/docs/${audience}-json`);
+        expect(res.status, audience).toBe(200);
+        const paths = Object.keys(res.body.paths);
+        expect(paths, audience).toContain(includes);
+        expect(paths, audience).not.toContain(excludes);
+      }
+    });
+
     it("can be switched off with ENABLE_API_DOCS=false", async () => {
       const app = await boot({ ENABLE_API_DOCS: "false" });
 
@@ -69,7 +103,15 @@ describe("API documentation", () => {
     it("is disabled unless ENABLE_API_DOCS=true", async () => {
       const app = await boot(production);
 
-      for (const path of [UI, "/api-docs", JSON_DOC, "/api-docs-yaml"]) {
+      for (const path of [
+        UI,
+        "/api-docs",
+        JSON_DOC,
+        "/api-docs-yaml",
+        "/api/docs/public",
+        "/api/docs/public-json",
+        "/api/docs/admin-json",
+      ]) {
         const res = await anonymous(app).get(path);
         expect(res.status, path).toBe(404);
       }
@@ -86,7 +128,13 @@ describe("API documentation", () => {
       it("refuses anonymous visitors and invalid sessions", async () => {
         const app = await boot(enabled);
 
-        for (const path of [UI, JSON_DOC, "/api-docs-yaml"]) {
+        for (const path of [
+          UI,
+          JSON_DOC,
+          "/api-docs-yaml",
+          "/api/docs/public-json",
+          "/api/docs/admin-json",
+        ]) {
           const res = await anonymous(app).get(path);
           expect(res.status, path).toBe(401);
           expect(res.headers["content-type"]).toMatch(/problem\+json/);

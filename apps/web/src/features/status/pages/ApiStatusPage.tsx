@@ -12,16 +12,15 @@ import {
 } from "lucide-react";
 import useAuth from "@/features/auth/hooks/useAuth";
 
-/** Public liveness shape from GET /api/health (minimal — no infra recon data) */
+/** Public readiness shape from GET /health/ready (no infra identifiers). */
 interface HealthData {
   status: string;
   timestamp: string;
-  database?: {
-    status: string;
-  };
+  database?: string;
+  migrations?: string;
 }
 
-/** Auth-only sanitized metrics from GET /api/health/detailed */
+/** Admin-only sanitised metrics from GET /api/v1/admin/system/health. */
 interface DetailedHealthData {
   status: string;
   timestamp: string;
@@ -33,14 +32,16 @@ interface DetailedHealthData {
     };
     uptime: number;
   };
-  database: {
-    status: string;
+  checks: {
+    database: string;
+    migrations: string;
   };
 }
 
 const ApiStatus = () => {
   const [isDetailed, setIsDetailed] = useState(false);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
   const {
@@ -51,7 +52,7 @@ const ApiStatus = () => {
   } = useQuery<HealthData>({
     queryKey: ["health"],
     queryFn: async () => {
-      const response = await fetch(`${apiBaseUrl}/api/health`);
+      const response = await fetch(`${apiBaseUrl}/health/ready`);
       if (!response.ok) {
         throw new Error("Health check failed");
       }
@@ -70,10 +71,10 @@ const ApiStatus = () => {
   } = useQuery<DetailedHealthData>({
     queryKey: ["detailedHealth"],
     queryFn: async () => {
-      const response = await fetch(`${apiBaseUrl}/api/health/detailed`, {
+      const response = await fetch(`${apiBaseUrl}/api/v1/admin/system/health`, {
         credentials: "include",
       });
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
         throw new Error("SIGN_IN_REQUIRED");
       }
       if (!response.ok) {
@@ -81,17 +82,20 @@ const ApiStatus = () => {
       }
       return response.json();
     },
-    enabled: isDetailed && isLoggedIn,
-    refetchInterval: isDetailed && isLoggedIn ? 30000 : false,
+    enabled: isDetailed && isLoggedIn && isAdmin,
+    refetchInterval: isDetailed && isLoggedIn && isAdmin ? 30000 : false,
     retry: false,
   });
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "healthy":
+      case "ready":
       case "connected":
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case "unhealthy":
+      case "not_ready":
+      case "pending":
       case "disconnected":
         return <XCircle className="w-5 h-5 text-red-500" />;
       default:
@@ -102,9 +106,12 @@ const ApiStatus = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "healthy":
+      case "ready":
       case "connected":
         return "bg-green-100 text-green-800";
       case "unhealthy":
+      case "not_ready":
+      case "pending":
       case "disconnected":
         return "bg-red-100 text-red-800";
       default:
@@ -158,6 +165,7 @@ const ApiStatus = () => {
   const needsSignInForDetails =
     isDetailed &&
     (!isLoggedIn ||
+      !isAdmin ||
       (isDetailedError &&
         detailedError instanceof Error &&
         detailedError.message === "SIGN_IN_REQUIRED"));
@@ -211,14 +219,14 @@ const ApiStatus = () => {
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600">Database</span>
-              {getStatusIcon(healthData?.database?.status || "unknown")}
+              {getStatusIcon(healthData?.database || "unknown")}
             </div>
             <span
               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                healthData?.database?.status || "unknown",
+                healthData?.database || "unknown",
               )}`}
             >
-              {healthData?.database?.status || "Unknown"}
+              {healthData?.database || "Unknown"}
             </span>
           </div>
 
@@ -239,7 +247,8 @@ const ApiStatus = () => {
           <AlertCircle className="w-8 h-8 text-amber-600 mx-auto mb-2" />
           <p className="text-amber-900 font-medium">Sign in to view detailed status</p>
           <p className="text-sm text-amber-800 mt-1">
-            Detailed metrics require authentication and no longer expose infrastructure identifiers.
+            Detailed metrics require an administrator account and no longer expose infrastructure
+            identifiers.
           </p>
         </div>
       )}
@@ -256,10 +265,10 @@ const ApiStatus = () => {
                 <span className="text-gray-600">Status:</span>
                 <span
                   className={`font-medium ${
-                    detailedData.database.status === "connected" ? "text-green-600" : "text-red-600"
+                    detailedData.checks.database === "connected" ? "text-green-600" : "text-red-600"
                   }`}
                 >
-                  {detailedData.database.status}
+                  {detailedData.checks.database}
                 </span>
               </div>
             </div>

@@ -134,7 +134,7 @@ describe("operator payloads are rejected before they reach a query", () => {
 
   it("reviews: ids must be real ids, not operator objects", async () => {
     expectRejected(
-      await user.agent.post(routes.reviews.create).send({
+      await user.agent.post(routes.reviews.create(SOME_ID)).send({
         hotelId: { $ne: null },
         bookingId: { $ne: null },
         rating: 5,

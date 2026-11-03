@@ -7,7 +7,7 @@ Standards from ADR-023 (logging) and ADR-024 (responses and errors).
 - **Format:** one JSON object per line on stdout (`LOG_FORMAT=json`, the default outside development). In development the default is `pretty` (`pino-pretty`). Ship logs by collecting stdout; the API never writes log files.
 - **Level:** `LOG_LEVEL` = `fatal | error | warn | info | debug | trace | silent`. Defaults: `info` in production, `debug` in development, `silent` in tests.
 - **Correlation:** every request gets a `requestId` (a valid incoming `X-Request-Id` is reused, otherwise a UUID is generated). It is returned in the `X-Request-Id` header, appears on every log line written during the request, and in every error response.
-- **Access log:** one line per request: `method`, `path` (no query string), `route` (template such as `/api/hotels/:id`), `res.statusCode`, `responseTime`, `userId` (when authenticated), `remoteAddress`, `userAgent`. Level by outcome: 5xx `error`, 4xx `warn`, otherwise `info`. Health checks are not logged.
+- **Access log:** one line per request: `method`, `path` (no query string), `route` (template such as `/api/v1/hotels/:id`), `res.statusCode`, `responseTime`, `userId` (when authenticated), `remoteAddress`, `userAgent`. Level by outcome: 5xx `error`, 4xx `warn`, otherwise `info`. Health checks are not logged.
 - **Never logged:** request or response bodies, headers, cookies, authorization values, query strings, passwords, tokens, card data. Credentials embedded in URLs inside error messages or stacks (for example connection strings) are scrubbed. See `src/common/logging/redaction.ts`.
 
 ### Writing logs in code
@@ -38,7 +38,7 @@ All errors are produced by the single global filter (`src/common/errors/global-e
   "title": "Conflict",
   "status": 409,
   "detail": "User already exists",
-  "instance": "/api/users/register",
+  "instance": "/api/v1/auth/register",
   "code": "CONFLICT",
   "requestId": "6f1c9a…",
   "errors": [{ "field": "email", "message": "email must be an email" }],

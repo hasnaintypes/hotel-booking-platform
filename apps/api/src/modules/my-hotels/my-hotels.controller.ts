@@ -31,7 +31,7 @@ const uploadOptions = {
   fileFilter: imageFileFilter,
 };
 
-@Controller("api/my-hotels")
+@Controller("hotels")
 @UseGuards(JwtAuthGuard)
 export class MyHotelsController {
   constructor(private readonly myHotelsService: MyHotelsService) {}
@@ -46,7 +46,7 @@ export class MyHotelsController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const hotel = await this.myHotelsService.create(dto, files, user.userId);
-    res.setHeader("Location", `/api/my-hotels/${hotel._id}`);
+    res.setHeader("Location", `/api/v1/manage/hotels/${hotel._id}`);
     return hotel;
   }
 

@@ -15,6 +15,6 @@ export const suggestAiAssist = async (payload: {
   usedFallback?: boolean;
   warning?: string;
 }> => {
-  const response = await axiosInstance.post("/api/ai/suggest", payload);
+  const response = await axiosInstance.post("/api/v1/manage/ai/suggestions", payload);
   return response.data;
 };

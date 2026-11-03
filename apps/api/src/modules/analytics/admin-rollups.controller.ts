@@ -4,8 +4,8 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { AnalyticsService } from "./analytics.service";
 
-@Controller("api/business-insights")
-export class AnalyticsController {
+@Controller("reports")
+export class AdminRollupsController {
   constructor(private readonly analyticsService: AnalyticsService) {}
 
   @Get("rollups")

@@ -21,27 +21,27 @@ type Case = {
  * validation or business logic, so this table is a cheap contract test for the whole surface.
  *
  * Remaining deviations, fixed when their routes are rebuilt:
- * - `POST /api/bookings/:id/cancel` returns 200; it becomes 201 when cancellation is modelled
- *   as a resource (M2).
- * - `POST /api/hotels/:hotelId/bookings/payment-intent` has no `Location` because the created
- *   Stripe object has no API route; the v1 route lands in M1-09.
- * - `POST /api/reviews` and `POST /api/analytics/rollups` have no `Location` because there is
- *   no GET-by-id route for either resource until M2.
+ * - `POST /api/v1/bookings/:id/cancellations` returns 200 until M2 gives cancellations a
+ *   created-resource response.
+ * - The temporary checkout routes under `/api/v1/hotels/:id/bookings` are replaced by
+ *   `POST /api/v1/bookings` in M2.
+ * - `POST /api/v1/bookings/:id/reviews` and rollup creation have no `Location` because neither
+ *   resource has a GET-by-id route yet.
  */
 const MATRIX: Case[] = [
-  { name: "health", method: "get", path: routes.health, status: 200 },
+  { name: "liveness", method: "get", path: routes.health, status: 200 },
+  { name: "readiness", method: "get", path: routes.healthReady, status: 200 },
   { name: "detailed health", method: "get", path: routes.healthDetailed, status: 401 },
 
   { name: "register", method: "post", path: routes.auth.register, status: 400 },
   { name: "login", method: "post", path: routes.auth.login, status: 400 },
   { name: "logout", method: "post", path: routes.auth.logout, status: 204 },
-  { name: "validate token", method: "get", path: routes.auth.validateToken, status: 401 },
   { name: "google start", method: "get", path: routes.auth.google, status: 302 },
   { name: "google callback", method: "get", path: routes.auth.googleCallback, status: 302 },
 
   { name: "current user", method: "get", path: routes.users.me, status: 401 },
   { name: "list users", method: "get", path: routes.users.list, status: 401 },
-  { name: "update role", method: "patch", path: routes.users.role(id), status: 401 },
+  { name: "update user", method: "patch", path: routes.users.role(id), status: 401 },
 
   { name: "list hotels", method: "get", path: routes.hotels.list, status: 200 },
   { name: "search hotels", method: "get", path: routes.hotels.search, status: 200 },
@@ -61,6 +61,13 @@ const MATRIX: Case[] = [
   { name: "bookings for hotel", method: "get", path: routes.bookings.forHotel(id), status: 401 },
   { name: "booking detail", method: "get", path: routes.bookings.byId(id), status: 401 },
   { name: "cancel booking", method: "post", path: routes.bookings.cancel(id), status: 401 },
+  {
+    name: "admin cancel booking",
+    method: "post",
+    path: routes.bookings.adminCancel(id),
+    status: 401,
+  },
+  { name: "admin booking detail", method: "get", path: routes.bookings.adminById(id), status: 401 },
   { name: "update booking status", method: "patch", path: routes.bookings.status(id), status: 401 },
   {
     name: "update booking payment",
@@ -68,12 +75,12 @@ const MATRIX: Case[] = [
     path: routes.bookings.payment(id),
     status: 401,
   },
-  { name: "delete booking", method: "delete", path: routes.bookings.byId(id), status: 401 },
+  { name: "delete booking", method: "delete", path: routes.bookings.remove(id), status: 401 },
 
   { name: "list reviews", method: "get", path: routes.reviews.list, status: 401 },
   { name: "hotel reviews", method: "get", path: routes.reviews.byHotel(id), status: 200 },
   { name: "hotel review summary", method: "get", path: routes.reviews.summary(id), status: 200 },
-  { name: "create review", method: "post", path: routes.reviews.create, status: 401 },
+  { name: "create review", method: "post", path: routes.reviews.create(id), status: 401 },
 
   { name: "insights dashboard", method: "get", path: routes.insights.dashboard, status: 401 },
   { name: "insights forecast", method: "get", path: routes.insights.forecast, status: 401 },
@@ -82,6 +89,7 @@ const MATRIX: Case[] = [
   { name: "create rollup", method: "post", path: routes.insights.rollups, status: 401 },
 
   { name: "ai suggestions", method: "post", path: routes.ai.suggest, status: 401 },
+  { name: "partner capabilities", method: "get", path: routes.partner.capabilities, status: 200 },
 
   { name: "list my hotels", method: "get", path: routes.myHotels.list, status: 401 },
   { name: "create my hotel", method: "post", path: routes.myHotels.list, status: 401 },
