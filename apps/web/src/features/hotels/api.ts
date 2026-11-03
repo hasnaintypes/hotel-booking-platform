@@ -36,16 +36,16 @@ export const searchHotels = async (searchParams: SearchParams): Promise<HotelSea
   searchParams.types?.forEach((type) => queryParams.append("types", type));
   searchParams.stars?.forEach((star) => queryParams.append("stars", star));
 
-  const response = await axiosInstance.get(`/api/hotels/search?${queryParams}`);
+  const response = await axiosInstance.get(`/api/v1/hotels/search?${queryParams}`);
   return response.data;
 };
 
 export const fetchHotels = async (): Promise<HotelType[]> => {
-  const response = await axiosInstance.get("/api/hotels");
+  const response = await axiosInstance.get("/api/v1/hotels");
   return response.data;
 };
 
 export const fetchHotelById = async (hotelId: string): Promise<HotelType> => {
-  const response = await axiosInstance.get(`/api/hotels/${hotelId}`);
+  const response = await axiosInstance.get(`/api/v1/hotels/${hotelId}`);
   return response.data;
 };

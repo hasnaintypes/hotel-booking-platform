@@ -1,50 +1,24 @@
-import { Controller, Get, Res, UseGuards } from "@nestjs/common";
-import { InjectConnection } from "@nestjs/mongoose";
-import { Response } from "express";
-import { Connection } from "mongoose";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
+import { Controller, Get, Res, VERSION_NEUTRAL } from "@nestjs/common";
+import type { Response } from "express";
+import { HealthService } from "./health.service";
 
-@Controller("api/health")
+@Controller({ path: "health", version: VERSION_NEUTRAL })
 export class HealthController {
-  constructor(@InjectConnection() private readonly connection: Connection) {}
+  constructor(private readonly healthService: HealthService) {}
 
-  @Get()
-  check(@Res({ passthrough: true }) res: Response) {
-    const dbStatus = this.connection.readyState === 1 ? "connected" : "disconnected";
-
-    const payload = {
-      status: dbStatus === "connected" ? "healthy" : "unhealthy",
-      timestamp: new Date().toISOString(),
-      database: { status: dbStatus },
-    };
-
-    res.status(dbStatus === "connected" ? 200 : 503);
-    return payload;
+  @Get("live")
+  live() {
+    return { status: "ok", timestamp: new Date().toISOString() };
   }
 
-  @Get("detailed")
-  @UseGuards(JwtAuthGuard)
-  detailed(@Res({ passthrough: true }) res: Response) {
-    const memUsage = process.memoryUsage();
-    const heapUsedMb = Math.round(memUsage.heapUsed / 1024 / 1024);
-    const heapTotalMb = Math.round(memUsage.heapTotal / 1024 / 1024);
-    const percentage = heapTotalMb > 0 ? Math.round((heapUsedMb / heapTotalMb) * 100) : 0;
-
-    res.status(200);
+  @Get("ready")
+  async ready(@Res({ passthrough: true }) res: Response) {
+    const readiness = await this.healthService.readiness();
+    res.status(readiness.ready ? 200 : 503);
     return {
-      status: "healthy",
+      status: readiness.ready ? "ready" : "not_ready",
       timestamp: new Date().toISOString(),
-      performance: {
-        memory: {
-          usedMb: heapUsedMb,
-          totalMb: heapTotalMb,
-          percentage,
-        },
-        uptime: Math.round(process.uptime()),
-      },
-      database: {
-        status: this.connection.readyState === 1 ? "connected" : "disconnected",
-      },
+      ...readiness.checks,
     };
   }
 }

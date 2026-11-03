@@ -1,16 +1,40 @@
-import { INestApplication } from "@nestjs/common";
+import { INestApplication, type Type } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { getConnectionToken } from "@nestjs/mongoose";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import type { NextFunction, Request, Response } from "express";
 import type { Connection } from "mongoose";
+import { AUDIENCE_GROUPS, type Audience } from "../common/routing/controllers";
+import { AdminRoutesModule } from "../routes/admin.routes.module";
+import { ManageRoutesModule } from "../routes/manage.routes.module";
+import { PartnerRoutesModule } from "../routes/partner.routes.module";
+import { PublicRoutesModule } from "../routes/public.routes.module";
 import { extractToken } from "../common/guards/jwt-auth.guard";
 import { PROBLEM_CONTENT_TYPE, problemType } from "../common/errors/problem";
 import type { JwtPayload } from "../common/types/jwt-payload.interface";
 
-/** Where the interactive docs and the raw documents are served. */
-export const DOCS_PATHS = ["/api-docs", "/api-docs-json", "/api-docs-yaml"];
+/** Where the combined and per-audience interactive docs and raw documents are served. */
+export const DOCS_PATHS = [
+  "/api-docs",
+  "/api-docs-json",
+  "/api-docs-yaml",
+  ...AUDIENCE_GROUPS.flatMap(({ audience }) => [
+    `/api/docs/${audience}`,
+    `/api/docs/${audience}-json`,
+    `/api/docs/${audience}-yaml`,
+  ]),
+];
+
+const audienceTitle = (audience: Audience) => audience[0].toUpperCase() + audience.slice(1);
+
+/** Swagger filters by module, not by controller class. */
+const AUDIENCE_MODULES: Record<Audience, Type<unknown>> = {
+  public: PublicRoutesModule,
+  manage: ManageRoutesModule,
+  admin: AdminRoutesModule,
+  partner: PartnerRoutesModule,
+};
 
 const deny = (req: Request, res: Response, status: 401 | 403) => {
   const code = status === 401 ? "UNAUTHENTICATED" : "FORBIDDEN";
@@ -101,6 +125,18 @@ export const setupSwagger = (app: INestApplication, config: ConfigService): bool
     customCss: ".swagger-ui .topbar { display: none }",
     customSiteTitle: "Hotel Booking API Documentation",
   });
+
+  for (const group of AUDIENCE_GROUPS) {
+    const audienceDocument = SwaggerModule.createDocument(app, swaggerConfig, {
+      include: [AUDIENCE_MODULES[group.audience]],
+    });
+    audienceDocument.servers = servers;
+
+    SwaggerModule.setup(`api/docs/${group.audience}`, app, audienceDocument, {
+      customCss: ".swagger-ui .topbar { display: none }",
+      customSiteTitle: `${audienceTitle(group.audience)} API documentation`,
+    });
+  }
 
   return true;
 };

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
-import { anonymous, registerUser } from "./support/helpers";
+import { anonymous, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
 describe("health", () => {
@@ -12,25 +12,37 @@ describe("health", () => {
     await t.close();
   });
 
-  it("reports healthy when the database is connected", async () => {
+  it("reports liveness without touching the database", async () => {
     const res = await anonymous(t).get(routes.health);
     expect(res.status).toBe(200);
-    expect(res.body.status).toBe("healthy");
-    expect(res.body.database.status).toBe("connected");
+    expect(res.body.status).toBe("ok");
   });
 
-  it("requires authentication for the detailed health report", async () => {
-    const res = await anonymous(t).get(routes.healthDetailed);
-    expect(res.status).toBe(401);
+  it("reports readiness from the databases and applied migrations", async () => {
+    const res = await anonymous(t).get(routes.healthReady);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      status: "ready",
+      database: "connected",
+      migrations: "ready",
+    });
   });
 
-  it("serves the detailed health report to a signed-in user", async () => {
-    const { agent } = await registerUser(t);
-    const res = await agent.get(routes.healthDetailed);
+  it("keeps detailed diagnostics out of the public and customer surface", async () => {
+    const user = await registerUser(t);
+
+    expect((await anonymous(t).get(routes.healthDetailed)).status).toBe(401);
+    expect((await user.agent.get(routes.healthDetailed)).status).toBe(403);
+  });
+
+  it("serves detailed diagnostics to an administrator", async () => {
+    const admin = await registerAdmin(t);
+    const res = await admin.agent.get(routes.healthDetailed);
+
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       status: "healthy",
-      database: { status: "connected" },
+      checks: { database: "connected", migrations: "ready" },
       performance: {
         memory: {
           usedMb: expect.any(Number),

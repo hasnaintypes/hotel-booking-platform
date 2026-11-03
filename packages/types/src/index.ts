@@ -88,7 +88,7 @@ export type HotelType = {
   totalRevenue?: number;
   averageRating?: number;
   reviewCount?: number;
-  /** Owner dashboard counts (enriched by GET /api/my-hotels) */
+  /** Owner dashboard counts (enriched by GET /api/v1/manage/hotels) */
   upcomingBookings?: number;
   completedBookings?: number;
   cancelledBookings?: number;

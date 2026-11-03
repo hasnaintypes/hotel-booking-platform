@@ -8,13 +8,13 @@ import { BusinessInsightsService } from "./business-insights.service";
  * Platform revenue and usage figures. Admin only: there are no public variants. Errors are left to
  * the global exception filter, which never echoes internal messages.
  */
-@Controller("api/business-insights")
+@Controller("reports")
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles("admin")
-export class BusinessInsightsController {
+export class AdminReportsController {
   constructor(private readonly businessInsightsService: BusinessInsightsService) {}
 
-  @Get("dashboard")
+  @Get("overview")
   dashboard() {
     return this.businessInsightsService.getDashboardData();
   }

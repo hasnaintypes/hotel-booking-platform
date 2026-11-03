@@ -1,7 +1,7 @@
 # @hotel-booking/web
 
 Guest and hotel-owner single-page app (React 19, Vite 8, TypeScript, Tailwind CSS 4, TanStack
-Query 5, React Router 7). It talks to the API in `apps/api` over `/api/*` using the shared Axios
+Query 5, React Router 7). It talks to the API in `apps/api` over `/api/v1/*` using the shared Axios
 instance from `@hotel-booking/api-client`.
 
 See the [root README](../../README.md) for the monorepo overview, setup, environment variables and

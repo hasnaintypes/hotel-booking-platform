@@ -209,7 +209,9 @@ export class BookingsService {
     this.assertAuthorized(await this.assertOwnerOrAdmin(existing.hotelId, userId));
 
     if (dto.status === "cancelled" || dto.status === "refunded") {
-      throw new BadRequestException("Use POST /api/bookings/:id/cancel for cancel/refund");
+      throw new BadRequestException(
+        "Use POST /api/v1/bookings/:id/cancellations for cancel/refund",
+      );
     }
 
     const updateData: Record<string, unknown> = { status: dto.status };

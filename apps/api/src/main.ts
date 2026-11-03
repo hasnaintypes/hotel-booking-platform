@@ -45,8 +45,8 @@ async function bootstrap() {
   logger.log(`Server listening on port ${port} (public URL ${backendUrl})`);
   logger.log(
     docsMounted
-      ? `API docs: ${backendUrl}/api-docs, health: ${backendUrl}/api/health`
-      : `API docs are disabled (set ENABLE_API_DOCS=true to enable), health: ${backendUrl}/api/health`,
+      ? `API docs: ${backendUrl}/api-docs, health: ${backendUrl}/health/live`
+      : `API docs are disabled (set ENABLE_API_DOCS=true to enable), health: ${backendUrl}/health/live`,
   );
 }
 

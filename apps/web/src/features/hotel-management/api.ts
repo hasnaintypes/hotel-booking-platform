@@ -2,7 +2,7 @@ import axiosInstance from "@hotel-booking/api-client";
 import type { BookingType, HotelType } from "@hotel-booking/types";
 
 export const addMyHotel = async (hotelFormData: FormData) => {
-  const response = await axiosInstance.post("/api/my-hotels", hotelFormData, {
+  const response = await axiosInstance.post("/api/v1/manage/hotels", hotelFormData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -11,18 +11,18 @@ export const addMyHotel = async (hotelFormData: FormData) => {
 };
 
 export const fetchMyHotels = async (): Promise<HotelType[]> => {
-  const response = await axiosInstance.get("/api/my-hotels");
+  const response = await axiosInstance.get("/api/v1/manage/hotels");
   return response.data;
 };
 
 export const fetchMyHotelById = async (hotelId: string): Promise<HotelType> => {
-  const response = await axiosInstance.get(`/api/my-hotels/${hotelId}`);
+  const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}`);
   return response.data;
 };
 
 export const updateMyHotelById = async (hotelFormData: FormData) => {
   const hotelId = hotelFormData.get("hotelId");
-  const response = await axiosInstance.put(`/api/my-hotels/${hotelId}`, hotelFormData, {
+  const response = await axiosInstance.put(`/api/v1/manage/hotels/${hotelId}`, hotelFormData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -30,16 +30,18 @@ export const updateMyHotelById = async (hotelFormData: FormData) => {
   return response.data;
 };
 
-/** Owner: toggle own hotel isActive (PATCH /api/my-hotels/:id/active) */
+/** Owner: toggle own hotel isActive (PATCH /api/v1/manage/hotels/:id/active) */
 export const updateMyHotelActive = async (
   hotelId: string,
   isActive: boolean,
 ): Promise<HotelType> => {
-  const response = await axiosInstance.patch(`/api/my-hotels/${hotelId}/active`, { isActive });
+  const response = await axiosInstance.patch(`/api/v1/manage/hotels/${hotelId}/active`, {
+    isActive,
+  });
   return response.data;
 };
 
 export const fetchHotelBookings = async (hotelId: string): Promise<BookingType[]> => {
-  const response = await axiosInstance.get(`/api/bookings/hotel/${hotelId}`);
+  const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}/bookings`);
   return response.data;
 };

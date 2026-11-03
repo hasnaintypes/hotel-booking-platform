@@ -12,7 +12,7 @@ import {
 
 /**
  * Shared destination list for AdvancedSearch + SearchBar.
- * Soft localStorage TTL avoids hammering /api/hotels; CRUD clears cache + invalidates this key.
+ * Soft localStorage TTL avoids hammering /api/v1/hotels; CRUD clears cache + invalidates this key.
  */
 export function useHotelPlaces() {
   const query = useQuery({

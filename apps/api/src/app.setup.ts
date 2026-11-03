@@ -1,4 +1,4 @@
-import { ForbiddenException, Logger, ValidationPipe } from "@nestjs/common";
+import { ForbiddenException, Logger, ValidationPipe, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
@@ -18,8 +18,8 @@ import { isAllowedOrigin } from "./common/security/allowed-origins";
 const BODY_LIMIT = "100kb";
 
 // The API only returns JSON, so the default policy denies everything. The Swagger UI
-// (served under /api-docs; off in production unless ENABLE_API_DOCS=true) needs inline scripts and styles, so only
-// that path gets a relaxed policy.
+// (served under /api-docs and /api/docs/<audience>; off in production unless
+// ENABLE_API_DOCS=true) needs inline scripts and styles, so only those paths get a relaxed policy.
 const strictHeaders = helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   contentSecurityPolicy: {
@@ -45,7 +45,7 @@ const docsHeaders = helmet({
     },
   },
 });
-const DOCS_PATH = /^\/api-docs(\/|$)/;
+const DOCS_PATH = /^\/(?:api-docs|api\/docs)(?:\/|$)/;
 const securityHeaders = (req: Request, res: Response, next: NextFunction) =>
   (DOCS_PATH.test(req.path) ? docsHeaders : strictHeaders)(req, res, next);
 
@@ -57,6 +57,11 @@ const securityHeaders = (req: Request, res: Response, next: NextFunction) =>
 export function configureApp(app: NestExpressApplication): void {
   const config = app.get(ConfigService);
   const logger = new Logger("Cors");
+
+  app.setGlobalPrefix("api", {
+    exclude: ["health/(.*)", "webhooks/(.*)"],
+  });
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
 
   const corsOrigin = (
     origin: string | undefined,

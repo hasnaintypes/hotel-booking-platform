@@ -296,7 +296,7 @@ const SignIn = () => {
                     className="w-full py-3 px-4 rounded-xl border-2 border-gray-300 bg-white hover:bg-gray-50 text-gray-700 font-medium transition-all duration-200 flex items-center justify-center gap-2"
                     onClick={() => {
                       const baseUrl = authApi.getApiBaseUrl();
-                      window.location.href = `${baseUrl}/api/auth/google`;
+                      window.location.href = `${baseUrl}/api/v1/auth/oauth/google/authorize`;
                     }}
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

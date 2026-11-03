@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
-  Req,
-  Res,
-  UseGuards,
-} from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { Request, Response } from "express";
 import {
@@ -20,10 +9,7 @@ import {
   clearOauthStateCookieOptions,
   oauthStateCookieOptions,
 } from "../../common/auth-cookie";
-import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { authRateLimit } from "../../common/security/auth-rate-limit";
-import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { AuthService } from "./auth.service";
 import { LoginDto } from "./dto/login.dto";
 import { GoogleOAuthService } from "./google-oauth.service";
@@ -32,21 +18,21 @@ import { GoogleOAuthService } from "./google-oauth.service";
 const asText = (value: unknown): string | undefined =>
   typeof value === "string" && value.length > 0 ? value : undefined;
 
-@Controller("api/auth")
+@Controller("auth")
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly googleOAuth: GoogleOAuthService,
   ) {}
 
-  @Get("google")
+  @Get("oauth/google/authorize")
   google(@Res() res: Response) {
     const { url, stateToken } = this.googleOAuth.buildAuthRequest();
     res.cookie(OAUTH_STATE_COOKIE_NAME, stateToken, oauthStateCookieOptions());
     res.redirect(url);
   }
 
-  @Get("callback/google")
+  @Get("oauth/google/callback")
   async googleCallback(
     @Query("code") code: unknown,
     @Query("error") error: unknown,
@@ -78,12 +64,6 @@ export class AuthController {
     const { token, ...payload } = await this.authService.login(dto);
     res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());
     return payload;
-  }
-
-  @Get("validate-token")
-  @UseGuards(JwtAuthGuard)
-  validateToken(@CurrentUser() user: AuthenticatedUser) {
-    return { userId: user.userId };
   }
 
   @Post("logout")

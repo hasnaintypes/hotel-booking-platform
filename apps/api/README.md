@@ -1,6 +1,6 @@
 # @hotel-booking/api
 
-NestJS 11 REST API for the hotel booking platform. It keeps the `/api/*` HTTP contract and is
+NestJS 11 REST API for the hotel booking platform. It serves the `/api/v1` HTTP contract and is
 organised as a modular monolith: one Nest module per domain. Mongo-backed services still inject
 Mongoose models directly while the M1 PostgreSQL port is in progress; PostgreSQL-backed domains
 use typed repositories.
@@ -24,6 +24,7 @@ src/
 ├── app.module.ts
 ├── config/                 # typed config, env validation, Swagger
 ├── common/                 # auth guards, routing, errors, logging, uploads, security
+├── routes/                 # audience route groups (public, manage, admin, partner)
 ├── database/               # Mongoose registration, PostgreSQL provider, repositories, seed script
 ├── integrations/           # Stripe, Cloudinary, LLM
 └── modules/<domain>/       # controller, service, DTOs, schema
@@ -47,7 +48,7 @@ Mongoose remains the runtime store for existing domains until they are ported.
 
 ## Request lifecycle
 
-`app.setup.ts` wires Helmet, CORS, cookie parsing, the global `ThrottlerGuard`, `OriginGuard`
+`app.setup.ts` applies the global `api` prefix and URI version 1, then wires Helmet, CORS, cookie parsing, the global `ThrottlerGuard`, `OriginGuard`
 (CSRF defence for cookie auth), a `ValidationPipe` (`whitelist`, `transform`, **no** implicit type
 conversion — DTOs convert query/multipart text explicitly), and a global exception filter that
 returns problem-details bodies (`code`, `detail`, optional field `errors`). Security-sensitive
@@ -65,10 +66,13 @@ pnpm --filter @hotel-booking/api test       # unit + e2e specs
 pnpm --filter @hotel-booking/api lint
 pnpm --filter @hotel-booking/api typecheck
 pnpm --filter @hotel-booking/api seed       # DESTRUCTIVE: drops all five collections first
+pnpm --filter @hotel-booking/api gen:controller <audience> <resource>  # scaffold a controller
 ```
 
-API docs are served at `/api-docs` in development; they are disabled in production unless
-`ENABLE_API_DOCS=true`, and admin-only when enabled there. Health is at `/api/health`.
+API docs are served at `/api-docs` (combined) and `/api/docs/<audience>` in development; they
+are disabled in production unless `ENABLE_API_DOCS=true`, and admin-only when enabled there.
+Health is unversioned at `/health/live` and `/health/ready`; detailed diagnostics are admin-only
+at `/api/v1/admin/system/health`.
 
 ## Configuration
 
@@ -94,4 +98,4 @@ docker build -f apps/api/Dockerfile -t hotel-booking-api .
 ```
 
 The container runs as the non-root `node` user, listens on `PORT` (default `5001`), and exposes
-`GET /api/health` for the health check.
+`GET /health/live` for the health check.

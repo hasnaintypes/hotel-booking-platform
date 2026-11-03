@@ -51,10 +51,10 @@ describe("reviews", () => {
     await t.close();
   });
 
-  describe("POST /api/reviews", () => {
+  describe("POST /api/v1/bookings/:id/reviews", () => {
     it("creates a verified review and updates the hotel's rating", async () => {
       const res = await guest.agent
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(bookingId))
         .send(reviewBody(hotelId, bookingId));
       expect(res.status).toBe(201);
       expect(res.body).toMatchObject({
@@ -74,7 +74,7 @@ describe("reviews", () => {
     it("marks a review unverified when the booking was not paid", async () => {
       const unpaid = await insertBooking(t, guest.user._id, hotelId, { paymentStatus: "pending" });
       const res = await guest.agent
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(unpaid.id))
         .send(reviewBody(hotelId, unpaid.id, { rating: 2 }));
       expect(res.status).toBe(201);
       expect(res.body.isVerified).toBe(false);
@@ -82,7 +82,7 @@ describe("reviews", () => {
 
     it("rejects a second review for the same booking", async () => {
       const res = await guest.agent
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(bookingId))
         .send(reviewBody(hotelId, bookingId));
       expect(res.status).toBe(409);
       expect(res.body.code).toBe("CONFLICT");
@@ -90,20 +90,22 @@ describe("reviews", () => {
 
     it("refuses a booking that belongs to someone else", async () => {
       const mine = await insertBooking(t, other.user._id, hotelId);
-      const res = await guest.agent.post(routes.reviews.create).send(reviewBody(hotelId, mine.id));
+      const res = await guest.agent
+        .post(routes.reviews.create(mine.id))
+        .send(reviewBody(hotelId, mine.id));
       expect(res.status).toBe(403);
     });
 
     it("answers 404 for an unknown hotel", async () => {
       const res = await guest.agent
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(bookingId))
         .send(reviewBody(UNKNOWN_ID, bookingId));
       expect(res.status).toBe(404);
     });
 
     it("requires a session", async () => {
       const res = await anonymous(t)
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(bookingId))
         .send(reviewBody(hotelId, bookingId));
       expect(res.status).toBe(401);
     });
@@ -116,7 +118,7 @@ describe("reviews", () => {
     ])("rejects %s with a field-level 400", async (_name, overrides, field) => {
       const fresh = await insertBooking(t, guest.user._id, hotelId);
       const res = await guest.agent
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(fresh.id))
         .send(reviewBody(hotelId, fresh.id, overrides));
       expect(res.status).toBe(400);
       expect(res.body.code).toBe("VALIDATION_FAILED");
@@ -128,7 +130,7 @@ describe("reviews", () => {
       // request reaches Mongoose and fails there with 422 instead of a field-level 400.
       const fresh = await insertBooking(t, guest.user._id, hotelId);
       const res = await guest.agent
-        .post(routes.reviews.create)
+        .post(routes.reviews.create(fresh.id))
         .send(reviewBody(hotelId, fresh.id, { categories: undefined }));
       expect(res.status).toBe(422);
       expect(res.body.code).toBe("UNPROCESSABLE");
@@ -137,7 +139,7 @@ describe("reviews", () => {
     });
   });
 
-  describe("GET /api/reviews/hotel/:hotelId", () => {
+  describe("GET /api/v1/hotels/:id/reviews", () => {
     it("lists the hotel's reviews", async () => {
       const res = await anonymous(t).get(routes.reviews.byHotel(hotelId));
       expect(res.status).toBe(200);
@@ -152,7 +154,7 @@ describe("reviews", () => {
     });
   });
 
-  describe("GET /api/reviews/hotel/:hotelId/summary", () => {
+  describe("GET /api/v1/hotels/:id/rating", () => {
     it("reports the rounded average and the count", async () => {
       const res = await anonymous(t).get(routes.reviews.summary(hotelId));
       expect(res.status).toBe(200);
@@ -166,7 +168,7 @@ describe("reviews", () => {
     });
   });
 
-  describe("GET /api/reviews (admin list)", () => {
+  describe("GET /api/v1/admin/reviews", () => {
     it("lists reviews for an admin and honours the limit", async () => {
       const all = await admin.agent.get(routes.reviews.list);
       expect(all.status).toBe(200);

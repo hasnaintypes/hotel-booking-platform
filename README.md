@@ -12,7 +12,7 @@ A full-stack hotel marketplace. Guests search hotels and pay for stays with Stri
 - **Hotel owners:** create and edit hotels with up to 6 images (Cloudinary); per-hotel booking log; activate/deactivate listings.
 - **Admins** (`apps/admin`): dashboard, hotels, users and roles, bookings, reviews, activity.
 - **Insights (admin only):** business dashboard, forecast and system stats; optional LLM-drafted copy (draft-only, off by default).
-- **Platform:** httpOnly cookie sessions with origin (CSRF) checks, rate limiting, Helmet, Pino logging, Swagger docs at `/api-docs`.
+- **Platform:** httpOnly cookie sessions with origin (CSRF) checks, rate limiting, Helmet, Pino logging, Swagger docs at `/api-docs` and per-audience documents at `/api/docs/<audience>`.
 
 ## Architecture
 
@@ -58,7 +58,7 @@ pnpm dev                              # API, web and admin together
 
 | App | URL |
 | --- | --- |
-| API | http://localhost:5001 (health: `/api/health`, Swagger: `/api-docs`) |
+| API | http://localhost:5001 (health: `/health/live`, Swagger: `/api-docs`) |
 | Web | http://localhost:5174 |
 | Admin | http://localhost:5175 |
 
@@ -79,7 +79,7 @@ The API exits at startup if a required variable is missing. Browser apps only re
 | `FRONTEND_URL`, `ADMIN_URL`, `BACKEND_URL` | api | No | CORS/origin allow-list and OAuth redirects (default to localhost) |
 | `PORT` | api | No | Default `5001` |
 | `BOOKING_MAX_NIGHTS` | api | No | Longest bookable stay in nights, 1 to 365 (default `30`) |
-| `GOOGLE_ID`, `GOOGLE_SECRET` | api | No | Google sign-in; register `{BACKEND_URL}/api/auth/callback/google` |
+| `GOOGLE_ID`, `GOOGLE_SECRET` | api | No | Google sign-in; register `{BACKEND_URL}/api/v1/auth/oauth/google/callback` |
 | `CLOUDINARY_FOLDER` | api | No | Cloudinary folder for hotel images (default `hotel-booking/<NODE_ENV>`) |
 | `AI_ASSIST_ENABLED`, `GROQ_*`, `OPENAI_*`, `OPENROUTER_*` | api | No | Optional LLM drafts; off unless `AI_ASSIST_ENABLED=true` (see below) |
 | `AI_DAILY_QUOTA`, `AI_PER_MINUTE_LIMIT`, `AI_REQUEST_DEADLINE_MS` | api | No | Per-user AI limits (defaults `20` a day, `5` a minute) and the time allowed for one request across all providers (default `30000`) |
@@ -91,7 +91,7 @@ See each app's `.env.example` for the full template.
 
 ### AI draft assist (optional, off by default)
 
-`POST /api/ai/suggest` drafts a hotel description (any signed-in user) or a short insights blurb (admins only). It only returns text for a person to review; nothing is saved automatically.
+`POST /api/v1/manage/ai/suggestions` drafts a hotel description (any signed-in user) or a short insights blurb (admins only). It only returns text for a person to review; nothing is saved automatically.
 
 - **Cost:** each request calls a paid provider (Groq, OpenAI or OpenRouter, in that order) when a key is configured. Input is limited to 2,000 characters, each user is limited per minute and per day, a request makes at most three provider calls, and one deadline covers the whole request. The daily and per-minute counters are kept in memory, so they reset when the server restarts and are not shared between instances.
 - **Privacy:** the text a user enters is sent to the configured provider. Prompts and drafts are never written to the application logs, which record only the provider, model, latency and outcome. Do not enter personal data.
@@ -129,7 +129,7 @@ The API has an end-to-end harness that boots the real application against a disp
 >
 > Priority principle: payment and booking correctness (M0 to M2) is delivered before advanced features (M3 onwards).
 
-- **API:** Docker image built from the **repository root** (`docker build -f apps/api/Dockerfile .`), exposing port 5001 with a `/api/health` healthcheck. Set all required variables, `NODE_ENV=production`, and `FRONTEND_URL`, `ADMIN_URL` and `BACKEND_URL` to the public origins.
+- **API:** Docker image built from the **repository root** (`docker build -f apps/api/Dockerfile .`), exposing port 5001 with a `/health/live` healthcheck. Set all required variables, `NODE_ENV=production`, and `FRONTEND_URL`, `ADMIN_URL` and `BACKEND_URL` to the public origins.
 - **Web and admin:** deployed as two Vercel projects (root directories `apps/web` and `apps/admin`) using each app's `vercel.json`, which sets the SPA rewrite, security headers and a Content-Security-Policy. Any new script, frame or connect origin must be added to the CSP.
 - **Production checklist:** secrets only in the host dashboards; live Stripe keys match the mode; Google redirect URI matches `BACKEND_URL`; API and SPA origins are listed in `FRONTEND_URL`/`ADMIN_URL`.
 

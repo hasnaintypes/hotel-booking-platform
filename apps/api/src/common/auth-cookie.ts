@@ -32,12 +32,12 @@ export const oauthStateCookieOptions = () => ({
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   maxAge: 10 * 60 * 1000,
-  path: "/api/auth",
+  path: "/api/v1/auth",
 });
 
 export const clearOauthStateCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
-  path: "/api/auth",
+  path: "/api/v1/auth",
 });

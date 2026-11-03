@@ -69,7 +69,7 @@ describe("structured logging", () => {
 
   it("logs by outcome: 4xx at warn, 5xx at error", async () => {
     await anonymous(t).get(routes.users.me); // 401
-    await anonymous(t).get("/__test__/boom"); // 500
+    await anonymous(t).get("/api/v1/__test__/boom"); // 500
     const levels = Object.fromEntries(accessLogs(t).map((l) => [l.res.statusCode, l.level]));
     expect(levels[401]).toBe("warn");
     expect(levels[500]).toBe("error");

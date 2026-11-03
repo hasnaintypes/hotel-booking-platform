@@ -1,8 +1,5 @@
-import "reflect-metadata";
-import { RequestMethod } from "@nestjs/common";
-import { METHOD_METADATA, PATH_METADATA } from "@nestjs/common/constants";
 import { describe, expect, it } from "vitest";
-import { CONTROLLERS } from "./controllers";
+import { ROUTE_TABLE } from "./route-table";
 
 /**
  * Two routes with the same HTTP method overlap when a request could match both, for example
@@ -10,11 +7,11 @@ import { CONTROLLERS } from "./controllers";
  * order, which ADR-022 forbids for new routes.
  *
  * KNOWN_ORDER_DEPENDENT lists the overlaps that exist today. They are tolerated only while the
- * more specific route is declared first, and the list must shrink to nothing once the routes move
- * to the versioned route map.
+ * more specific route is declared first, and the list must shrink to nothing once dated search
+ * moves to `/offers`.
  */
 const KNOWN_ORDER_DEPENDENT: Array<[string, string]> = [
-  ["GET /api/hotels/search", "GET /api/hotels/:id"],
+  ["GET /api/v1/hotels/search", "GET /api/v1/hotels/:id"],
 ];
 
 interface RouteInfo {
@@ -24,33 +21,15 @@ interface RouteInfo {
   order: number;
 }
 
-const segmentsOf = (path: string) => path.split("/").filter(Boolean);
 const isParam = (segment: string) => segment.startsWith(":");
 const literalCount = (segments: string[]) => segments.filter((s) => !isParam(s)).length;
 
-function collectRoutes(): RouteInfo[] {
-  const routes: RouteInfo[] = [];
-  let order = 0;
-  for (const controller of CONTROLLERS) {
-    const base = (Reflect.getMetadata(PATH_METADATA, controller) as string | undefined) ?? "";
-    for (const name of Object.getOwnPropertyNames(controller.prototype)) {
-      const handler = controller.prototype[name];
-      if (typeof handler !== "function" || name === "constructor") continue;
-      const method = Reflect.getMetadata(METHOD_METADATA, handler) as RequestMethod | undefined;
-      if (method === undefined) continue;
-      const own = (Reflect.getMetadata(PATH_METADATA, handler) as string | undefined) ?? "";
-      const segments = [...segmentsOf(base), ...segmentsOf(own)];
-      const verb = RequestMethod[method];
-      routes.push({
-        key: `${verb} /${segments.join("/")}`,
-        method: verb,
-        segments,
-        order: order++,
-      });
-    }
-  }
-  return routes;
-}
+const routes: RouteInfo[] = ROUTE_TABLE.map((route, order) => ({
+  key: `${route.method} /${route.segments.join("/")}`,
+  method: route.method,
+  segments: route.segments,
+  order,
+}));
 
 function overlaps(a: RouteInfo, b: RouteInfo): boolean {
   if (a.method !== b.method || a.segments.length !== b.segments.length) return false;
@@ -74,7 +53,6 @@ const pairKey = (a: string, b: string) => [a, b].sort().join(" <-> ");
 const known = new Set(KNOWN_ORDER_DEPENDENT.map(([a, b]) => pairKey(a, b)));
 
 describe("route shadowing", () => {
-  const routes = collectRoutes();
   const pairs = overlappingPairs(routes);
 
   it("finds the application's routes (guards against empty metadata)", () => {

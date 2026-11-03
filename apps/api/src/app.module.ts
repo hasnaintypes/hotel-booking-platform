@@ -12,16 +12,8 @@ import { DatabaseRepositoriesModule } from "./database/repositories/repositories
 import { CloudinaryModule } from "./integrations/cloudinary/cloudinary.module";
 import { LlmModule } from "./integrations/llm/llm.module";
 import { StripeModule } from "./integrations/stripe/stripe.module";
-import { AiModule } from "./modules/ai/ai.module";
-import { AnalyticsModule } from "./modules/analytics/analytics.module";
-import { AuthModule } from "./modules/auth/auth.module";
-import { BookingsModule } from "./modules/bookings/bookings.module";
-import { BusinessInsightsModule } from "./modules/business-insights/business-insights.module";
 import { HealthModule } from "./modules/health/health.module";
-import { HotelsModule } from "./modules/hotels/hotels.module";
-import { MyHotelsModule } from "./modules/my-hotels/my-hotels.module";
-import { ReviewsModule } from "./modules/reviews/reviews.module";
-import { UsersModule } from "./modules/users/users.module";
+import { RoutesModule } from "./routes/routes.module";
 
 @Module({
   imports: [
@@ -47,15 +39,7 @@ import { UsersModule } from "./modules/users/users.module";
     StripeModule,
     CloudinaryModule,
     LlmModule,
-    AuthModule,
-    UsersModule,
-    HotelsModule,
-    MyHotelsModule,
-    BookingsModule,
-    ReviewsModule,
-    BusinessInsightsModule,
-    AnalyticsModule,
-    AiModule,
+    RoutesModule,
     HealthModule,
   ],
   providers: [

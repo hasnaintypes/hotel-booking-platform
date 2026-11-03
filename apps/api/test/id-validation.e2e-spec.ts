@@ -43,9 +43,8 @@ describe("malformed ids", () => {
   });
 
   it("rejects bad ids in a review body", async () => {
-    const res = await user.agent.post(routes.reviews.create).send({
+    const res = await user.agent.post(routes.reviews.create(GOOD_ID)).send({
       hotelId: "abc",
-      bookingId: { $ne: null },
       rating: 5,
       comment: "Lovely stay",
       categories: { cleanliness: 5, service: 5, location: 5, value: 5, amenities: 5 },
@@ -53,7 +52,7 @@ describe("malformed ids", () => {
     expect(res.status).toBe(400);
     expect(res.body.code).toBe("VALIDATION_FAILED");
     const fields = res.body.errors.map((e: { field: string }) => e.field).sort();
-    expect(fields).toEqual(["bookingId", "hotelId"]);
+    expect(fields).toEqual(["hotelId"]);
   });
 
   it("lets a well-formed id that matches nothing through to a 404", async () => {

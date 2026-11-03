@@ -7,12 +7,12 @@ import type { RegisterFormData, SignInFormData } from "./types";
 export { getApiBaseUrl };
 
 export const fetchCurrentUser = async (): Promise<UserType> => {
-  const response = await axiosInstance.get("/api/users/me");
+  const response = await axiosInstance.get("/api/v1/me");
   return response.data;
 };
 
 export const register = async (formData: RegisterFormData) => {
-  const response = await axiosInstance.post("/api/users/register", formData);
+  const response = await axiosInstance.post("/api/v1/auth/register", formData);
 
   authSession.set();
   localStorage.setItem("user_email", formData.email);
@@ -24,7 +24,7 @@ export const register = async (formData: RegisterFormData) => {
 };
 
 export const signIn = async (formData: SignInFormData) => {
-  const response = await axiosInstance.post("/api/auth/login", formData);
+  const response = await axiosInstance.post("/api/v1/auth/login", formData);
 
   authSession.set();
 
@@ -59,7 +59,7 @@ export const clearAuthStorage = () => {
 };
 
 export const signOut = async () => {
-  const response = await axiosInstance.post("/api/auth/logout");
+  const response = await axiosInstance.post("/api/v1/auth/logout");
 
   clearAuthStorage();
 

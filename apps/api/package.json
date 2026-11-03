@@ -10,6 +10,7 @@
     "build": "nest build",
     "start": "node dist/apps/api/src/main.js",
     "seed": "tsx src/database/seeds/seed.ts",
+    "gen:controller": "node scripts/new-controller.mjs",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.spec.json",
     "clean": "rm -rf dist",
     "lint": "eslint . --max-warnings 0",
