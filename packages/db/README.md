@@ -32,6 +32,10 @@ erDiagram
   organisations ||--o{ bookings : "books on behalf of"
   users ||--o{ reviews : "writes"
 
+  currencies ||--o{ exchange_rates : "base / quote"
+  currencies ||--o{ fx_rate_snapshots : "base / quote"
+  exchange_rates ||--o{ fx_rate_snapshots : "provenance"
+
   hotels ||--o{ hotel_images : "gallery"
   hotels ||--o{ bookings : "receives"
   hotels ||--o{ reviews : "rated by"
@@ -79,6 +83,33 @@ erDiagram
     uuid organisation_id PK, FK
     text role_key FK
   }
+  currencies {
+    char code PK "ISO 4217"
+    text name
+    smallint minor_unit_exponent "0..4"
+    boolean enabled "GBP only for now"
+  }
+  exchange_rates {
+    uuid id PK
+    char base_code FK
+    char quote_code FK
+    numeric rate "18,8"
+    text source
+    timestamptz observed_at
+    timestamptz valid_from
+    timestamptz valid_to
+  }
+  fx_rate_snapshots {
+    uuid id PK
+    uuid exchange_rate_id FK "optional provenance"
+    char base_code FK
+    char quote_code FK
+    numeric rate "18,8"
+    text source
+    timestamptz observed_at
+    timestamptz valid_from
+    timestamptz valid_to
+  }
   hotels {
     uuid id PK
     hotel_source source
@@ -90,7 +121,7 @@ erDiagram
     numeric longitude
     smallint star_rating "1..5"
     integer price_per_night_minor
-    char currency_code
+    char currency_code FK "currencies.code"
     hotel_status status
   }
   hotel_images {
@@ -147,11 +178,36 @@ guest (`user_id`) and a creator (`created_by_user_id`); `organisation_id` is set
 on behalf of an organisation. Organisation ownership is optional, so adding an agency booking does
 not change the booking shape.
 
+## Currency and exchange rates
+
+- **Reference data:** `currencies.code` is the ISO 4217 code, `minor_unit_exponent` says how many
+  decimal places the minor unit has (GBP = 2, JPY = 0), and `enabled` controls whether new money
+  may be written in that currency. The migration seeds 20 currencies with GBP as the only enabled
+  one; the rest exist so enabling one is configuration rather than a schema change.
+- **Money precision:** money is always integer minor units plus a currency code. Exchange rates
+  are the only decimal money-related values and use `numeric(18,8)`; no money column is floating
+  point. Rounding rules belong with the pricing engine in M2 and will round once at the boundary.
+- **Foreign key:** `hotels.currency_code` references `currencies.code`. A database trigger rejects
+  inserts or updates that use a currency whose `enabled` flag is false, so a disabled currency
+  cannot be used for a new monetary row. Future booking/payment tables attach the same
+  `assert_currency_enabled()` trigger.
+- **Rate windows:** an `exchange_rates` row applies when `observed_at <= at`,
+  `valid_from <= at`, and `valid_to` is null or after `at`.
+- **Lookup:** `lookupExchangeRate(db, { baseCode, quoteCode, at, maxAgeMs })` chooses the latest
+  applicable row by `valid_from`, then `observed_at`, then `created_at`. Same-currency lookups
+  return the identity rate without a query.
+- **Staleness:** `DEFAULT_EXCHANGE_RATE_MAX_AGE_MS` is 24 hours. A rate older than the limit is
+  returned as `stale` rather than `found`, so callers must refuse to price a new booking with it.
+- **Snapshots:** `fx_rate_snapshots` copies the rate, source and validity window at the moment a
+  quote, price snapshot or ledger entry uses it. A database trigger rejects UPDATE, DELETE and
+  TRUNCATE, so historical money cannot be rewritten when a rate changes. Quotes, price snapshots
+  and ledger entries added in M1-05 reference `fx_rate_snapshots.id` with `ON DELETE RESTRICT`.
+
 `bookings` still carries only identity, ownership and stay dates so reviews can reference a real
 row. [M1-05 (#35)](https://github.com/hasnaintypes/hotel-booking-platform/issues/35) adds guest
-details, integer minor-unit money, supplier references, snapshots and idempotency;
-[M1-17 (#102)](https://github.com/hasnaintypes/hotel-booking-platform/issues/102) adds currencies
-and exchange-rate snapshots and the currency foreign keys.
+details, integer minor-unit money, supplier references, snapshots and idempotency, and wires
+quotes, price snapshots and ledger entries to the immutable `fx_rate_snapshots` rows defined by
+[M1-17 (#102)](https://github.com/hasnaintypes/hotel-booking-platform/issues/102).
 
 ## Authorisation model
 
@@ -186,7 +242,8 @@ that organisation.
 - **Time:** every timestamp is `timestamp with time zone`; `created_at`/`updated_at` default to
   `now()`.
 - **Money:** integer minor units plus an explicit ISO-4217 currency code. No floating point
-  columns for money. GBP is the only enabled currency until #102 lands.
+  columns for money. `currencies.enabled` makes GBP the only enabled currency for new rows;
+  exchange rates use `numeric(18,8)`.
 - **Location:** `country_code` is a two-letter ISO 3166-1 alpha-2 code enforced by a `CHECK`;
   coordinates are bounded by `CHECK` constraints.
 - **Soft delete:** users have a `status` (`active`/`suspended`), hotels have a `status`
