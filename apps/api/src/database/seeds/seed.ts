@@ -93,7 +93,7 @@ async function seed() {
     firstName: "Hotel",
     lastName: "Owner",
     image: "https://i.pravatar.cc/150?u=owner",
-    role: "hotel_owner",
+    role: "user",
     phone: "+44 131 000 0002",
     address: {
       street: "42 Castle Wynd",
