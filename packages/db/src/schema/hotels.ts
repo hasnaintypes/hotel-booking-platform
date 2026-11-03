@@ -13,11 +13,13 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { hotelSource, hotelStatus } from "./enums.js";
+import { organisations } from "./organisations.js";
 import { users } from "./users.js";
 
 /**
- * Canonical hotel record shared by owner-managed and supplier-derived inventory. Organisation
- * ownership is added in M1-16 (#101); today a managed hotel has a user owner.
+ * Canonical hotel record shared by owner-managed and supplier-derived inventory. A managed
+ * hotel is owned directly by a user, by an organisation, or both; `created_by_user_id` records
+ * the user who created the row even when the owning organisation later changes.
  */
 export const hotels = pgTable(
   "hotels",
@@ -25,6 +27,12 @@ export const hotels = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     source: hotelSource("source").notNull().default("managed"),
     ownerUserId: uuid("owner_user_id").references(() => users.id, { onDelete: "restrict" }),
+    organisationId: uuid("organisation_id").references(() => organisations.id, {
+      onDelete: "restrict",
+    }),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id, {
+      onDelete: "restrict",
+    }),
     name: text("name").notNull(),
     description: text("description").notNull(),
     city: text("city").notNull(),
@@ -59,7 +67,11 @@ export const hotels = pgTable(
     ),
     check(
       "hotels_managed_owner_check",
-      sql`${table.source} <> 'managed' or ${table.ownerUserId} is not null`,
+      sql`${table.source} <> 'managed' or ${table.ownerUserId} is not null or ${table.organisationId} is not null`,
+    ),
+    check(
+      "hotels_managed_creator_check",
+      sql`${table.source} <> 'managed' or ${table.createdByUserId} is not null`,
     ),
     index("hotels_city_trgm_idx").using("gin", sql`lower(${table.city}) gin_trgm_ops`),
     index("hotels_country_trgm_idx").using("gin", sql`lower(${table.country}) gin_trgm_ops`),
@@ -67,6 +79,8 @@ export const hotels = pgTable(
     index("hotels_price_idx").on(table.pricePerNightMinor),
     index("hotels_star_rating_idx").on(table.starRating),
     index("hotels_owner_idx").on(table.ownerUserId),
+    index("hotels_organisation_idx").on(table.organisationId),
+    index("hotels_created_by_idx").on(table.createdByUserId),
     index("hotels_status_idx").on(table.status),
     index("hotels_city_star_rating_idx").on(table.city, table.starRating),
   ],

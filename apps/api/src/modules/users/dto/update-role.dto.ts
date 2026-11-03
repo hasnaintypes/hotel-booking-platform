@@ -1,7 +1,7 @@
 import { IsIn } from "class-validator";
 import { AppRole } from "../../../common/decorators/roles.decorator";
 
-export const APP_ROLES: AppRole[] = ["user", "admin", "hotel_owner"];
+export const APP_ROLES: AppRole[] = ["user", "admin"];
 
 export class UpdateRoleDto {
   @IsIn(APP_ROLES, {

@@ -1,7 +1,7 @@
 import apiClient from "@hotel-booking/api-client";
 import type { UserType } from "@hotel-booking/types";
 
-export type AdminRole = "user" | "admin" | "hotel_owner";
+export type AdminRole = "user" | "admin";
 
 export const fetchUsers = async (): Promise<UserType[]> => {
   const response = await apiClient.get("/api/v1/admin/users");

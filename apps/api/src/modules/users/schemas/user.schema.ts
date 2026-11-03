@@ -11,7 +11,7 @@ export const UserSchema = new mongoose.Schema(
     image: { type: String },
     role: {
       type: String,
-      enum: ["user", "admin", "hotel_owner"],
+      enum: ["user", "admin"],
       default: "user",
     },
     phone: { type: String },

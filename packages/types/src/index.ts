@@ -5,7 +5,7 @@ export type UserType = {
   firstName: string;
   lastName: string;
   image?: string;
-  role?: "user" | "admin" | "hotel_owner";
+  role?: "user" | "admin";
   phone?: string;
   address?: {
     street: string;

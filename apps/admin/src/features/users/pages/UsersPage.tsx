@@ -12,19 +12,18 @@ import {
   SelectValue,
 } from "@hotel-booking/ui";
 import type { LucideIcon } from "lucide-react";
-import { Crown, Shield, User } from "lucide-react";
+import { Shield, User } from "lucide-react";
 import { toast } from "sonner";
 import { apiErrorMessage } from "@hotel-booking/api-client";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminCatalogs } from "@/shared/lib/query-invalidation";
 import { fetchUsers, updateUserRole, type AdminRole } from "../api";
 
-const ROLES: AdminRole[] = ["user", "admin", "hotel_owner"];
+const ROLES: AdminRole[] = ["user", "admin"];
 
 const ROLE_ICONS: Record<AdminRole, LucideIcon> = {
   user: User,
   admin: Shield,
-  hotel_owner: Crown,
 };
 
 const UsersPage = () => {
