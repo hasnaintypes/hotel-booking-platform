@@ -1,4 +1,4 @@
-export { createDb } from "./client.js";
+export { createDb, DEFAULT_DATABASE_TIMEOUTS } from "./client.js";
 export { EXPECTED_MIGRATION_COUNT } from "./migrations.js";
 export type { CreateDatabaseOptions, Database, DatabaseHandle } from "./client.js";
 export {
@@ -83,6 +83,8 @@ export type {
 } from "./schema/index.js";
 export { findPostgresError, isRetryableTransactionError, POSTGRES_ERROR_CODES } from "./errors.js";
 export type { PostgresError, PostgresErrorCode } from "./errors.js";
+export { applyLocalDatabaseTimeouts, withDatabaseTimeouts } from "./timeouts.js";
+export type { DatabaseTimeoutOverrides } from "./timeouts.js";
 export { withTransaction } from "./transaction.js";
 export type {
   Transaction,

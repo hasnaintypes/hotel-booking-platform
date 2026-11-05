@@ -32,6 +32,13 @@ export const configuration = () => {
     },
     database: {
       url: process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/hotel_booking",
+      maxConnections: parseInt(process.env.DATABASE_POOL_MAX || "10", 10),
+      statementTimeoutMs: parseInt(process.env.DATABASE_STATEMENT_TIMEOUT_MS || "5000", 10),
+      idleInTransactionTimeoutMs: parseInt(
+        process.env.DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS || "10000",
+        10,
+      ),
+      lockTimeoutMs: parseInt(process.env.DATABASE_LOCK_TIMEOUT_MS || "3000", 10),
     },
     jwt: {
       secret: process.env.JWT_SECRET_KEY,

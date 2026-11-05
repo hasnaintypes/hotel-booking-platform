@@ -79,6 +79,34 @@ describe("validateEnv", () => {
     });
   });
 
+  describe("database operations limits", () => {
+    it("accepts values inside the allowed ranges", () => {
+      expect(() =>
+        validateEnv({
+          ...base,
+          DATABASE_POOL_MAX: "20",
+          DATABASE_STATEMENT_TIMEOUT_MS: "5000",
+          DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS: "10000",
+          DATABASE_LOCK_TIMEOUT_MS: "3000",
+        }),
+      ).not.toThrow();
+    });
+
+    it.each([
+      ["DATABASE_POOL_MAX", "0"],
+      ["DATABASE_POOL_MAX", "101"],
+      ["DATABASE_STATEMENT_TIMEOUT_MS", "50"],
+      ["DATABASE_STATEMENT_TIMEOUT_MS", "120001"],
+      ["DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS", "50"],
+      ["DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS", "600001"],
+      ["DATABASE_LOCK_TIMEOUT_MS", "50"],
+      ["DATABASE_LOCK_TIMEOUT_MS", "120001"],
+      ["DATABASE_LOCK_TIMEOUT_MS", "3s"],
+    ])("rejects %s=%s", (name, value) => {
+      expect(() => validateEnv({ ...base, [name]: value })).toThrow(new RegExp(name));
+    });
+  });
+
   it("still validates the log settings", () => {
     expect(() => validateEnv({ ...base, LOG_LEVEL: "loud" })).toThrow(/LOG_LEVEL/);
     expect(() => validateEnv({ ...base, LOG_FORMAT: "xml" })).toThrow(/LOG_FORMAT/);

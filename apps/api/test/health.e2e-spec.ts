@@ -24,6 +24,7 @@ describe("health", () => {
     expect(res.body).toMatchObject({
       status: "ready",
       database: "connected",
+      postgres: "connected",
       migrations: "ready",
     });
   });
@@ -42,7 +43,7 @@ describe("health", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       status: "healthy",
-      checks: { database: "connected", migrations: "ready" },
+      checks: { database: "connected", postgres: "connected", migrations: "ready" },
       performance: {
         memory: {
           usedMb: expect.any(Number),

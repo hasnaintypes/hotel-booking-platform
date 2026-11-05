@@ -73,6 +73,7 @@ The API exits at startup if a required variable is missing. Browser apps only re
 | `MONGODB_CONNECTION_STRING` | api | Yes | MongoDB URI (runtime store until the M1 port completes) |
 | `DATABASE_URL` | api | For `db:*` | PostgreSQL connection string |
 | `TEST_DATABASE_URL` | api | For DB tests | Disposable PostgreSQL database for integration tests |
+| `DATABASE_POOL_MAX`, `DATABASE_STATEMENT_TIMEOUT_MS`, `DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS`, `DATABASE_LOCK_TIMEOUT_MS` | api | No | PostgreSQL pool and timeout defaults (see [database operations](packages/db/OPERATIONS.md)) |
 | `JWT_SECRET_KEY` | api | Yes | JWT signing secret (`openssl rand -base64 64`) |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | api | Yes | Image uploads |
 | `STRIPE_API_KEY` | api | Yes | Stripe secret key (`sk_test_…` locally) |
