@@ -81,13 +81,36 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
 
   const insertBooking = async (userId: string, hotelId: string, organisationId?: string) => {
     const result = await client.query<{ id: string }>(
-      `insert into bookings (user_id, hotel_id, organisation_id, created_by_user_id, check_in, check_out)
+      `insert into bookings (owner_user_id, hotel_id, organisation_id, created_by_user_id, check_in, check_out)
        values ($1, $2, $3, $1, '2026-12-01', '2026-12-03')
        returning id`,
       [userId, hotelId, organisationId ?? null],
     );
     return result.rows[0]!.id;
   };
+
+  const insertPayment = async (
+    bookingId: string,
+    provider = "stripe",
+    providerPaymentId = `pi_${randomUUID()}`,
+    amountMinor = 1_000,
+  ) => {
+    const result = await client.query<{ id: string }>(
+      `insert into payments
+        (booking_id, provider, provider_payment_id, amount_minor, currency_code)
+       values ($1, $2, $3, $4, 'GBP')
+       returning id`,
+      [bookingId, provider, providerPaymentId, amountMinor],
+    );
+    return result.rows[0]!.id;
+  };
+
+  const insertLedgerEntry = async (bookingId: string, amountMinor = 1_000) =>
+    client.query(
+      `insert into ledger_entries (booking_id, entry_type, amount_minor, currency_code)
+       values ($1, 'charge', $2, 'GBP')`,
+      [bookingId, amountMinor],
+    );
 
   const insertReview = async (bookingId: string, userId: string, hotelId: string, rating = 5) =>
     client.query(
@@ -139,7 +162,7 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
     await expectDatabaseError(
       () =>
         client.query(
-          `insert into bookings (user_id, hotel_id, created_by_user_id, check_in, check_out)
+          `insert into bookings (owner_user_id, hotel_id, created_by_user_id, check_in, check_out)
            values ($1, $2, $1, '2026-12-03', '2026-12-01')`,
           [userId, hotelId],
         ),
@@ -452,6 +475,214 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
     await expectDatabaseError(
       () => client.query("delete from hotels where id = $1", [hotelId]),
       "23503",
+    );
+  });
+
+  it("rejects a replayed provider payment id across bookings", async () => {
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const firstBooking = await insertBooking(userId, hotelId);
+    const secondBooking = await insertBooking(userId, hotelId);
+
+    await insertPayment(firstBooking, "stripe", "pi_replayed");
+
+    await expectDatabaseError(() => insertPayment(secondBooking, "stripe", "pi_replayed"), "23505");
+  });
+
+  it("allows only one active primary payment per booking", async () => {
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const bookingId = await insertBooking(userId, hotelId);
+
+    await insertPayment(bookingId, "stripe", "pi_primary");
+
+    await expectDatabaseError(
+      () => insertPayment(bookingId, "stripe", "pi_second_primary"),
+      "23505",
+    );
+  });
+
+  it("stores money as non-negative integer minor units with a currency", async () => {
+    const moneyColumns = await client.query<{
+      table_name: string;
+      column_name: string;
+      data_type: string;
+    }>(
+      `select table_name, column_name, data_type
+         from information_schema.columns
+        where table_schema = 'public'
+          and table_name in ('bookings', 'payments', 'ledger_entries')
+          and column_name in ('total_amount_minor', 'amount_minor', 'currency_code')
+        order by table_name, column_name`,
+    );
+
+    expect(moneyColumns.rows).toEqual([
+      { table_name: "bookings", column_name: "currency_code", data_type: "character" },
+      { table_name: "bookings", column_name: "total_amount_minor", data_type: "integer" },
+      { table_name: "ledger_entries", column_name: "amount_minor", data_type: "integer" },
+      { table_name: "ledger_entries", column_name: "currency_code", data_type: "character" },
+      { table_name: "payments", column_name: "amount_minor", data_type: "integer" },
+      { table_name: "payments", column_name: "currency_code", data_type: "character" },
+    ]);
+
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const bookingId = await insertBooking(userId, hotelId);
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into bookings (owner_user_id, hotel_id, created_by_user_id, check_in, check_out,
+             total_amount_minor)
+           values ($1, $2, $1, '2026-12-01', '2026-12-03', -1)`,
+          [userId, hotelId],
+        ),
+      "23514",
+    );
+    await expectDatabaseError(() => insertPayment(bookingId, "stripe", "pi_negative", -1), "23514");
+    await expectDatabaseError(() => insertLedgerEntry(bookingId, -1), "23514");
+  });
+
+  it("enforces booking idempotency per owner and organisation", async () => {
+    const userId = await insertUser();
+    const otherUserId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const organisationId = await insertOrganisation();
+
+    const insertWithKey = (ownerUserId: string, key: string, org?: string) =>
+      client.query(
+        `insert into bookings
+          (owner_user_id, hotel_id, organisation_id, created_by_user_id, check_in, check_out,
+           idempotency_key)
+         values ($1, $2, $3, $1, '2026-12-01', '2026-12-03', $4)`,
+        [ownerUserId, hotelId, org ?? null, key],
+      );
+
+    await insertWithKey(userId, "idem-1");
+
+    await expectDatabaseError(() => insertWithKey(userId, "idem-1"), "23505");
+    await insertWithKey(otherUserId, "idem-1");
+    await insertWithKey(userId, "idem-1", organisationId);
+  });
+
+  it("rejects inconsistent supplier inventory fields", async () => {
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into bookings
+            (owner_user_id, hotel_id, created_by_user_id, check_in, check_out, inventory_source)
+           values ($1, $2, $1, '2026-12-01', '2026-12-03', 'supplier')`,
+          [userId, hotelId],
+        ),
+      "23514",
+    );
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into bookings
+            (owner_user_id, hotel_id, created_by_user_id, check_in, check_out, supplier_id,
+             supplier_reference)
+           values ($1, $2, $1, '2026-12-01', '2026-12-03', 'supplier-1', 'ref-1')`,
+          [userId, hotelId],
+        ),
+      "23514",
+    );
+  });
+
+  it("rejects disabled or unknown currencies on bookings, payments and ledger entries", async () => {
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const bookingId = await insertBooking(userId, hotelId);
+    const paymentId = await insertPayment(bookingId);
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into bookings
+            (owner_user_id, hotel_id, created_by_user_id, check_in, check_out, currency_code)
+           values ($1, $2, $1, '2026-12-01', '2026-12-03', 'USD')`,
+          [userId, hotelId],
+        ),
+      "23514",
+    );
+    await expectDatabaseError(
+      () => client.query("update payments set currency_code = 'USD' where id = $1", [paymentId]),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into ledger_entries (booking_id, entry_type, amount_minor, currency_code)
+           values ($1, 'charge', 1000, 'ZZZ')`,
+          [bookingId],
+        ),
+      "23503",
+    );
+  });
+
+  it("keeps ledger entries and booking events append-only", async () => {
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const bookingId = await insertBooking(userId, hotelId);
+
+    await insertLedgerEntry(bookingId);
+    const event = await client.query<{ id: string }>(
+      `insert into booking_events (booking_id, to_status)
+       values ($1, 'confirmed')
+       returning id`,
+      [bookingId],
+    );
+    const eventId = event.rows[0]!.id;
+
+    await expectDatabaseError(
+      () =>
+        client.query("update ledger_entries set amount_minor = 2000 where booking_id = $1", [
+          bookingId,
+        ]),
+      "55000",
+    );
+    await expectDatabaseError(
+      () => client.query("delete from ledger_entries where booking_id = $1", [bookingId]),
+      "55000",
+    );
+    await expectDatabaseError(() => client.query("truncate ledger_entries"), "55000");
+    await expectDatabaseError(
+      () => client.query("update booking_events set reason = 'rewritten' where id = $1", [eventId]),
+      "55000",
+    );
+    await expectDatabaseError(
+      () => client.query("delete from booking_events where id = $1", [eventId]),
+      "55000",
+    );
+    await expectDatabaseError(() => client.query("truncate booking_events"), "55000");
+  });
+
+  it("rejects invalid booking event transitions and metadata", async () => {
+    const userId = await insertUser();
+    const hotelId = await insertHotel(userId);
+    const bookingId = await insertBooking(userId, hotelId);
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into booking_events (booking_id, from_status, to_status)
+           values ($1, 'pending', 'pending')`,
+          [bookingId],
+        ),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into booking_events (booking_id, to_status, metadata)
+           values ($1, 'confirmed', '[]'::jsonb)`,
+          [bookingId],
+        ),
+      "23514",
     );
   });
 

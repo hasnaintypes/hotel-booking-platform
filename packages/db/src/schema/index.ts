@@ -1,3 +1,4 @@
+import { bookingEvents } from "./booking-events.js";
 import { bookings } from "./bookings.js";
 import { credentials } from "./credentials.js";
 import { currencies } from "./currencies.js";
@@ -7,9 +8,11 @@ import { facilities, hotelFacilities } from "./facilities.js";
 import { hotelImages } from "./hotel-images.js";
 import { hotelHotelTypes, hotelTypes } from "./hotel-types.js";
 import { hotels } from "./hotels.js";
+import { ledgerEntries } from "./ledger-entries.js";
 import { memberships } from "./memberships.js";
 import { oauthAccounts } from "./oauth-accounts.js";
 import { organisationRoles, organisations, rolePermissions } from "./organisations.js";
+import { payments } from "./payments.js";
 import { reviews } from "./reviews.js";
 import { users } from "./users.js";
 
@@ -66,11 +69,38 @@ export type {
 export { bookings };
 export type { Booking, NewBooking } from "./bookings.js";
 
+export { payments };
+export type { NewPayment, Payment } from "./payments.js";
+
+export { ledgerEntries };
+export type { LedgerEntry, NewLedgerEntry } from "./ledger-entries.js";
+
+export { bookingEvents };
+export type { BookingEvent, NewBookingEvent } from "./booking-events.js";
+
 export { reviews };
 export type { NewReview, Review } from "./reviews.js";
 
-export { bookingStatus, hotelSource, hotelStatus, userRole, userStatus } from "./enums.js";
-export type { BookingStatus, HotelSource, HotelStatus, UserRole, UserStatus } from "./enums.js";
+export {
+  bookingStatus,
+  hotelSource,
+  hotelStatus,
+  inventorySource,
+  ledgerEntryType,
+  paymentStatus,
+  userRole,
+  userStatus,
+} from "./enums.js";
+export type {
+  BookingStatus,
+  HotelSource,
+  HotelStatus,
+  InventorySource,
+  LedgerEntryType,
+  PaymentStatus,
+  UserRole,
+  UserStatus,
+} from "./enums.js";
 
 export const schema = {
   users,
@@ -90,5 +120,8 @@ export const schema = {
   hotelTypes,
   hotelHotelTypes,
   bookings,
+  payments,
+  ledgerEntries,
+  bookingEvents,
   reviews,
 };

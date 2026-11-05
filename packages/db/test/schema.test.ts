@@ -1,5 +1,6 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
 import {
+  bookingEvents,
   bookings,
   credentials,
   currencies,
@@ -11,10 +12,12 @@ import {
   hotelImages,
   hotels,
   hotelTypes,
+  ledgerEntries,
   memberships,
   oauthAccounts,
   organisationRoles,
   organisations,
+  payments,
   reviews,
   rolePermissions,
   users,
@@ -56,7 +59,10 @@ describe("schema types", () => {
       exchangeRates,
       fxRateSnapshots,
       bookings,
+      payments,
+      ledgerEntries,
+      bookingEvents,
       reviews,
-    ]).toHaveLength(18);
+    ]).toHaveLength(21);
   });
 });
