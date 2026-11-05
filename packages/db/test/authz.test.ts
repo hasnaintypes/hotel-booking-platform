@@ -86,7 +86,7 @@ async function insertHotel(
 async function insertBooking(
   tx: Transaction,
   input: {
-    userId: string;
+    ownerUserId: string;
     hotelId: string;
     organisationId?: string;
     createdByUserId: string;
@@ -95,7 +95,7 @@ async function insertBooking(
   const [row] = await tx
     .insert(bookings)
     .values({
-      userId: input.userId,
+      ownerUserId: input.ownerUserId,
       hotelId: input.hotelId,
       organisationId: input.organisationId,
       createdByUserId: input.createdByUserId,
@@ -174,18 +174,18 @@ describe.skipIf(!url)("authorisation on PostgreSQL", () => {
     });
 
     const guestBooking = await insertBooking(tx, {
-      userId: guest,
+      ownerUserId: guest,
       hotelId: hotelA,
       createdByUserId: guest,
     });
     const bookingA = await insertBooking(tx, {
-      userId: guestTwo,
+      ownerUserId: guestTwo,
       hotelId: hotelA,
       organisationId: orgA,
       createdByUserId: orgOwner,
     });
     const bookingB = await insertBooking(tx, {
-      userId: guestTwo,
+      ownerUserId: guestTwo,
       hotelId: hotelB,
       organisationId: orgB,
       createdByUserId: orgOwner,

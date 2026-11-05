@@ -73,7 +73,7 @@ export const DIRECT_HOTEL_OWNER_PERMISSIONS: ReadonlySet<Permission> = new Set([
   PERMISSIONS.hotelDelete,
 ]);
 
-/** Permissions a user gets from being the guest named on `bookings.user_id`. */
+/** Permissions a user gets from being the guest named on `bookings.owner_user_id`. */
 export const DIRECT_BOOKING_OWNER_PERMISSIONS: ReadonlySet<Permission> = new Set([
   PERMISSIONS.bookingRead,
   PERMISSIONS.bookingUpdate,
