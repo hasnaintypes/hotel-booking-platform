@@ -50,7 +50,14 @@ export class UsersService {
     if (rows.length === 0) return [];
 
     const stats = (await this.bookingModel.aggregate([
-      { $match: { userId: { $in: rows.map((user) => user.id) } } },
+      {
+        $match: {
+          userId: { $in: rows.map((user) => user.id) },
+          // User counters were decremented when a booking was cancelled, so cancelled and
+          // refunded bookings must not count towards the computed totals.
+          status: { $nin: ["cancelled", "refunded"] },
+        },
+      },
       {
         $group: {
           _id: "$userId",
