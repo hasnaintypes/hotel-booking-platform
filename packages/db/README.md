@@ -16,7 +16,7 @@ pnpm --filter @hotel-booking/db test          # real-PostgreSQL constraint and a
 `TEST_DATABASE_URL` must point at a disposable PostgreSQL database for the tests. CI applies
 migrations before running them; the constraint suite also runs `db:migrate` itself.
 
-## Schema (v1 + M1-16)
+## Schema (v1 + M1-05 + M1-16)
 
 ```mermaid
 erDiagram
@@ -45,6 +45,11 @@ erDiagram
   hotel_types ||--o{ hotel_hotel_types : "applies to"
 
   bookings ||--o{ reviews : "reviewed by"
+  bookings ||--o{ payments : "paid by"
+  bookings ||--o{ ledger_entries : "ledger"
+  bookings ||--o{ booking_events : "history"
+  payments ||--o{ ledger_entries : "entry source"
+  fx_rate_snapshots ||--o{ ledger_entries : "converted at"
 
   users {
     uuid id PK
@@ -150,14 +155,52 @@ erDiagram
   }
   bookings {
     uuid id PK
-    uuid user_id FK "guest / direct owner"
+    text public_reference "unique bearer reference"
+    uuid owner_user_id FK "guest / direct owner"
     uuid hotel_id FK
     uuid organisation_id FK "booked on behalf of"
     uuid created_by_user_id FK
+    inventory_source inventory_source "managed | supplier"
+    text supplier_id "required for supplier inventory"
+    text supplier_reference "required for supplier inventory"
     date check_in
     date check_out
     booking_status status
     integer version
+    integer total_amount_minor "non-negative"
+    char currency_code FK "currencies.code"
+    jsonb price_snapshot
+    jsonb cancellation_policy_snapshot
+    text idempotency_key "unique per owner or organisation"
+  }
+  payments {
+    uuid id PK
+    uuid booking_id FK
+    text provider
+    text provider_payment_id "unique with provider"
+    integer amount_minor "non-negative"
+    char currency_code FK
+    payment_status status
+    uuid original_payment_id FK "refund / correction source"
+  }
+  ledger_entries {
+    uuid id PK
+    uuid booking_id FK
+    uuid payment_id FK "optional"
+    ledger_entry_type entry_type
+    integer amount_minor "non-negative"
+    char currency_code FK
+    uuid fx_rate_snapshot_id FK "optional"
+    timestamptz occurred_at
+  }
+  booking_events {
+    uuid id PK
+    uuid booking_id FK
+    booking_status from_status "null on creation"
+    booking_status to_status
+    uuid actor_user_id FK "optional"
+    jsonb metadata
+    timestamptz created_at
   }
   reviews {
     uuid id PK
@@ -174,9 +217,9 @@ erDiagram
 ```
 
 A managed hotel must have an `owner_user_id`, an `organisation_id`, or both. A booking always has a
-guest (`user_id`) and a creator (`created_by_user_id`); `organisation_id` is set when it is booked
-on behalf of an organisation. Organisation ownership is optional, so adding an agency booking does
-not change the booking shape.
+guest (`owner_user_id`) and a creator (`created_by_user_id`); `organisation_id` is set when it is
+booked on behalf of an organisation. Organisation ownership is optional, so adding an agency booking
+does not change the booking shape.
 
 ## Currency and exchange rates
 
@@ -189,7 +232,7 @@ not change the booking shape.
   point. Rounding rules belong with the pricing engine in M2 and will round once at the boundary.
 - **Foreign key:** `hotels.currency_code` references `currencies.code`. A database trigger rejects
   inserts or updates that use a currency whose `enabled` flag is false, so a disabled currency
-  cannot be used for a new monetary row. Future booking/payment tables attach the same
+  cannot be used for a new monetary row. Bookings, payments and ledger entries attach the same
   `assert_currency_enabled()` trigger.
 - **Rate windows:** an `exchange_rates` row applies when `observed_at <= at`,
   `valid_from <= at`, and `valid_to` is null or after `at`.
@@ -203,27 +246,45 @@ not change the booking shape.
   TRUNCATE, so historical money cannot be rewritten when a rate changes. Quotes, price snapshots
   and ledger entries added in M1-05 reference `fx_rate_snapshots.id` with `ON DELETE RESTRICT`.
 
-`bookings` still carries only identity, ownership and stay dates so reviews can reference a real
-row. [M1-05 (#35)](https://github.com/hasnaintypes/hotel-booking-platform/issues/35) adds guest
-details, integer minor-unit money, supplier references, snapshots and idempotency, and wires
-quotes, price snapshots and ledger entries to the immutable `fx_rate_snapshots` rows defined by
-[M1-17 (#102)](https://github.com/hasnaintypes/hotel-booking-platform/issues/102).
+## Bookings, payments and ledger
+
+[M1-05 (#35)](https://github.com/hasnaintypes/hotel-booking-platform/issues/35) adds the M2 booking
+money model without changing the API yet:
+
+- **Bookings** keep guest details, stay dates and ownership (`owner_user_id`, optional
+  `organisation_id`, `created_by_user_id`). `inventory_source` distinguishes managed hotels from
+  supplier inventory, and a check constraint requires both supplier fields for supplier rows.
+  `public_reference` is a high-entropy guest-facing reference, separate from the UUID primary key.
+- **Money** is integer minor units plus `currency_code`; `total_amount_minor`, payment
+  `amount_minor` and ledger `amount_minor` all reject negative values. `price_snapshot` and
+  `cancellation_policy_snapshot` freeze the quote and policy the guest agreed to.
+- **Idempotency** uses partial unique indexes on `(owner_user_id, idempotency_key)` for direct
+  bookings and `(organisation_id, idempotency_key)` for agency bookings.
+- **Payments** make `(provider, provider_payment_id)` unique across the table, so a replayed
+  provider payment cannot create a second booking. A partial unique index permits one active
+  primary payment per booking; refunds/corrections are new rows referencing `original_payment_id`.
+- **Ledger entries** are append-only charge/refund/fee/adjustment rows (payable and settlement are
+  reserved), with an optional FX snapshot. **Booking events** are append-only state history.
+  Database triggers reject UPDATE, DELETE and TRUNCATE on both tables with SQLSTATE `55000`.
+
+[M1-17 (#102)](https://github.com/hasnaintypes/hotel-booking-platform/issues/102) supplies the
+currency reference data, enabled-currency trigger and immutable `fx_rate_snapshots` used here.
 
 ## Authorisation model
 
 Permissions are code constants in `src/authz.ts`; roles and their grants are seeded data in
 `organisation_roles` and `role_permissions`.
 
-| Role      | Grants                                                                                                                 |
-| --------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `owner`   | All hotel, booking and organisation permissions, plus membership management.                                            |
-| `manager` | Hotel read/create/update, booking read/create/update/cancel, organisation read.                                        |
-| `member`  | Hotel read, booking read/create/update, organisation read.                                                            |
-| `viewer`  | Hotel read, booking read, organisation read.                                                                          |
+| Role      | Grants                                                                          |
+| --------- | ------------------------------------------------------------------------------- |
+| `owner`   | All hotel, booking and organisation permissions, plus membership management.    |
+| `manager` | Hotel read/create/update, booking read/create/update/cancel, organisation read. |
+| `member`  | Hotel read, booking read/create/update, organisation read.                      |
+| `viewer`  | Hotel read, booking read, organisation read.                                    |
 
 A regular user gets access from exactly one of:
 
-- direct ownership — `hotels.owner_user_id` for hotels, `bookings.user_id` for bookings;
+- direct ownership — `hotels.owner_user_id` for hotels, `bookings.owner_user_id` for bookings;
 - a membership in the resource's own organisation whose role grants the permission;
 - the platform `admin` role.
 
