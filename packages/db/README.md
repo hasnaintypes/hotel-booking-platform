@@ -16,6 +16,11 @@ pnpm --filter @hotel-booking/db test          # real-PostgreSQL constraint and a
 `TEST_DATABASE_URL` must point at a disposable PostgreSQL database for the tests. CI applies
 migrations before running them; the constraint suite also runs `db:migrate` itself.
 
+`createDb()` sets pool size and statement/idle-transaction/lock timeouts. Use
+`withDatabaseTimeouts(db, overrides, run)` when one request needs different limits; the overrides
+are scoped to that transaction. Operational procedures live in
+[OPERATIONS.md](./OPERATIONS.md).
+
 ## Schema (v1 + M1-05 + M1-16)
 
 ```mermaid

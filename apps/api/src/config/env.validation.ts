@@ -16,6 +16,10 @@ const INTEGER_SETTINGS: Array<[string, number, number]> = [
   ["AI_DAILY_QUOTA", 1, 10_000],
   ["AI_PER_MINUTE_LIMIT", 1, 600],
   ["AI_REQUEST_DEADLINE_MS", 1_000, 120_000],
+  ["DATABASE_POOL_MAX", 1, 100],
+  ["DATABASE_STATEMENT_TIMEOUT_MS", 100, 120_000],
+  ["DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS", 100, 600_000],
+  ["DATABASE_LOCK_TIMEOUT_MS", 100, 120_000],
 ];
 
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"];
