@@ -13,8 +13,6 @@ import {
   Star,
   Building2,
   Calendar,
-  UserCircle,
-  CreditCard,
   Power,
   Sparkles,
 } from "lucide-react";
@@ -90,23 +88,9 @@ const MyHotels = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-muted-foreground">
-              To view and manage your hotels, please sign in with your test credentials or your
-              personal account.
+              To view and manage your hotels, please sign in with your personal account or create
+              one.
             </p>
-            <div className="flex flex-col gap-2 text-sm mb-4">
-              <div className="flex items-center gap-2">
-                <UserCircle className="h-4 w-4 text-primary-600" />
-                <span className="text-sm font-normal text-gray-700">
-                  Test credentials: test@user.com / 12345678
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-primary-600" />
-                <span className="text-sm font-normal text-gray-700">
-                  Or use your own registered account
-                </span>
-              </div>
-            </div>
             <Link to="/sign-in">
               <Button className="w-full font-medium bg-primary-600 hover:bg-primary-700 mt-4">
                 <Sparkles className="h-4 w-4 mr-2 text-white" />

@@ -7,47 +7,16 @@ import type { SignInFormData } from "@/features/auth/types";
 import { welcomeBackToast } from "@/shared/lib/toast-messages";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { StaggerItem } from "@hotel-booking/ui";
-import { Mail, Lock, Eye, EyeOff, Sparkles, X } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { oauthErrorMessage } from "@/features/auth/lib/oauth-errors";
 import { Button } from "@hotel-booking/ui";
 import { Input } from "@hotel-booking/ui";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@hotel-booking/ui";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Label } from "@hotel-booking/ui";
 import { Separator } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { apiErrorMessage } from "@hotel-booking/api-client";
-
-/** Matches seed.ts: test@user.com → Test Admin (role=admin) */
-const testAccounts = {
-  "test-admin": {
-    email: "test@user.com",
-    password: "12345678",
-    name: "Test Admin",
-  },
-};
-
-/** Same Robohash set1 as UsernameMenu — circle ring + Name · email row */
-const testAccountAvatar = (email: string) =>
-  `https://robohash.org/${encodeURIComponent(email)}.png?set=set1&size=32x32`;
-
-function TestAccountOptionLabel({ name, email }: { name: string; email: string }) {
-  return (
-    <span className="inline-flex min-w-0 items-center gap-2">
-      <img
-        src={testAccountAvatar(email)}
-        alt=""
-        className="h-7 w-7 shrink-0 rounded-full border border-gray-300 bg-gray-100 object-cover"
-      />
-      <span className="truncate font-normal">
-        <span className="text-gray-700">{name}</span>
-        <span className="text-gray-400"> · </span>
-        <span className="text-gray-500">{email}</span>
-      </span>
-    </span>
-  );
-}
 
 const SignIn = () => {
   const { showToast } = useToast();
@@ -55,7 +24,6 @@ const SignIn = () => {
   const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>("");
 
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -64,23 +32,7 @@ const SignIn = () => {
     register,
     formState: { errors },
     handleSubmit,
-    setValue,
   } = useForm<SignInFormData>();
-
-  const handleRoleSelect = (value: string) => {
-    if (value === "clear") {
-      setSelectedRole("");
-      setValue("email", "");
-      setValue("password", "");
-    } else {
-      setSelectedRole(value);
-      const account = testAccounts[value as keyof typeof testAccounts];
-      if (account) {
-        setValue("email", account.email);
-        setValue("password", account.password);
-      }
-    }
-  };
 
   const mutation = useMutation({
     mutationFn: authApi.signIn,
@@ -147,50 +99,6 @@ const SignIn = () => {
             <CardContent className="space-y-6">
               <form className="space-y-6" onSubmit={onSubmit}>
                 <StaggerItem index={2} className="space-y-2">
-                  <Label htmlFor="test-account" className="text-sm font-medium text-gray-700">
-                    Test Accounts To Login With
-                  </Label>
-                  <Select
-                    key={`select-${selectedRole || "empty"}`}
-                    value={selectedRole || undefined}
-                    onValueChange={handleRoleSelect}
-                  >
-                    <SelectTrigger className="border border-gray-300 bg-white/80 text-gray-700 [&>span]:inline-flex [&>span]:items-center [&>span]:gap-2 [&>span]:truncate">
-                      {selectedRole && testAccounts[selectedRole as keyof typeof testAccounts] ? (
-                        <TestAccountOptionLabel
-                          name={testAccounts[selectedRole as keyof typeof testAccounts].name}
-                          email={testAccounts[selectedRole as keyof typeof testAccounts].email}
-                        />
-                      ) : (
-                        <SelectValue placeholder="Select Role Based Test Account" />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent className="border-gray-200 bg-white">
-                      <SelectItem
-                        value="test-admin"
-                        className="cursor-pointer font-normal text-gray-700 focus:bg-primary-50 focus:text-primary-900"
-                      >
-                        <TestAccountOptionLabel
-                          name={testAccounts["test-admin"].name}
-                          email={testAccounts["test-admin"].email}
-                        />
-                      </SelectItem>
-                      {selectedRole && (
-                        <SelectItem
-                          value="clear"
-                          className="cursor-pointer font-normal text-gray-600 focus:bg-gray-100 focus:text-gray-700"
-                        >
-                          <span className="inline-flex items-center gap-2 font-normal">
-                            <X className="h-4 w-4" />
-                            Clear Selection
-                          </span>
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                </StaggerItem>
-
-                <StaggerItem index={3} className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                     Email Address
                   </Label>
@@ -216,7 +124,7 @@ const SignIn = () => {
                   )}
                 </StaggerItem>
 
-                <StaggerItem index={4} className="space-y-2">
+                <StaggerItem index={3} className="space-y-2">
                   <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                     Password
                   </Label>
@@ -261,7 +169,7 @@ const SignIn = () => {
                   )}
                 </StaggerItem>
 
-                <StaggerItem index={5}>
+                <StaggerItem index={4}>
                   <Button
                     type="submit"
                     disabled={isLoading}
@@ -281,7 +189,7 @@ const SignIn = () => {
                   </Button>
                 </StaggerItem>
 
-                <StaggerItem index={6} className="relative my-6">
+                <StaggerItem index={5} className="relative my-6">
                   <Separator className="bg-gray-300" />
                   <div className="relative flex justify-center text-sm">
                     <span className="px-2 bg-white text-gray-500">or</span>
@@ -289,7 +197,7 @@ const SignIn = () => {
                 </StaggerItem>
 
                 {/* Google OAuth starts on backend; redirect_uri port must match PORT / VITE_API_BASE_URL */}
-                <StaggerItem index={7}>
+                <StaggerItem index={6}>
                   <Button
                     type="button"
                     variant="outline"
@@ -321,7 +229,7 @@ const SignIn = () => {
                   </Button>
                 </StaggerItem>
 
-                <StaggerItem index={8} className="text-center">
+                <StaggerItem index={7} className="text-center">
                   <p className="text-sm text-gray-600">
                     Don't have an account?{" "}
                     <Link
@@ -337,7 +245,7 @@ const SignIn = () => {
           </Card>
         </StaggerItem>
 
-        <StaggerItem index={9} className="text-center">
+        <StaggerItem index={8} className="text-center">
           <p className="text-xs text-gray-500">
             By signing in, you agree to our{" "}
             <a href="#" className="text-primary-600 hover:text-primary-700">
