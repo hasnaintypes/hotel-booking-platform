@@ -1,14 +1,13 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { InjectConnection } from "@nestjs/mongoose";
-import { Connection } from "mongoose";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import { AppRole, ROLES_KEY } from "../decorators/roles.decorator";
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
-    @InjectConnection() private readonly connection: Connection,
+    private readonly users: UsersRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -29,9 +28,7 @@ export class RolesGuard implements CanActivate {
     }
 
     try {
-      const user = (await this.connection.model("User").findById(userId).select("role")) as {
-        role?: string;
-      } | null;
+      const user = await this.users.findById(userId);
 
       if (!user || !roles.includes(user.role as AppRole)) {
         throw new ForbiddenException("Access denied");

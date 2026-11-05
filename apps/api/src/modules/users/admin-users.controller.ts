@@ -12,7 +12,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
-import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
+import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { UsersService } from "./users.service";
@@ -31,7 +31,7 @@ export class AdminUsersController {
   @Patch(":id")
   @HttpCode(HttpStatus.OK)
   updateRole(
-    @Param("id", MongoIdPipe) id: string,
+    @Param("id", UuidPipe) id: string,
     @Body() dto: UpdateRoleDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {

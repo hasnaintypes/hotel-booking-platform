@@ -13,7 +13,8 @@ import type { FieldError } from "../../common/errors/problem";
 import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { escapeRegExp } from "../../common/utils/escape-regexp";
-import { BOOKING_MODEL, HOTEL_MODEL, USER_MODEL } from "../../database/models";
+import { BOOKING_MODEL, HOTEL_MODEL } from "../../database/models";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { CreateBookingDto } from "./dto/create-booking.dto";
@@ -28,7 +29,7 @@ export class HotelsService {
   constructor(
     @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
-    @InjectModel(USER_MODEL) private readonly userModel: Model<any>,
+    private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
     private readonly config: ConfigService,
   ) {}
@@ -81,7 +82,7 @@ export class HotelsService {
 
   private async isAdmin(userId?: string): Promise<boolean> {
     if (!userId) return false;
-    const user = await this.userModel.findById(userId).select("role");
+    const user = await this.users.findById(userId);
     return user?.role === "admin";
   }
 
@@ -288,13 +289,6 @@ export class HotelsService {
       $inc: {
         totalBookings: 1,
         totalRevenue: newBooking.totalCost,
-      },
-    });
-
-    await this.userModel.findByIdAndUpdate(userId, {
-      $inc: {
-        totalBookings: 1,
-        totalSpent: newBooking.totalCost,
       },
     });
 

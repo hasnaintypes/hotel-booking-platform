@@ -40,6 +40,7 @@ const MATRIX: Case[] = [
   { name: "google callback", method: "get", path: routes.auth.googleCallback, status: 302 },
 
   { name: "current user", method: "get", path: routes.users.me, status: 401 },
+  { name: "update current user", method: "patch", path: routes.users.me, status: 401 },
   { name: "list users", method: "get", path: routes.users.list, status: 401 },
   { name: "update user", method: "patch", path: routes.users.role(id), status: 401 },
 

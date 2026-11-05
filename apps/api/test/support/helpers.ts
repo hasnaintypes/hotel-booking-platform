@@ -1,5 +1,6 @@
 import request from "supertest";
 import type { TestApp } from "./create-app";
+import { UsersRepository } from "../../src/database/repositories/users.repository";
 import { routes } from "./routes";
 
 let counter = 0;
@@ -31,12 +32,12 @@ export async function registerUser(t: TestApp, overrides: Partial<Credentials> =
 
 /** Promotes a user to admin directly in the database (no API exists for the first admin). */
 export async function promoteToAdmin(t: TestApp, userId: string) {
-  await t.connection
-    .collection("users")
-    .updateOne(
-      { _id: new (await import("mongoose")).Types.ObjectId(userId) },
-      { $set: { role: "admin" } },
-    );
+  await t.app.get(UsersRepository).updateRole(userId, "admin");
+}
+
+/** The PostgreSQL identity repository, for tests that need direct account state. */
+export function usersRepository(t: TestApp) {
+  return t.app.get(UsersRepository);
 }
 
 export function anonymous(t: TestApp) {

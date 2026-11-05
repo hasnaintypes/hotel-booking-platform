@@ -1,8 +1,8 @@
 import { JwtService } from "@nestjs/jwt";
-import { createHash } from "node:crypto";
-import { Types } from "mongoose";
+import { createHash, randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
+import { UsersRepository } from "../src/database/repositories/users.repository";
 import { anonymous, withEnv } from "./support/helpers";
 import { routes } from "./support/routes";
 
@@ -59,7 +59,7 @@ describe("Google sign-in", () => {
     restoreEnv = undefined;
   });
 
-  const users = (app: TestApp) => app.connection.collection("users");
+  const users = (app: TestApp) => app.app.get(UsersRepository);
 
   /** Starts a sign-in the way a browser does and returns what it would carry to the callback. */
   const start = async (app: TestApp) => {
@@ -137,13 +137,13 @@ describe("Google sign-in", () => {
       }
       expect(sessionCookie(res)).toMatch(/HttpOnly/i);
 
-      const user = await users(app).findOne({ email: "grace@example.test" });
+      const user = await users(app).findByEmail("grace@example.test");
       expect(user).toMatchObject({
         firstName: "Grace",
         lastName: "Hopper",
-        emailVerified: true,
         image: "https://img.test/grace.png",
       });
+      expect(user?.emailVerifiedAt).toBeInstanceOf(Date);
     });
 
     it("sends Google the PKCE verifier that matches the challenge", async () => {
@@ -181,7 +181,7 @@ describe("Google sign-in", () => {
       const app = await boot();
       const first = await start(app);
       await callback(app, { code: "c", state: first.state }, first.cookie);
-      const before = await users(app).countDocuments();
+      const before = await users(app).count();
 
       profile = { ...defaultProfile(), picture: "https://img.test/new.png" };
       const second = await start(app);
@@ -189,8 +189,8 @@ describe("Google sign-in", () => {
 
       expect(res.headers.location).toBe(`${FRONTEND}/auth/callback?authenticated=1`);
       expect(sessionCookie(res)).toBeDefined();
-      expect(await users(app).countDocuments()).toBe(before);
-      expect((await users(app).findOne({ email: "grace@example.test" }))?.image).toBe(
+      expect(await users(app).count()).toBe(before);
+      expect((await users(app).findByEmail("grace@example.test"))?.image).toBe(
         "https://img.test/new.png",
       );
     });
@@ -206,7 +206,7 @@ describe("Google sign-in", () => {
       expect(String(res.headers.location)).toMatch(/\/sign-in\?error=oauth_state$/);
       expect(sessionCookie(res)).toBeUndefined();
       expect(googleCalls).toHaveLength(0);
-      expect(await users(app).countDocuments()).toBe(0);
+      expect(await users(app).count()).toBe(0);
     };
 
     it("is refused when the state cookie is missing", async () => {
@@ -256,7 +256,7 @@ describe("Google sign-in", () => {
     it("is refused when a session token is offered in place of the state token", async () => {
       const app = await boot();
       const { state } = await start(app);
-      const session = app.app.get(JwtService).sign({ userId: new Types.ObjectId().toString() });
+      const session = app.app.get(JwtService).sign({ userId: randomUUID() });
       await expectRefused(app, await callback(app, { code: "c", state }, session));
     });
 
@@ -298,7 +298,7 @@ describe("Google sign-in", () => {
 
       expect(reason(res)).toBe("email_unverified");
       expect(sessionCookie(res)).toBeUndefined();
-      expect(await users(app).countDocuments()).toBe(0);
+      expect(await users(app).count()).toBe(0);
     });
 
     it.each([
@@ -314,7 +314,7 @@ describe("Google sign-in", () => {
       const res = await callback(app, { code: "c", state }, cookie);
 
       expect(reason(res)).toBe("email_unverified");
-      expect(await users(app).countDocuments()).toBe(0);
+      expect(await users(app).count()).toBe(0);
     });
 
     it("reports a failed code exchange", async () => {
@@ -347,33 +347,35 @@ describe("Google sign-in", () => {
   });
 
   describe("existing accounts", () => {
-    const insertPasswordAccount = async (app: TestApp, overrides: Record<string, unknown> = {}) => {
-      await users(app).insertOne({
+    const insertPasswordAccount = async (
+      app: TestApp,
+      overrides: { emailVerified?: boolean; isActive?: boolean } = {},
+    ) => {
+      await users(app).createWithPassword({
         email: "grace@example.test",
         firstName: "Grace",
         lastName: "Local",
-        password: "$2a$04$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234",
-        role: "user",
-        isActive: true,
-        emailVerified: false,
-        ...overrides,
+        passwordHash: "$2a$04$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234",
+        status: overrides.isActive === false ? "suspended" : "active",
+        emailVerifiedAt: overrides.emailVerified ? new Date() : undefined,
       });
     };
 
     it("does not link Google to an account created with a password", async () => {
       const app = await boot();
       await insertPasswordAccount(app);
-      const before = await users(app).findOne({ email: "grace@example.test" });
+      const before = await users(app).findByEmail("grace@example.test");
+      const beforeHash = (await users(app).getCredential(before!.id))?.passwordHash;
       const { state, cookie } = await start(app);
 
       const res = await callback(app, { code: "c", state }, cookie);
 
       expect(reason(res)).toBe("account_exists");
       expect(sessionCookie(res)).toBeUndefined();
-      const after = await users(app).findOne({ email: "grace@example.test" });
-      expect(after?.password).toBe(before?.password);
-      expect(after?.emailVerified).toBe(false);
-      expect(after?.image).toBeUndefined();
+      const after = await users(app).findByEmail("grace@example.test");
+      expect((await users(app).getCredential(after!.id))?.passwordHash).toBe(beforeHash);
+      expect(after?.emailVerifiedAt).toBeNull();
+      expect(after?.image).toBeNull();
     });
 
     it("refuses a deactivated account", async () => {

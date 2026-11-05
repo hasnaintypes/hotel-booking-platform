@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertHotel, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
 const SOME_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const SOME_USER_ID = randomUUID();
 
 /**
  * Evidence for the CodeQL js/sql-injection alerts on the auth, bookings, hotels, reviews and
@@ -127,7 +129,7 @@ describe("operator payloads are rejected before they reach a query", () => {
 
   it("role updates: only a known role is accepted", async () => {
     expectRejected(
-      await admin.agent.patch(routes.users.role(SOME_ID)).send({ role: { $ne: "user" } }),
+      await admin.agent.patch(routes.users.role(SOME_USER_ID)).send({ role: { $ne: "user" } }),
       "role",
     );
   });

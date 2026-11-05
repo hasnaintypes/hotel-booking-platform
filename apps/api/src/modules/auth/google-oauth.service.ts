@@ -1,11 +1,8 @@
 import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { InjectModel } from "@nestjs/mongoose";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
-import { Model } from "mongoose";
-import { UserType } from "@hotel-booking/types";
-import { USER_MODEL } from "../../database/models";
+import { UsersRepository } from "../../database/repositories/users.repository";
 
 /** The audience of the signed state token, so it can never be mistaken for a session token. */
 const STATE_AUDIENCE = "oauth-state";
@@ -51,7 +48,7 @@ export class GoogleOAuthService {
   private readonly logger = new Logger(GoogleOAuthService.name);
 
   constructor(
-    @InjectModel(USER_MODEL) private readonly userModel: Model<UserType>,
+    private readonly users: UsersRepository,
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
   ) {}
@@ -177,28 +174,28 @@ export class GoogleOAuthService {
     const fail = (reason: string) => ({ url: `${frontendUrl}/sign-in?error=${reason}` });
     const image = typeof profile.picture === "string" ? profile.picture : undefined;
 
-    let user = await this.userModel.findOne({ email: profile.email });
+    let user = await this.users.findByEmail(profile.email);
 
     if (user) {
-      if (user.isActive === false) return fail("account_disabled");
+      if (user.status !== "active") return fail("account_disabled");
       // Created with a password, never confirmed to belong to the Google account's owner.
-      if (user.emailVerified !== true) return fail("account_exists");
+      if (!user.emailVerifiedAt) return fail("account_exists");
       if (image && image !== user.image) {
-        await this.userModel.updateOne({ _id: user._id }, { $set: { image } });
+        await this.users.updateImage(user.id, image);
       }
     } else {
       const name = typeof profile.name === "string" ? profile.name.trim() : "";
       const [firstName, ...lastParts] = name.split(/\s+/);
-      user = new this.userModel({
+      user = await this.users.findOrCreateOAuthUser({
         email: profile.email,
         firstName: firstName || "User",
         lastName: lastParts.join(" ") || firstName || "Google",
-        // Never used to sign in; the account is reached through Google.
-        password: randomBytes(32).toString("hex"),
         image,
-        emailVerified: true,
       });
-      await user.save();
+
+      // A registration for the same address may have won the race.
+      if (user.status !== "active") return fail("account_disabled");
+      if (!user.emailVerifiedAt) return fail("account_exists");
     }
 
     const token = this.jwtService.sign({ userId: user.id });

@@ -4,35 +4,75 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
 import { JwtService } from "@nestjs/jwt";
+import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { UserType } from "@hotel-booking/types";
-import { USER_MODEL } from "../../database/models";
+import { UniqueViolationError } from "../../common/errors/postgres-errors";
+import { hashPassword } from "../../common/security/password";
+import { BOOKING_MODEL } from "../../database/models";
+import {
+  toPublicUser,
+  UsersRepository,
+  type PublicUser,
+} from "../../database/repositories/users.repository";
 import { RegisterDto } from "./dto/register.dto";
+import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
+
+type BookingStats = { _id: string; totalBookings: number; totalSpent: number };
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel(USER_MODEL) private readonly userModel: Model<UserType>,
+    private readonly users: UsersRepository,
     private readonly jwtService: JwtService,
+    @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<any>,
   ) {}
 
-  async me(userId: string) {
-    const user = await this.userModel.findById(userId).select("-password");
+  async me(userId: string): Promise<PublicUser> {
+    const user = await this.users.findById(userId);
     if (!user) {
       throw new BadRequestException("User not found");
     }
-    return user;
+    return toPublicUser(user);
   }
 
-  findAll() {
-    return this.userModel
-      .find()
-      .select("email firstName lastName role isActive totalBookings totalSpent createdAt")
-      .sort({ createdAt: -1 })
-      .limit(200);
+  async updateProfile(userId: string, dto: UpdateProfileDto): Promise<PublicUser> {
+    const user = await this.users.updateProfile(userId, dto);
+    if (!user) {
+      throw new NotFoundException("User not found");
+    }
+    return toPublicUser(user);
+  }
+
+  async findAll() {
+    const rows = await this.users.list();
+    if (rows.length === 0) return [];
+
+    const stats = (await this.bookingModel.aggregate([
+      {
+        $match: {
+          userId: { $in: rows.map((user) => user.id) },
+          // User counters were decremented when a booking was cancelled, so cancelled and
+          // refunded bookings must not count towards the computed totals.
+          status: { $nin: ["cancelled", "refunded"] },
+        },
+      },
+      {
+        $group: {
+          _id: "$userId",
+          totalBookings: { $sum: 1 },
+          totalSpent: { $sum: "$totalCost" },
+        },
+      },
+    ])) as BookingStats[];
+    const byUser = new Map(stats.map((row) => [row._id, row]));
+
+    return rows.map((user) => ({
+      ...toPublicUser(user),
+      totalBookings: byUser.get(user.id)?.totalBookings ?? 0,
+      totalSpent: byUser.get(user.id)?.totalSpent ?? 0,
+    }));
   }
 
   async updateRole(id: string, dto: UpdateRoleDto, actorId: string) {
@@ -40,29 +80,39 @@ export class UsersService {
       throw new BadRequestException("Cannot demote your own admin role");
     }
 
-    const user = await this.userModel
-      .findByIdAndUpdate(id, { role: dto.role, updatedAt: new Date() }, { new: true })
-      .select("-password");
-
+    const user = await this.users.updateRole(id, dto.role);
     if (!user) {
       throw new NotFoundException("User not found");
     }
 
-    return user;
+    return toPublicUser(user);
   }
 
   async register(dto: RegisterDto) {
-    const existing = await this.userModel.findOne({ email: dto.email });
+    const existing = await this.users.findByEmail(dto.email);
     if (existing) {
       throw new ConflictException("User already exists");
     }
 
-    const user = new this.userModel(dto);
-    await user.save();
+    let user;
+    try {
+      user = await this.users.createWithPassword({
+        email: dto.email,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        phone: dto.phone,
+        passwordHash: await hashPassword(dto.password),
+      });
+    } catch (error) {
+      // The unique index is the real guard: two simultaneous registrations can both pass the
+      // check above, and exactly one of them inserts.
+      if (error instanceof UniqueViolationError) {
+        throw new ConflictException("User already exists");
+      }
+      throw error;
+    }
 
     const token = this.jwtService.sign({ userId: user.id });
-    const created = user.toObject() as Record<string, unknown>;
-    delete created.password;
-    return { token, user: created };
+    return { token, user: toPublicUser(user) };
   }
 }

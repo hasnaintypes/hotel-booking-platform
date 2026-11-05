@@ -1,14 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { HotelType, UserType } from "@hotel-booking/types";
-import {
-  ANALYTICS_MODEL,
-  BOOKING_MODEL,
-  HOTEL_MODEL,
-  REVIEW_MODEL,
-  USER_MODEL,
-} from "../../database/models";
+import { HotelType } from "@hotel-booking/types";
+import { ANALYTICS_MODEL, BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { IReview } from "../reviews/schemas/review.schema";
 import { IAnalytics } from "./schemas/analytics-snapshot.schema";
@@ -19,7 +14,7 @@ export class AnalyticsService {
     @InjectModel(ANALYTICS_MODEL)
     private readonly analyticsModel: Model<IAnalytics>,
     @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
-    @InjectModel(USER_MODEL) private readonly userModel: Model<UserType>,
+    private readonly users: UsersRepository,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(REVIEW_MODEL) private readonly reviewModel: Model<IReview>,
   ) {}
@@ -27,7 +22,7 @@ export class AnalyticsService {
   private async buildLiveSnapshot() {
     const [totalHotels, totalUsers, allBookings, reviewAgg] = await Promise.all([
       this.hotelModel.countDocuments(),
-      this.userModel.countDocuments(),
+      this.users.count(),
       this.bookingModel.find().select("status paymentStatus totalCost hotelId"),
       this.reviewModel.aggregate([{ $group: { _id: null, averageRating: { $avg: "$rating" } } }]),
     ]);

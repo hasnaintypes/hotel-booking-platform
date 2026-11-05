@@ -42,6 +42,18 @@ describe("auth and sessions", () => {
     expect(res.body.message).toBe("User already exists");
   });
 
+  it("lets exactly one of two identical registrations win", async () => {
+    const credentials = newCredentials();
+    const [first, second] = await Promise.all([
+      anonymous(t).post(routes.auth.register).send(credentials),
+      anonymous(t).post(routes.auth.register).send(credentials),
+    ]);
+
+    expect([first.status, second.status].sort()).toEqual([201, 409]);
+    const conflict = first.status === 409 ? first : second;
+    expect(conflict.body).toMatchObject({ code: "CONFLICT", message: "User already exists" });
+  });
+
   it("validates registration input", async () => {
     const res = await anonymous(t)
       .post(routes.auth.register)
@@ -85,6 +97,22 @@ describe("auth and sessions", () => {
     expect(res.status).toBe(200);
     expect(res.body.email).toBe(credentials.email);
     expect(res.body.password).toBeUndefined();
+  });
+
+  it("updates the caller's profile through PATCH /me", async () => {
+    const { agent } = await registerUser(t);
+    const res = await agent
+      .patch(routes.users.me)
+      .send({ firstName: "Grace", lastName: "Hopper", phone: "+44 20 7946 0000" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      firstName: "Grace",
+      lastName: "Hopper",
+      phone: "+44 20 7946 0000",
+    });
+    expect(res.body.password).toBeUndefined();
+    expect((await agent.get(routes.users.me)).body.firstName).toBe("Grace");
   });
 
   it("returns 401 for protected routes without a session", async () => {

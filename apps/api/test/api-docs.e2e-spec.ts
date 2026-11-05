@@ -1,8 +1,9 @@
 import { JwtService } from "@nestjs/jwt";
-import { Types } from "mongoose";
+import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
-import { anonymous, registerUser, withEnv } from "./support/helpers";
+import { UsersRepository } from "../src/database/repositories/users.repository";
+import { anonymous, newCredentials, withEnv } from "./support/helpers";
 import { routes } from "./support/routes";
 
 const JSON_DOC = "/api-docs-json";
@@ -31,11 +32,14 @@ describe("API documentation", () => {
    * database rather than from /api/users/me.
    */
   const createUser = async (app: TestApp, role: "user" | "admin" = "user") => {
-    const { credentials } = await registerUser(app);
-    const row = await app.connection.collection("users").findOne({ email: credentials.email });
-    const id = String(row!._id);
+    const credentials = newCredentials();
+    const res = await anonymous(app).post(routes.auth.register).send(credentials);
+    if (res.status !== 201) {
+      throw new Error(`register failed: ${res.status} ${JSON.stringify(res.body)}`);
+    }
+    const id = String(res.body._id);
     if (role === "admin") {
-      await app.connection.collection("users").updateOne({ _id: row!._id }, { $set: { role } });
+      await app.app.get(UsersRepository).updateRole(id, role);
     }
     return { id, token: app.app.get(JwtService).sign({ userId: id }) };
   };
@@ -169,13 +173,11 @@ describe("API documentation", () => {
       it("refuses a deactivated admin and a token for a user that does not exist", async () => {
         const app = await boot(enabled);
         const admin = await createUser(app, "admin");
-        await app.connection
-          .collection("users")
-          .updateOne({ _id: new Types.ObjectId(admin.id) }, { $set: { isActive: false } });
+        await app.app.get(UsersRepository).setStatus(admin.id, "suspended");
 
         expect((await withBearer(app, JSON_DOC, admin.token)).status).toBe(401);
 
-        const ghost = app.app.get(JwtService).sign({ userId: new Types.ObjectId().toString() });
+        const ghost = app.app.get(JwtService).sign({ userId: randomUUID() });
         expect((await withBearer(app, JSON_DOC, ghost)).status).toBe(401);
       });
 

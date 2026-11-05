@@ -1,7 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { InjectConnection } from "@nestjs/mongoose";
-import { Connection } from "mongoose";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import { SESSION_COOKIE_NAME } from "../auth-cookie";
 import { JwtPayload } from "../types/jwt-payload.interface";
 
@@ -23,7 +22,7 @@ export const extractToken = (request: {
  */
 export async function activeUserIdFromToken(
   jwtService: JwtService,
-  connection: Connection,
+  users: UsersRepository,
   token: string,
 ): Promise<string | undefined> {
   let payload: JwtPayload;
@@ -34,24 +33,15 @@ export async function activeUserIdFromToken(
   }
   if (typeof payload.userId !== "string") return undefined;
 
-  try {
-    const user = (await connection.model("User").findById(payload.userId).select("isActive")) as {
-      isActive?: boolean;
-    } | null;
-    return user && user.isActive !== false ? payload.userId : undefined;
-  } catch (error) {
-    // A token whose id is not a valid id is simply not a session. Anything else (for example the
-    // database being down) is a server fault and must not look like a sign-out.
-    if ((error as { name?: string }).name === "CastError") return undefined;
-    throw error;
-  }
+  const user = await users.findById(payload.userId);
+  return user && user.status === "active" ? user.id : undefined;
 }
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    @InjectConnection() private readonly connection: Connection,
+    private readonly users: UsersRepository,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -62,7 +52,7 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException("unauthorized");
     }
 
-    const userId = await activeUserIdFromToken(this.jwtService, this.connection, token);
+    const userId = await activeUserIdFromToken(this.jwtService, this.users, token);
     if (!userId) {
       throw new UnauthorizedException("unauthorized");
     }

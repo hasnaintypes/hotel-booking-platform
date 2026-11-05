@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertHotel, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const UNKNOWN_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_HOTEL_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_USER_ID = randomUUID();
 
 describe("admin role and hotel state changes", () => {
   let t: TestApp;
@@ -45,7 +47,8 @@ describe("admin role and hotel state changes", () => {
         (await admin.agent.patch(routes.users.role(other.user._id)).send({ role: "root" })).status,
       ).toBe(400);
       expect(
-        (await admin.agent.patch(routes.users.role(UNKNOWN_ID)).send({ role: "admin" })).status,
+        (await admin.agent.patch(routes.users.role(UNKNOWN_USER_ID)).send({ role: "admin" }))
+          .status,
       ).toBe(404);
     });
 
@@ -80,7 +83,7 @@ describe("admin role and hotel state changes", () => {
           .status,
       ).toBe(400);
       expect(
-        (await admin.agent.patch(routes.hotels.active(UNKNOWN_ID)).send({ isActive: false }))
+        (await admin.agent.patch(routes.hotels.active(UNKNOWN_HOTEL_ID)).send({ isActive: false }))
           .status,
       ).toBe(404);
     });

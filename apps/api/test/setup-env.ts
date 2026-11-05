@@ -21,3 +21,8 @@ process.env.AUTH_MAX_FAILED_LOGINS = "100";
 
 const base = process.env.TEST_MONGO_BASE_URI ?? "mongodb://127.0.0.1:27017";
 process.env.MONGODB_CONNECTION_STRING = `${base}/test_${randomUUID().replace(/-/g, "")}`;
+
+// Tests that touch PostgreSQL must never reach a development database. TEST_DATABASE_URL wins;
+// otherwise use the conventional disposable database that docker compose and CI provide.
+process.env.TEST_DATABASE_URL ??= "postgres://postgres:postgres@localhost:5432/hotel_booking_test";
+process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
