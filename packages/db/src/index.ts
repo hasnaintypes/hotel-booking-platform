@@ -84,6 +84,17 @@ export type {
 export { findPostgresError, isRetryableTransactionError, POSTGRES_ERROR_CODES } from "./errors.js";
 export type { PostgresError, PostgresErrorCode } from "./errors.js";
 export { applyLocalDatabaseTimeouts, withDatabaseTimeouts } from "./timeouts.js";
+export {
+  assertSeedPassword,
+  assertSeedTarget,
+  deleteSeedFixtures,
+  MIN_SEED_PASSWORD_LENGTH,
+  SEED_FIXTURE_IDS,
+  SEED_TIMESTAMP,
+  seedDatabase,
+} from "./seed/index.js";
+export type { SeedOptions, SeedSummary, SeedTarget, SeedTargetOptions } from "./seed/index.js";
+
 export type { DatabaseTimeoutOverrides } from "./timeouts.js";
 export { withTransaction } from "./transaction.js";
 export type {
