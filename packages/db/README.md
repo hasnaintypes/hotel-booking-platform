@@ -299,6 +299,36 @@ joining an extra organisation cannot widen access. An authenticated user may cre
 booking; creating one for an organisation requires a membership grant such as `booking:create` on
 that organisation.
 
+## Demo fixtures and seeding
+
+`seedDatabase(db, { passwordHash })` inserts a deterministic demo set and is safe to run repeatedly:
+
+| Fixture | Rows | Natural keys |
+| --- | --- | --- |
+| Users | 4 | `test@user.com` (admin), `owner@hotel.com`, `guest@user.com`, `guest.two@user.com` |
+| Organisations | 1 | `harbour-collection`, with the owner as an `owner` member |
+| Hotels | 3 | Thames View (active), Edinburgh Castle Inn (active), Quiet Quayside (inactive) |
+| Bookings | 6 | confirmed, completed, cancelled, pending and refunded states |
+| Reviews | 2 | one verified review on each completed booking |
+
+Every row uses a fixed UUID, timestamp and public reference. All writes use
+`ON CONFLICT DO NOTHING`, so a second run leaves the same rows, counts and password hashes; nothing
+is truncated and unrelated data is untouched. Reference roles, permissions and currencies come
+from the migrations.
+
+The API CLI hashes `SEED_PASSWORD` before calling the seeder:
+
+```bash
+SEED_PASSWORD='choose-a-strong-demo-password' pnpm --filter @hotel-booking/api seed
+```
+
+There is no default demo password and `SEED_PASSWORD` must be at least 12 characters. A local
+database is allowed directly; any other host is refused unless `ALLOW_SEED=true` and
+`SEED_DATABASE_NAME` exactly match the target database. Those guards live in
+`src/seed/guard.ts` and are unit-tested without a database. Use `deleteSeedFixtures(db)` only when
+you deliberately want to remove the deterministic fixtures; it deletes by fixture id, not by
+truncating tables.
+
 ## Conventions
 
 - **Naming:** plural `snake_case` tables and columns; `*_id` for foreign keys; index and

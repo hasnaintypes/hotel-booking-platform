@@ -18,8 +18,9 @@ docker compose up -d mongo
 `pnpm --filter @hotel-booking/web dev` and `pnpm --filter @hotel-booking/admin dev`. See the
 [README](README.md) for ports, configuration and the production warning.
 
-**Never run `pnpm --filter @hotel-booking/api seed` against data you need:** it deletes all five
-collections first.
+**Never run `pnpm --filter @hotel-booking/api seed` against data you need:** it writes deterministic
+fixtures and refuses non-local targets unless `ALLOW_SEED=true` and `SEED_DATABASE_NAME` match the
+disposable database. Supply `SEED_PASSWORD`; there is no default password.
 
 ## Workflow
 

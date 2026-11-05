@@ -116,7 +116,16 @@ Run from the repository root.
 
 Run a single test file with `pnpm --filter @hotel-booking/admin exec vitest run <path>`.
 
-> `pnpm --filter @hotel-booking/api seed` **deletes all collections** before inserting sample data. Use it only on a disposable database.
+Seed deterministic PostgreSQL demo fixtures after migrations, with an explicit demo password:
+
+```bash
+SEED_PASSWORD='choose-a-strong-demo-password' pnpm --filter @hotel-booking/api seed
+```
+
+Local databases run without extra flags. A non-local target is refused unless both
+`ALLOW_SEED=true` and `SEED_DATABASE_NAME` (the exact disposable database name) are set. The seed
+inserts fixtures idempotently and never truncates tables or deletes unrelated data. It no longer
+uses the old weak demo password and does not touch MongoDB.
 
 ## Quality and CI
 
