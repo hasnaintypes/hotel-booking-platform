@@ -3,6 +3,9 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { getConnectionToken } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
 import { Connection } from "mongoose";
+import { sql } from "drizzle-orm";
+import type { Database } from "@hotel-booking/db";
+import { DATABASE } from "../../src/database/postgres.database";
 import { AppModule } from "../../src/app.module";
 import { ConfigService } from "@nestjs/config";
 import { configureApp } from "../../src/app.setup";
@@ -58,6 +61,13 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
   configureApp(app);
   if (options.docs) setupSwagger(app, app.get(ConfigService));
   await app.init();
+
+  // Each test file starts from a clean PostgreSQL identity state. Files run in sequence.
+  // Truncating users cascades into booking tables, whose append-only trigger is not wanted here.
+  await app.get<Database>(DATABASE).transaction(async (tx) => {
+    await tx.execute(sql`set local session_replication_role = replica`);
+    await tx.execute(sql`truncate table "users" cascade`);
+  });
 
   const connection = app.get<Connection>(getConnectionToken());
 

@@ -21,6 +21,8 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 120_000,
     pool: "forks",
+    // Tests reset the shared PostgreSQL database, so files must not run alongside each other.
+    fileParallelism: false,
     restoreMocks: true,
   },
 });

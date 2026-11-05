@@ -1,16 +1,15 @@
 import { INestApplication, type Type } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { getConnectionToken } from "@nestjs/mongoose";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import type { NextFunction, Request, Response } from "express";
-import type { Connection } from "mongoose";
 import { AUDIENCE_GROUPS, type Audience } from "../common/routing/controllers";
 import { AdminRoutesModule } from "../routes/admin.routes.module";
 import { ManageRoutesModule } from "../routes/manage.routes.module";
 import { PartnerRoutesModule } from "../routes/partner.routes.module";
 import { PublicRoutesModule } from "../routes/public.routes.module";
 import { extractToken } from "../common/guards/jwt-auth.guard";
+import { UsersRepository } from "../database/repositories/users.repository";
 import { PROBLEM_CONTENT_TYPE, problemType } from "../common/errors/problem";
 import type { JwtPayload } from "../common/types/jwt-payload.interface";
 
@@ -59,7 +58,7 @@ const deny = (req: Request, res: Response, status: 401 | 403) => {
 /** Lets only a signed-in, active administrator through. */
 const adminOnly = (app: INestApplication) => {
   const jwt = app.get(JwtService);
-  const connection = app.get<Connection>(getConnectionToken());
+  const users = app.get(UsersRepository);
 
   return async (req: Request, res: Response, next: NextFunction) => {
     const token = extractToken(req);
@@ -74,11 +73,8 @@ const adminOnly = (app: INestApplication) => {
     if (typeof userId !== "string") return deny(req, res, 401);
 
     try {
-      const user = (await connection.model("User").findById(userId).select("role isActive")) as {
-        role?: string;
-        isActive?: boolean;
-      } | null;
-      if (!user || user.isActive === false) return deny(req, res, 401);
+      const user = await users.findById(userId);
+      if (!user || user.status !== "active") return deny(req, res, 401);
       if (user.role !== "admin") return deny(req, res, 403);
       next();
     } catch (error) {

@@ -9,7 +9,8 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import { HotelType } from "@hotel-booking/types";
-import { BOOKING_MODEL, HOTEL_MODEL, USER_MODEL } from "../../database/models";
+import { BOOKING_MODEL, HOTEL_MODEL } from "../../database/models";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { IBooking } from "./schemas/booking.schema";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
@@ -35,7 +36,7 @@ export class BookingsService {
   constructor(
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
-    @InjectModel(USER_MODEL) private readonly userModel: Model<any>,
+    private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
   ) {}
 
@@ -59,7 +60,7 @@ export class BookingsService {
       return { ok: true };
     }
 
-    const user = await this.userModel.findById(userId);
+    const user = await this.users.findById(userId);
     if (user?.role === "admin") {
       return { ok: true };
     }
@@ -77,7 +78,7 @@ export class BookingsService {
       return { ok: true };
     }
 
-    const user = await this.userModel.findById(userId);
+    const user = await this.users.findById(userId);
     if (user?.role === "admin") {
       return { ok: true };
     }
@@ -106,7 +107,7 @@ export class BookingsService {
     }
 
     if (hotel.userId !== userId) {
-      const user = await this.userModel.findById(userId);
+      const user = await this.users.findById(userId);
       if (user?.role !== "admin") {
         throw new ForbiddenException("Access denied");
       }
@@ -174,12 +175,6 @@ export class BookingsService {
         $inc: {
           totalBookings: -1,
           totalRevenue: -(booking.totalCost || 0),
-        },
-      });
-      await this.userModel.findByIdAndUpdate(booking.userId, {
-        $inc: {
-          totalBookings: -1,
-          totalSpent: -(booking.totalCost || 0),
         },
       });
     }
@@ -257,13 +252,6 @@ export class BookingsService {
         $inc: {
           totalBookings: -1,
           totalRevenue: -(booking.totalCost || 0),
-        },
-      });
-
-      await this.userModel.findByIdAndUpdate(booking.userId, {
-        $inc: {
-          totalBookings: -1,
-          totalSpent: -(booking.totalCost || 0),
         },
       });
     }

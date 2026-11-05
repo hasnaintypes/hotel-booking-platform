@@ -5,8 +5,7 @@ import { AnalyticsSchema } from "../modules/analytics/schemas/analytics-snapshot
 import { BookingSchema } from "../modules/bookings/schemas/booking.schema";
 import { HotelSchema } from "../modules/hotels/schemas/hotel.schema";
 import { ReviewSchema } from "../modules/reviews/schemas/review.schema";
-import { UserSchema } from "../modules/users/schemas/user.schema";
-import { ANALYTICS_MODEL, BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL, USER_MODEL } from "./models";
+import { ANALYTICS_MODEL, BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "./models";
 import { DATABASE, PostgresDatabase } from "./postgres.database";
 
 @Global()
@@ -19,7 +18,6 @@ import { DATABASE, PostgresDatabase } from "./postgres.database";
       }),
     }),
     MongooseModule.forFeature([
-      { name: USER_MODEL, schema: UserSchema },
       { name: HOTEL_MODEL, schema: HotelSchema },
       { name: BOOKING_MODEL, schema: BookingSchema },
       { name: REVIEW_MODEL, schema: ReviewSchema },

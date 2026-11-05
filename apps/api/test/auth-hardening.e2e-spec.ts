@@ -1,8 +1,9 @@
 import { JwtService } from "@nestjs/jwt";
 import bcrypt from "bcryptjs";
-import { Types } from "mongoose";
+import { randomUUID } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
+import { UsersRepository } from "../src/database/repositories/users.repository";
 import { anonymous, insertHotel, newCredentials, registerUser, withEnv } from "./support/helpers";
 import { routes } from "./support/routes";
 
@@ -25,7 +26,7 @@ describe("auth hardening", () => {
     return t;
   };
 
-  const users = (app: TestApp) => app.connection.collection("users");
+  const users = (app: TestApp) => app.app.get(UsersRepository);
 
   /** Inserts an account directly, so the hash cost and the account state are under the test's control. */
   const insertUser = async (
@@ -34,25 +35,21 @@ describe("auth hardening", () => {
   ) => {
     const { email, firstName, lastName } = newCredentials();
     const password = options.password ?? PASSWORD;
-    const result = await users(app).insertOne({
+    const user = await users(app).createWithPassword({
       email,
       firstName,
       lastName,
-      password: bcrypt.hashSync(password, options.cost ?? 4),
-      role: "user",
-      isActive: options.isActive ?? true,
-      emailVerified: false,
-      totalBookings: 0,
-      totalSpent: 0,
+      passwordHash: bcrypt.hashSync(password, options.cost ?? 4),
+      status: options.isActive === false ? "suspended" : "active",
     });
-    return { id: String(result.insertedId), email, password };
+    return { id: user.id, email, password };
   };
 
   const login = (app: TestApp, email: string, password: string) =>
     anonymous(app).post(routes.auth.login).send({ email, password });
 
   const storedHash = async (app: TestApp, id: string) =>
-    String((await users(app).findOne({ _id: new Types.ObjectId(id) }))!.password);
+    String((await users(app).getCredential(id))!.passwordHash);
 
   describe("deactivated accounts", () => {
     it("refuses sign-in once the password is right, but gives nothing away before", async () => {
@@ -74,11 +71,10 @@ describe("auth hardening", () => {
       const { agent, user } = await registerUser(app);
       expect((await agent.get(routes.users.me)).status).toBe(200);
 
-      const filter = { _id: new Types.ObjectId(user._id) };
-      await users(app).updateOne(filter, { $set: { isActive: false } });
+      await users(app).setStatus(user._id, "suspended");
       expect((await agent.get(routes.users.me)).status).toBe(401);
 
-      await users(app).updateOne(filter, { $set: { isActive: true } });
+      await users(app).setStatus(user._id, "active");
       expect((await agent.get(routes.users.me)).status).toBe(200);
     });
 
@@ -89,10 +85,7 @@ describe("auth hardening", () => {
 
       expect((await owner.agent.get(routes.hotels.byId(hidden.id))).status).toBe(200);
 
-      await users(app).updateOne(
-        { _id: new Types.ObjectId(owner.user._id) },
-        { $set: { isActive: false } },
-      );
+      await users(app).setStatus(owner.user._id, "suspended");
       expect((await owner.agent.get(routes.hotels.byId(hidden.id))).status).toBe(404);
     });
   });
@@ -105,7 +98,7 @@ describe("auth hardening", () => {
       const app = await boot();
       const res = await anonymous(app)
         .get(routes.users.me)
-        .set("Authorization", bearer(app, { userId: new Types.ObjectId().toString() }));
+        .set("Authorization", bearer(app, { userId: randomUUID() }));
       expect(res.status).toBe(401);
     });
 
@@ -125,7 +118,7 @@ describe("auth hardening", () => {
     it("rejects a token signed with another secret", async () => {
       const app = await boot();
       const forged = new JwtService({ secret: "some-other-secret" }).sign({
-        userId: new Types.ObjectId().toString(),
+        userId: randomUUID(),
       });
       const res = await anonymous(app)
         .get(routes.users.me)
@@ -156,7 +149,7 @@ describe("auth hardening", () => {
       expect(res.status).toBe(400);
       expect(res.body.code).toBe("VALIDATION_FAILED");
       expect(res.body.errors.map((e: { field: string }) => e.field)).toContain("password");
-      expect(await users(app).countDocuments()).toBe(0);
+      expect(await users(app).count()).toBe(0);
     });
 
     it("rejects a password equal to the email name", async () => {

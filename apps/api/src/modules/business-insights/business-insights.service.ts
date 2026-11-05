@@ -1,8 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { HotelType, UserType } from "@hotel-booking/types";
-import { BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL, USER_MODEL } from "../../database/models";
+import { HotelType } from "@hotel-booking/types";
+import { BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { IReview } from "../reviews/schemas/review.schema";
 
@@ -12,7 +13,7 @@ const round2 = (value: number) => Math.round((value || 0) * 100) / 100;
 export class BusinessInsightsService {
   constructor(
     @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
-    @InjectModel(USER_MODEL) private readonly userModel: Model<UserType>,
+    private readonly users: UsersRepository,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(REVIEW_MODEL) private readonly reviewModel: Model<IReview>,
   ) {}
@@ -22,7 +23,7 @@ export class BusinessInsightsService {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     const totalHotels = await this.hotelModel.countDocuments();
-    const totalUsers = await this.userModel.countDocuments();
+    const totalUsers = await this.users.count();
     const allBookings = await this.bookingModel.find();
     const totalBookings = allBookings.length;
 

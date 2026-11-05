@@ -195,7 +195,7 @@ describe("bookings", () => {
   });
 
   describe("POST /api/bookings/:id/cancel", () => {
-    it("cancels an upcoming paid booking, refunds it and reverses the counters", async () => {
+    it("cancels an upcoming paid booking, refunds it and reverses the hotel counters", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, {
         stripePaymentIntentId: "pi_test_cancel_ok",
         totalCost: 150,
@@ -203,10 +203,6 @@ describe("bookings", () => {
       const beforeHotel = await t.connection
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });
-      const beforeUser = await t.connection.collection("users").findOne({
-        _id: new Types.ObjectId(guest.user._id),
-      });
-
       const res = await guest.agent
         .post(routes.bookings.cancel(fresh.id))
         .send({ cancellationReason: "  Plans changed  " });
@@ -226,13 +222,8 @@ describe("bookings", () => {
       const afterHotel = await t.connection
         .collection("hotels")
         .findOne({ _id: new Types.ObjectId(hotelId) });
-      const afterUser = await t.connection.collection("users").findOne({
-        _id: new Types.ObjectId(guest.user._id),
-      });
       expect(afterHotel?.totalBookings).toBe((beforeHotel?.totalBookings ?? 0) - 1);
       expect(afterHotel?.totalRevenue).toBe((beforeHotel?.totalRevenue ?? 0) - 150);
-      expect(afterUser?.totalBookings).toBe((beforeUser?.totalBookings ?? 0) - 1);
-      expect(afterUser?.totalSpent).toBe((beforeUser?.totalSpent ?? 0) - 150);
     });
 
     it("skips the refund when a paid booking has no payment intent", async () => {
