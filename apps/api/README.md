@@ -65,7 +65,7 @@ pnpm --filter @hotel-booking/api build
 pnpm --filter @hotel-booking/api test       # unit + e2e specs
 pnpm --filter @hotel-booking/api lint
 pnpm --filter @hotel-booking/api typecheck
-pnpm --filter @hotel-booking/api seed       # DESTRUCTIVE: drops all five collections first
+SEED_PASSWORD='...' pnpm --filter @hotel-booking/api seed  # deterministic PostgreSQL fixtures; no truncate
 pnpm --filter @hotel-booking/api gen:controller <audience> <resource>  # scaffold a controller
 ```
 

@@ -34,7 +34,7 @@ pnpm --filter @hotel-booking/admin exec vitest run src/features/auth/components/
 pnpm --filter @hotel-booking/web exec vitest run -t "notifies subscribers"
 ```
 
-**Never run `pnpm --filter @hotel-booking/api seed` against data you need**: it deletes all five collections. Use Stripe test keys and a disposable DB for payment, refund, upload and seed checks.
+**Never run `pnpm --filter @hotel-booking/api seed` against data you need**: it writes deterministic PostgreSQL fixtures and refuses non-local targets unless `ALLOW_SEED=true` and `SEED_DATABASE_NAME` match the disposable database. Supply `SEED_PASSWORD`; there is no default. Use Stripe test keys and a disposable DB for payment, refund, upload and seed checks.
 
 Setup: copy each app's `.env.example` to `.env`. The API refuses to start without `MONGODB_CONNECTION_STRING`, `JWT_SECRET_KEY`, the three `CLOUDINARY_*` vars and `STRIPE_API_KEY` (`apps/api/src/config/env.validation.ts`). `ADMIN_URL` is read by the API but missing from its `.env.example`.
 
