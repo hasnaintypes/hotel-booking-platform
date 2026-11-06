@@ -112,6 +112,7 @@ export const bookings = pgTable(
       .on(table.organisationId, table.idempotencyKey)
       .where(sql`${table.idempotencyKey} is not null and ${table.organisationId} is not null`),
     index("bookings_owner_created_at_idx").on(table.ownerUserId, table.createdAt),
+    index("bookings_created_at_idx").on(table.createdAt),
     index("bookings_hotel_check_in_idx").on(table.hotelId, table.checkIn),
     index("bookings_status_created_at_idx").on(table.status, table.createdAt),
     index("bookings_organisation_created_at_idx").on(table.organisationId, table.createdAt),

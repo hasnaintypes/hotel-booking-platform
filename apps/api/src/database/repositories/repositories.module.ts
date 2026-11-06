@@ -1,4 +1,5 @@
 import { Global, Module } from "@nestjs/common";
+import { AnalyticsRepository } from "./analytics.repository";
 import { BookingsRepository } from "./bookings.repository";
 import { MigrationsRepository } from "./migrations.repository";
 import { ReviewsRepository } from "./reviews.repository";
@@ -8,6 +9,7 @@ import { UsersRepository } from "./users.repository";
 @Global()
 @Module({
   providers: [
+    AnalyticsRepository,
     UsersRepository,
     HotelsRepository,
     BookingsRepository,
@@ -15,6 +17,7 @@ import { UsersRepository } from "./users.repository";
     MigrationsRepository,
   ],
   exports: [
+    AnalyticsRepository,
     UsersRepository,
     HotelsRepository,
     BookingsRepository,
