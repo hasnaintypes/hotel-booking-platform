@@ -2,7 +2,7 @@ import apiClient from "@hotel-booking/api-client";
 import type { HotelType } from "@hotel-booking/types";
 
 export const fetchHotels = async (): Promise<HotelType[]> => {
-  const response = await apiClient.get("/api/v1/hotels");
+  const response = await apiClient.get("/api/v1/admin/hotels");
   return response.data;
 };
 

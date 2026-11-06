@@ -19,7 +19,15 @@ const EditHotel = () => {
   });
 
   const { mutate, isPending: isLoading } = useMutation({
-    mutationFn: hotelManagementApi.updateMyHotelById,
+    mutationFn: ({
+      hotelId,
+      payload,
+      imageFiles,
+    }: {
+      hotelId: string;
+      payload: hotelManagementApi.HotelFormPayload;
+      imageFiles: File[];
+    }) => hotelManagementApi.updateMyHotelById(hotelId, payload, imageFiles),
     onSuccess: async () => {
       await invalidateHotelQueries(queryClient);
       showToast({
@@ -41,8 +49,9 @@ const EditHotel = () => {
     },
   });
 
-  const handleSave = (hotelFormData: FormData) => {
-    mutate(hotelFormData);
+  const handleSave = (payload: hotelManagementApi.HotelFormPayload, imageFiles: File[]) => {
+    if (!hotelId) return;
+    mutate({ hotelId, payload, imageFiles });
   };
 
   // Cancel discards edits and returns to My Hotels without saving
