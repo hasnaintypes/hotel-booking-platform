@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { HotelType } from "@hotel-booking/types";
-import { BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models";
+import { BOOKING_MODEL, REVIEW_MODEL } from "../../database/models";
+import { HotelsRepository } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { IReview } from "../reviews/schemas/review.schema";
@@ -12,7 +12,7 @@ const round2 = (value: number) => Math.round((value || 0) * 100) / 100;
 @Injectable()
 export class BusinessInsightsService {
   constructor(
-    @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
+    private readonly hotels: HotelsRepository,
     private readonly users: UsersRepository,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(REVIEW_MODEL) private readonly reviewModel: Model<IReview>,
@@ -22,7 +22,7 @@ export class BusinessInsightsService {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const totalHotels = await this.hotelModel.countDocuments();
+    const totalHotels = await this.hotels.count();
     const totalUsers = await this.users.count();
     const allBookings = await this.bookingModel.find();
     const totalBookings = allBookings.length;
@@ -61,62 +61,94 @@ export class BusinessInsightsService {
       revenueGrowth = 0;
     }
 
-    const popularDestinations = await this.bookingModel.aggregate([
-      { $addFields: { hotelIdObjectId: { $toObjectId: "$hotelId" } } },
+    const destinationTotals = await this.bookingModel.aggregate<{
+      _id: string;
+      count: number;
+      totalRevenue: number;
+    }>([
       {
         $group: {
-          _id: "$hotelIdObjectId",
+          _id: "$hotelId",
           count: { $sum: 1 },
           totalRevenue: { $sum: "$totalCost" },
         },
       },
-      {
-        $lookup: {
-          from: "hotels",
-          localField: "_id",
-          foreignField: "_id",
-          as: "hotel",
-        },
-      },
-      { $unwind: "$hotel" },
-      {
-        $group: {
-          _id: "$hotel.city",
-          count: { $sum: "$count" },
-          totalRevenue: { $sum: "$totalRevenue" },
-          avgPrice: { $avg: "$hotel.pricePerNight" },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: 5 },
     ]);
 
+    const destinationHotels = await this.hotels.findByIds(
+      destinationTotals.map((total) => String(total._id)),
+    );
+    const destinationHotelById = new Map(destinationHotels.map((hotel) => [hotel.id, hotel]));
+    const destinationMap = new Map<
+      string,
+      { _id: string; count: number; totalRevenue: number; priceTotal: number; hotels: number }
+    >();
+    for (const total of destinationTotals) {
+      const hotel = destinationHotelById.get(String(total._id));
+      if (!hotel) continue;
+      const current = destinationMap.get(hotel.city) ?? {
+        _id: hotel.city,
+        count: 0,
+        totalRevenue: 0,
+        priceTotal: 0,
+        hotels: 0,
+      };
+      current.count += Number(total.count) || 0;
+      current.totalRevenue += Number(total.totalRevenue) || 0;
+      current.priceTotal += hotel.pricePerNightMinor / 100;
+      current.hotels += 1;
+      destinationMap.set(hotel.city, current);
+    }
+
+    const popularDestinations = [...destinationMap.values()]
+      .map((destination) => ({
+        _id: destination._id,
+        count: destination.count,
+        totalRevenue: destination.totalRevenue,
+        avgPrice: destination.hotels > 0 ? destination.priceTotal / destination.hotels : 0,
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
     if (popularDestinations.length === 0) {
-      const hotels = await this.hotelModel.find();
-      const hotelDestinations = hotels.reduce((acc: any, hotel) => {
-        if (acc[hotel.city]) {
-          acc[hotel.city].count++;
-          acc[hotel.city].totalRevenue += hotel.totalRevenue || 0;
-        } else {
-          acc[hotel.city] = {
+      const hotelRows = await this.hotels.listForMetrics();
+      const hotelDestinations = hotelRows.reduce(
+        (acc, hotel) => {
+          const current = acc[hotel.city] ?? {
             _id: hotel.city,
-            count: 1,
-            totalRevenue: hotel.totalRevenue || 0,
-            avgPrice: hotel.pricePerNight,
+            count: 0,
+            totalRevenue: 0,
+            priceTotal: 0,
+            hotels: 0,
           };
-        }
-        return acc;
-      }, {});
-      const fallbackDestinations = Object.values(hotelDestinations)
-        .map((destination: any) => ({
-          _id: destination._id,
-          count: destination.count,
-          totalRevenue: destination.totalRevenue,
-          avgPrice: destination.avgPrice,
-        }))
-        .sort((a: any, b: any) => b.count - a.count)
-        .slice(0, 5);
-      popularDestinations.push(...fallbackDestinations);
+          current.count += 1;
+          current.priceTotal += hotel.pricePerNightMinor / 100;
+          current.hotels += 1;
+          acc[hotel.city] = current;
+          return acc;
+        },
+        {} as Record<
+          string,
+          {
+            _id: string;
+            count: number;
+            totalRevenue: number;
+            priceTotal: number;
+            hotels: number;
+          }
+        >,
+      );
+      popularDestinations.push(
+        ...Object.values(hotelDestinations)
+          .map((destination) => ({
+            _id: destination._id,
+            count: destination.count,
+            totalRevenue: destination.totalRevenue,
+            avgPrice: destination.hotels > 0 ? destination.priceTotal / destination.hotels : 0,
+          }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 5),
+      );
     }
 
     const bookingDates = allBookings.reduce((acc: any, booking) => {
@@ -132,7 +164,11 @@ export class BusinessInsightsService {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     if (dailyBookings.length > 7) dailyBookings = dailyBookings.slice(-7);
 
-    const hotelPerformance = await this.bookingModel.aggregate([
+    const performanceTotals = await this.bookingModel.aggregate<{
+      _id: string;
+      bookingCount: number;
+      totalRevenue: number;
+    }>([
       {
         $group: {
           _id: "$hotelId",
@@ -140,45 +176,48 @@ export class BusinessInsightsService {
           totalRevenue: { $sum: "$totalCost" },
         },
       },
-      {
-        $lookup: {
-          from: "hotels",
-          localField: "_id",
-          foreignField: "_id",
-          as: "hotel",
-        },
-      },
-      { $unwind: "$hotel" },
-      {
-        $project: {
-          _id: "$hotel._id",
-          name: "$hotel.name",
-          city: "$hotel.city",
-          starRating: "$hotel.starRating",
-          pricePerNight: "$hotel.pricePerNight",
-          bookingCount: 1,
-          totalRevenue: 1,
-        },
-      },
-      { $sort: { bookingCount: -1 } },
-      { $limit: 10 },
     ]);
 
-    if (hotelPerformance.length === 0) {
-      const hotels = await this.hotelModel.find();
-      const fallbackPerformance = hotels
-        .map((hotel) => ({
-          _id: hotel._id,
+    const performanceHotels = await this.hotels.findByIds(
+      performanceTotals.map((total) => String(total._id)),
+    );
+    const performanceHotelById = new Map(performanceHotels.map((hotel) => [hotel.id, hotel]));
+    const hotelPerformance = performanceTotals
+      .map((total) => {
+        const hotel = performanceHotelById.get(String(total._id));
+        if (!hotel) return null;
+        return {
+          _id: hotel.id,
           name: hotel.name,
           city: hotel.city,
           starRating: hotel.starRating,
-          pricePerNight: hotel.pricePerNight,
-          bookingCount: hotel.totalBookings || 0,
-          totalRevenue: hotel.totalRevenue || 0,
-        }))
-        .sort((a, b) => b.bookingCount - a.bookingCount)
-        .slice(0, 10);
-      hotelPerformance.push(...fallbackPerformance);
+          pricePerNight: hotel.pricePerNightMinor / 100,
+          bookingCount: Number(total.bookingCount) || 0,
+          totalRevenue: Number(total.totalRevenue) || 0,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null)
+      .sort((a, b) => b.bookingCount - a.bookingCount)
+      .slice(0, 10);
+
+    if (hotelPerformance.length === 0) {
+      const hotelRows = await this.hotels.findByIds(
+        (await this.hotels.listForMetrics()).map((hotel) => hotel.id),
+      );
+      hotelPerformance.push(
+        ...hotelRows
+          .map((hotel) => ({
+            _id: hotel.id,
+            name: hotel.name,
+            city: hotel.city,
+            starRating: hotel.starRating,
+            pricePerNight: hotel.pricePerNightMinor / 100,
+            bookingCount: 0,
+            totalRevenue: 0,
+          }))
+          .sort((a, b) => b.bookingCount - a.bookingCount)
+          .slice(0, 10),
+      );
     }
 
     const cancelledBookings = allBookings.filter(
@@ -259,14 +298,7 @@ export class BusinessInsightsService {
     const bookingStatusBreakdown = countBy("status");
     const paymentStatusBreakdown = countBy("paymentStatus");
 
-    const hotelsByStarAgg = await this.hotelModel.aggregate([
-      { $group: { _id: "$starRating", count: { $sum: 1 } } },
-      { $sort: { _id: 1 } },
-    ]);
-    const hotelsByStar = hotelsByStarAgg.map((hotel: any) => ({
-      starRating: hotel._id ?? 0,
-      count: hotel.count,
-    }));
+    const hotelsByStar = await this.hotels.starCounts();
 
     return {
       overview: {
@@ -408,7 +440,7 @@ export class BusinessInsightsService {
   }
 
   async getBusinessStatsData() {
-    const allHotels = await this.hotelModel.find();
+    const totalHotels = await this.hotels.count();
     const allBookings = await this.bookingModel.find();
     const totalBookings = allBookings.length;
     const totalRevenue = allBookings.reduce((sum, booking) => sum + (booking.totalCost || 0), 0);
@@ -426,7 +458,7 @@ export class BusinessInsightsService {
     // not measured by the application, so they are not reported.
     return {
       database: {
-        totalHotels: allHotels.length,
+        totalHotels,
         totalBookings,
         totalRevenue: Math.round(totalRevenue * 100) / 100,
       },

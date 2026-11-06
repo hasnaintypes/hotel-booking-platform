@@ -15,7 +15,7 @@ import type { Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../../common/guards/optional-jwt-auth.guard";
-import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
+import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { CreateBookingDto } from "./dto/create-booking.dto";
 import { PaymentIntentDto } from "./dto/payment-intent.dto";
@@ -32,17 +32,13 @@ export class HotelsController {
   }
 
   @Get()
-  @UseGuards(OptionalJwtAuthGuard)
-  findAll(@CurrentUser() viewer: AuthenticatedUser | undefined) {
-    return this.hotelsService.findAll(viewer);
+  findAll() {
+    return this.hotelsService.findAll();
   }
 
   @Get(":id")
   @UseGuards(OptionalJwtAuthGuard)
-  findOne(
-    @Param("id", MongoIdPipe) id: string,
-    @CurrentUser() viewer: AuthenticatedUser | undefined,
-  ) {
+  findOne(@Param("id", UuidPipe) id: string, @CurrentUser() viewer: AuthenticatedUser | undefined) {
     return this.hotelsService.findOne(id, viewer);
   }
 
@@ -51,7 +47,7 @@ export class HotelsController {
   @UseGuards(JwtAuthGuard)
   @Throttle({ default: { limit: 50, ttl: 900000 } })
   createPaymentIntent(
-    @Param("hotelId", MongoIdPipe) hotelId: string,
+    @Param("hotelId", UuidPipe) hotelId: string,
     @Body() dto: PaymentIntentDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
@@ -62,7 +58,7 @@ export class HotelsController {
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard)
   async createBooking(
-    @Param("hotelId", MongoIdPipe) hotelId: string,
+    @Param("hotelId", UuidPipe) hotelId: string,
     @Body() dto: CreateBookingDto,
     @CurrentUser() user: AuthenticatedUser,
     @Res({ passthrough: true }) res: Response,

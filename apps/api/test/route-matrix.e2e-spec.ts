@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Types } from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ROUTE_TABLE } from "../src/common/routing/route-table";
@@ -6,6 +7,7 @@ import { anonymous } from "./support/helpers";
 import { routes } from "./support/routes";
 
 const id = new Types.ObjectId().toString();
+const hotelId = randomUUID();
 
 type Case = {
   name: string;
@@ -45,21 +47,43 @@ const MATRIX: Case[] = [
   { name: "update user", method: "patch", path: routes.users.role(id), status: 401 },
 
   { name: "list hotels", method: "get", path: routes.hotels.list, status: 200 },
+  { name: "list admin hotels", method: "get", path: routes.hotels.adminList, status: 401 },
+  {
+    name: "admin hotel detail",
+    method: "get",
+    path: routes.hotels.adminById(hotelId),
+    status: 401,
+  },
   { name: "search hotels", method: "get", path: routes.hotels.search, status: 200 },
-  { name: "hotel detail", method: "get", path: routes.hotels.byId(id), status: 404 },
+  { name: "hotel detail", method: "get", path: routes.hotels.byId(hotelId), status: 404 },
   {
     name: "hotel detail invalid id",
     method: "get",
     path: routes.hotels.byId("not-an-id"),
     status: 400,
   },
-  { name: "set hotel active", method: "patch", path: routes.hotels.active(id), status: 401 },
-  { name: "payment intent", method: "post", path: routes.hotels.paymentIntent(id), status: 401 },
-  { name: "create booking", method: "post", path: routes.hotels.bookings(id), status: 401 },
+  {
+    name: "set hotel active",
+    method: "patch",
+    path: routes.hotels.adminById(hotelId),
+    status: 401,
+  },
+  {
+    name: "payment intent",
+    method: "post",
+    path: routes.hotels.paymentIntent(hotelId),
+    status: 401,
+  },
+  { name: "create booking", method: "post", path: routes.hotels.bookings(hotelId), status: 401 },
 
   { name: "list bookings", method: "get", path: routes.bookings.list, status: 401 },
   { name: "my bookings", method: "get", path: routes.bookings.myBookings, status: 401 },
-  { name: "bookings for hotel", method: "get", path: routes.bookings.forHotel(id), status: 401 },
+  {
+    name: "bookings for hotel",
+    method: "get",
+    path: routes.bookings.forHotel(hotelId),
+    status: 401,
+  },
   { name: "booking detail", method: "get", path: routes.bookings.byId(id), status: 401 },
   { name: "cancel booking", method: "post", path: routes.bookings.cancel(id), status: 401 },
   {
@@ -79,8 +103,13 @@ const MATRIX: Case[] = [
   { name: "delete booking", method: "delete", path: routes.bookings.remove(id), status: 401 },
 
   { name: "list reviews", method: "get", path: routes.reviews.list, status: 401 },
-  { name: "hotel reviews", method: "get", path: routes.reviews.byHotel(id), status: 200 },
-  { name: "hotel review summary", method: "get", path: routes.reviews.summary(id), status: 200 },
+  { name: "hotel reviews", method: "get", path: routes.reviews.byHotel(hotelId), status: 200 },
+  {
+    name: "hotel review summary",
+    method: "get",
+    path: routes.reviews.summary(hotelId),
+    status: 200,
+  },
   { name: "create review", method: "post", path: routes.reviews.create(id), status: 401 },
 
   { name: "insights dashboard", method: "get", path: routes.insights.dashboard, status: 401 },
@@ -94,9 +123,27 @@ const MATRIX: Case[] = [
 
   { name: "list my hotels", method: "get", path: routes.myHotels.list, status: 401 },
   { name: "create my hotel", method: "post", path: routes.myHotels.list, status: 401 },
-  { name: "my hotel detail", method: "get", path: routes.myHotels.byId(id), status: 401 },
-  { name: "set my hotel active", method: "patch", path: routes.myHotels.active(id), status: 401 },
-  { name: "update my hotel", method: "put", path: routes.myHotels.byId(id), status: 401 },
+  { name: "my hotel detail", method: "get", path: routes.myHotels.byId(hotelId), status: 401 },
+  {
+    name: "set my hotel active",
+    method: "patch",
+    path: routes.myHotels.active(hotelId),
+    status: 401,
+  },
+  { name: "update my hotel", method: "patch", path: routes.myHotels.byId(hotelId), status: 401 },
+  {
+    name: "add my hotel images",
+    method: "post",
+    path: routes.myHotels.images(hotelId),
+    status: 401,
+  },
+  {
+    name: "remove my hotel image",
+    method: "delete",
+    path: routes.myHotels.images(hotelId),
+    status: 401,
+  },
+  { name: "my hotel stats", method: "get", path: routes.myHotels.stats(hotelId), status: 401 },
 ];
 
 describe("route status matrix", () => {

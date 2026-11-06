@@ -1,10 +1,11 @@
 import { Global, Module } from "@nestjs/common";
 import { MigrationsRepository } from "./migrations.repository";
+import { HotelsRepository } from "./hotels.repository";
 import { UsersRepository } from "./users.repository";
 
 @Global()
 @Module({
-  providers: [UsersRepository, MigrationsRepository],
-  exports: [UsersRepository, MigrationsRepository],
+  providers: [UsersRepository, HotelsRepository, MigrationsRepository],
+  exports: [UsersRepository, HotelsRepository, MigrationsRepository],
 })
 export class DatabaseRepositoriesModule {}

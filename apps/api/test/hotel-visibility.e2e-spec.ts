@@ -1,9 +1,10 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertHotel, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const UNKNOWN_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_ID = randomUUID();
 
 function bookingBody(paymentIntentId = "pi_test_visibility") {
   return {
@@ -52,7 +53,7 @@ describe("inactive hotels", () => {
   });
 
   it("lists every hotel for admins", async () => {
-    const res = await admin.agent.get(routes.hotels.list);
+    const res = await admin.agent.get(routes.hotels.adminList);
     expect(names(res.body)).toEqual(expect.arrayContaining(["Visible Inn", "Hidden Inn"]));
   });
 

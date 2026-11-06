@@ -12,8 +12,8 @@ import { HotelSearchResponse, HotelType } from "@hotel-booking/types";
 import type { FieldError } from "../../common/errors/problem";
 import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
-import { escapeRegExp } from "../../common/utils/escape-regexp";
-import { BOOKING_MODEL, HOTEL_MODEL } from "../../database/models";
+import { BOOKING_MODEL } from "../../database/models";
+import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { IBooking } from "../bookings/schemas/booking.schema";
@@ -21,13 +21,16 @@ import { CreateBookingDto } from "./dto/create-booking.dto";
 import { PaymentIntentDto } from "./dto/payment-intent.dto";
 import { SearchHotelsDto } from "./dto/search-hotels.dto";
 import { ToggleActiveDto } from "./dto/toggle-active.dto";
+import { toHotelResponse } from "./hotel-response";
+import { HotelStatsService } from "./hotel-stats.service";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class HotelsService {
   constructor(
-    @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
+    private readonly hotels: HotelsRepository,
+    private readonly hotelStats: HotelStatsService,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
@@ -43,7 +46,10 @@ export class HotelsService {
    * CreateBookingDto. Check-in may be one day before today (UTC) so a guest in a time zone ahead
    * of UTC can still book "today".
    */
-  private validateStay(dto: CreateBookingDto, hotel: HotelType) {
+  private validateStay(
+    dto: CreateBookingDto,
+    hotel: Pick<HotelRecord, "adultCount" | "childCount">,
+  ) {
     const errors: FieldError[] = [];
     const checkIn = new Date(dto.checkIn).getTime();
     const checkOut = new Date(dto.checkOut).getTime();
@@ -86,85 +92,41 @@ export class HotelsService {
     return user?.role === "admin";
   }
 
-  private constructSearchQuery(queryParams: SearchHotelsDto) {
-    // Deactivated hotels never appear in guest search.
-    const constructedQuery: Record<string, any> = { isActive: { $ne: false } };
+  private async enrich(records: HotelRecord[]): Promise<HotelType[]> {
+    const stats = await this.hotelStats.forHotels(records.map((hotel) => hotel.id));
+    return records.map((hotel) => toHotelResponse(hotel, stats.get(hotel.id)));
+  }
 
-    const destination = queryParams.destination?.trim();
-    if (destination) {
-      // Matched literally: the text is escaped so it cannot act as a pattern.
-      const literal = escapeRegExp(destination);
-      constructedQuery.$or = [
-        { city: { $regex: literal, $options: "i" } },
-        { country: { $regex: literal, $options: "i" } },
-      ];
-    }
-
-    if (queryParams.adultCount !== undefined) {
-      constructedQuery.adultCount = { $gte: queryParams.adultCount };
-    }
-
-    if (queryParams.childCount !== undefined) {
-      constructedQuery.childCount = { $gte: queryParams.childCount };
-    }
-
-    if (queryParams.facilities?.length) {
-      constructedQuery.facilities = { $all: queryParams.facilities };
-    }
-
-    if (queryParams.types?.length) {
-      constructedQuery.type = { $in: queryParams.types };
-    }
-
-    if (queryParams.stars?.length) {
-      constructedQuery.starRating = { $in: queryParams.stars };
-    }
-
-    if (queryParams.maxPrice !== undefined) {
-      constructedQuery.pricePerNight = { $lte: queryParams.maxPrice };
-    }
-
-    return constructedQuery;
+  private async enrichOne(hotel: HotelRecord): Promise<HotelType> {
+    return toHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
   }
 
   async search(queryParams: SearchHotelsDto): Promise<HotelSearchResponse> {
-    const query = this.constructSearchQuery(queryParams);
-
-    let sortOptions: Record<string, 1 | -1> = {};
-    switch (queryParams.sortOption) {
-      case "starRating":
-        sortOptions = { starRating: -1 };
-        break;
-      case "pricePerNightAsc":
-        sortOptions = { pricePerNight: 1 };
-        break;
-      case "pricePerNightDesc":
-        sortOptions = { pricePerNight: -1 };
-        break;
-    }
-
-    const pageSize = 5;
-    const pageNumber = queryParams.page ?? 1;
-    const skip = (pageNumber - 1) * pageSize;
-
-    const hotels = await this.hotelModel.find(query).sort(sortOptions).skip(skip).limit(pageSize);
-
-    const total = await this.hotelModel.countDocuments(query);
+    const result = await this.hotels.search({
+      destination: queryParams.destination,
+      adultCount: queryParams.adultCount,
+      childCount: queryParams.childCount,
+      facilities: queryParams.facilities,
+      types: queryParams.types,
+      stars: queryParams.stars,
+      maxPrice: queryParams.maxPrice,
+      sortOption: queryParams.sortOption,
+      page: queryParams.page,
+    });
 
     return {
-      data: hotels,
-      pagination: {
-        total,
-        page: pageNumber,
-        pages: Math.ceil(total / pageSize),
-      },
+      data: await this.enrich(result.data),
+      pagination: result.pagination,
     };
   }
 
-  /** Admins see every hotel; everyone else sees only active ones. */
-  async findAll(viewer?: AuthenticatedUser) {
-    const filter = (await this.isAdmin(viewer?.userId)) ? {} : { isActive: { $ne: false } };
-    return this.hotelModel.find(filter).sort("-lastUpdated");
+  /** Guests and owners see active hotels; administrators use the admin list. */
+  findAll() {
+    return this.hotels.listActive().then((records) => this.enrich(records));
+  }
+
+  findAllAdmin() {
+    return this.hotels.listAll().then((records) => this.enrich(records));
   }
 
   async setActive(id: string, dto: ToggleActiveDto) {
@@ -175,43 +137,46 @@ export class HotelsService {
       throw new BadRequestException("isActive boolean required");
     }
 
-    const hotel = await this.hotelModel.findByIdAndUpdate(
-      id,
-      { isActive, lastUpdated: new Date() },
-      { new: true },
-    );
-
+    const hotel = await this.hotels.setStatus(id, isActive);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
 
-    return hotel;
+    return this.enrichOne(hotel);
   }
 
   /** An inactive hotel is visible only to its owner and to admins; everyone else gets a 404. */
-  async findOne(id: string, viewer?: AuthenticatedUser) {
-    const hotel = await this.hotelModel.findById(id);
+  async findOne(id: string, viewer?: AuthenticatedUser): Promise<HotelType> {
+    const hotel = await this.hotels.findById(id);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
 
-    if (hotel.isActive === false) {
-      const isOwner = viewer !== undefined && hotel.userId === viewer.userId;
+    if (hotel.status !== "active") {
+      const isOwner = viewer !== undefined && hotel.ownerUserId === viewer.userId;
       if (!isOwner && !(await this.isAdmin(viewer?.userId))) {
         throw new NotFoundException("Hotel not found");
       }
     }
 
-    return hotel;
+    return this.enrichOne(hotel);
+  }
+
+  async findOneAdmin(id: string): Promise<HotelType> {
+    const hotel = await this.hotels.findById(id);
+    if (!hotel) {
+      throw new NotFoundException("Hotel not found");
+    }
+    return this.enrichOne(hotel);
   }
 
   async createPaymentIntent(hotelId: string, dto: PaymentIntentDto, userId: string) {
-    const hotel = await this.hotelModel.findById(hotelId);
+    const hotel = await this.hotels.findById(hotelId);
     if (!hotel) {
       throw new BadRequestException("Hotel not found");
     }
 
-    if (hotel.isActive === false) {
+    if (hotel.status !== "active") {
       throw new ConflictException("This hotel is not available for booking");
     }
 
@@ -222,10 +187,10 @@ export class HotelsService {
       ]);
     }
 
-    const totalCost = hotel.pricePerNight * nights;
+    const totalCost = (hotel.pricePerNightMinor / 100) * nights;
 
     const paymentIntent = await this.stripeService.client.paymentIntents.create({
-      amount: totalCost * 100,
+      amount: Math.round(totalCost * 100),
       currency: "gbp",
       metadata: {
         hotelId,
@@ -245,11 +210,11 @@ export class HotelsService {
   }
 
   async createBooking(hotelId: string, dto: CreateBookingDto, userId: string) {
-    const hotel = await this.hotelModel.findById(hotelId);
+    const hotel = await this.hotels.findById(hotelId);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
-    if (hotel.isActive === false) {
+    if (hotel.status !== "active") {
       throw new ConflictException("This hotel is not available for booking");
     }
     this.validateStay(dto, hotel);
@@ -284,13 +249,6 @@ export class HotelsService {
 
     const booking = new this.bookingModel(newBooking);
     await booking.save();
-
-    await this.hotelModel.findByIdAndUpdate(hotelId, {
-      $inc: {
-        totalBookings: 1,
-        totalRevenue: newBooking.totalCost,
-      },
-    });
 
     return booking;
   }

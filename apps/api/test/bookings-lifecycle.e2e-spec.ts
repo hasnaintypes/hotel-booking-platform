@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import {
@@ -10,7 +10,8 @@ import {
 } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const UNKNOWN_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_BOOKING_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_HOTEL_ID = randomUUID();
 
 describe("bookings", () => {
   let t: TestApp;
@@ -88,7 +89,7 @@ describe("bookings", () => {
 
     it("forbids unrelated users and unknown bookings", async () => {
       expect((await other.agent.get(routes.bookings.byId(bookingId))).status).toBe(403);
-      expect((await guest.agent.get(routes.bookings.byId(UNKNOWN_ID))).status).toBe(404);
+      expect((await guest.agent.get(routes.bookings.byId(UNKNOWN_BOOKING_ID))).status).toBe(404);
     });
 
     it("requires a session", async () => {
@@ -112,7 +113,7 @@ describe("bookings", () => {
 
     it("forbids unrelated users and answers 404 for an unknown hotel", async () => {
       expect((await other.agent.get(routes.bookings.forHotel(hotelId))).status).toBe(403);
-      expect((await owner.agent.get(routes.bookings.forHotel(UNKNOWN_ID))).status).toBe(404);
+      expect((await owner.agent.get(routes.bookings.forHotel(UNKNOWN_HOTEL_ID))).status).toBe(404);
       expect((await anonymous(t).get(routes.bookings.forHotel(hotelId))).status).toBe(401);
     });
   });
@@ -195,14 +196,11 @@ describe("bookings", () => {
   });
 
   describe("POST /api/bookings/:id/cancel", () => {
-    it("cancels an upcoming paid booking, refunds it and reverses the hotel counters", async () => {
+    it("cancels an upcoming paid booking and refunds it", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, {
         stripePaymentIntentId: "pi_test_cancel_ok",
         totalCost: 150,
       });
-      const beforeHotel = await t.connection
-        .collection("hotels")
-        .findOne({ _id: new Types.ObjectId(hotelId) });
       const res = await guest.agent
         .post(routes.bookings.cancel(fresh.id))
         .send({ cancellationReason: "  Plans changed  " });
@@ -218,12 +216,6 @@ describe("bookings", () => {
       expect(t.stripe.client.refunds.create).toHaveBeenCalledWith({
         payment_intent: "pi_test_cancel_ok",
       });
-
-      const afterHotel = await t.connection
-        .collection("hotels")
-        .findOne({ _id: new Types.ObjectId(hotelId) });
-      expect(afterHotel?.totalBookings).toBe((beforeHotel?.totalBookings ?? 0) - 1);
-      expect(afterHotel?.totalRevenue).toBe((beforeHotel?.totalRevenue ?? 0) - 150);
     });
 
     it("skips the refund when a paid booking has no payment intent", async () => {
@@ -246,42 +238,26 @@ describe("bookings", () => {
 
     it("forbids other users and answers 404 for an unknown booking", async () => {
       expect((await other.agent.post(routes.bookings.cancel(bookingId))).status).toBe(403);
-      expect((await guest.agent.post(routes.bookings.cancel(UNKNOWN_ID))).status).toBe(404);
+      expect((await guest.agent.post(routes.bookings.cancel(UNKNOWN_BOOKING_ID))).status).toBe(404);
       expect((await anonymous(t).post(routes.bookings.cancel(bookingId))).status).toBe(401);
     });
   });
 
   describe("DELETE /api/bookings/:id", () => {
-    it("lets an admin delete a booking and reverses the counters once", async () => {
+    it("lets an admin delete a booking", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, { totalCost: 120 });
-      const hotel = await t.connection
-        .collection("hotels")
-        .findOne({ _id: new Types.ObjectId(hotelId) });
 
       const res = await admin.agent.delete(routes.bookings.remove(fresh.id));
       expect(res.status).toBe(204);
       expect(res.text).toBe("");
 
-      const afterHotel = await t.connection
-        .collection("hotels")
-        .findOne({ _id: new Types.ObjectId(hotelId) });
-      expect(afterHotel?.totalBookings).toBe((hotel?.totalBookings ?? 0) - 1);
-      expect(afterHotel?.totalRevenue).toBe((hotel?.totalRevenue ?? 0) - 120);
-
       expect((await admin.agent.delete(routes.bookings.remove(fresh.id))).status).toBe(404);
     });
 
-    it("does not touch the counters twice for an already-cancelled booking", async () => {
+    it("deletes an already-cancelled booking", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, { status: "cancelled" });
-      const hotel = await t.connection
-        .collection("hotels")
-        .findOne({ _id: new Types.ObjectId(hotelId) });
 
       expect((await admin.agent.delete(routes.bookings.remove(fresh.id))).status).toBe(204);
-      const afterHotel = await t.connection
-        .collection("hotels")
-        .findOne({ _id: new Types.ObjectId(hotelId) });
-      expect(afterHotel?.totalBookings).toBe(hotel?.totalBookings);
     });
 
     it("is closed to non-admins and anonymous callers", async () => {
