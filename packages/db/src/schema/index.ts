@@ -1,3 +1,4 @@
+import { analyticsSnapshots } from "./analytics-snapshots.js";
 import { bookingEvents } from "./booking-events.js";
 import { bookings } from "./bookings.js";
 import { credentials } from "./credentials.js";
@@ -78,6 +79,16 @@ export type { LedgerEntry, NewLedgerEntry } from "./ledger-entries.js";
 export { bookingEvents };
 export type { BookingEvent, NewBookingEvent } from "./booking-events.js";
 
+export { analyticsSnapshots };
+export type {
+  AnalyticsDestinationTotal,
+  AnalyticsHotelTypeTotal,
+  AnalyticsPaymentBreakdown,
+  AnalyticsSnapshot,
+  AnalyticsStatusBreakdown,
+  NewAnalyticsSnapshot,
+} from "./analytics-snapshots.js";
+
 export { reviews };
 export type { NewReview, Review } from "./reviews.js";
 
@@ -123,5 +134,6 @@ export const schema = {
   payments,
   ledgerEntries,
   bookingEvents,
+  analyticsSnapshots,
   reviews,
 };

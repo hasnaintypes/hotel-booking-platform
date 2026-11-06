@@ -2,6 +2,7 @@ export { createDb, DEFAULT_DATABASE_TIMEOUTS } from "./client.js";
 export { EXPECTED_MIGRATION_COUNT } from "./migrations.js";
 export type { CreateDatabaseOptions, Database, DatabaseHandle } from "./client.js";
 export {
+  analyticsSnapshots,
   bookingEvents,
   bookings,
   bookingStatus,
@@ -35,8 +36,14 @@ export {
   userStatus,
 } from "./schema/index.js";
 export type {
+  AnalyticsDestinationTotal,
+  AnalyticsHotelTypeTotal,
+  AnalyticsPaymentBreakdown,
+  AnalyticsSnapshot,
+  AnalyticsStatusBreakdown,
   Booking,
   BookingEvent,
+  BookingStatus,
   Credential,
   Currency,
   ExchangeRate,
@@ -51,6 +58,7 @@ export type {
   LedgerEntry,
   LedgerEntryType,
   Membership,
+  NewAnalyticsSnapshot,
   NewBooking,
   NewBookingEvent,
   NewCredential,
