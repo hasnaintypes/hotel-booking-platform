@@ -43,6 +43,13 @@
       "when": 1793692285071,
       "tag": "0005_dashing_nicolaos",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793894005972,
+      "tag": "0006_freezing_speed_demon",
+      "breakpoints": true
     }
   ]
 }
