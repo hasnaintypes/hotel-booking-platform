@@ -11,7 +11,7 @@ Use Node 22 and pnpm 10.15.0.
 ```bash
 pnpm install --frozen-lockfile
 cp apps/api/.env.example apps/api/.env   # fill in local values; never commit it
-docker compose up -d mongo
+docker compose up -d postgres
 ```
 
 `pnpm dev` runs every workspace; individual apps are `pnpm --filter @hotel-booking/api dev`,
@@ -66,7 +66,7 @@ pnpm check:bundle
 ```
 
 - `pnpm test` runs every workspace. The API suite boots the real application against a disposable
-  MongoDB (in-memory locally, a `mongo:7` service in CI) and fakes Stripe, Cloudinary and logging.
+  PostgreSQL (a disposable `hotel_booking_test` database) and fakes Stripe, Cloudinary and logging.
 - Changes that affect persistence should include a test that exercises a real database, not only a
   mocked service.
 - Run `pnpm format` only when you intend to format the whole repository; prefer formatting the files

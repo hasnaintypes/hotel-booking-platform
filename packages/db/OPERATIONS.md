@@ -2,8 +2,8 @@
 
 > Last updated: 2026-11-05
 
-This is the operating baseline for the `@hotel-booking/db` package and every service that uses PostgreSQL. The API still reads and writes MongoDB for product
-data, but PostgreSQL is the system of record for the M1 schema and every future booking path.
+This is the operating baseline for the `@hotel-booking/db` package and every service that uses
+PostgreSQL. PostgreSQL is the system of record for every domain and booking path.
 
 ## Connection pool and timeouts
 
@@ -43,11 +43,11 @@ the pool.
 
 ## Health checks
 
-- `GET /health/live` is a cheap process check. It does not touch MongoDB or PostgreSQL, so a
+- `GET /health/live` is a cheap process check. It does not touch PostgreSQL, so a
   database outage cannot restart a healthy container.
-- `GET /health/ready` checks MongoDB, runs `select 1` on PostgreSQL, and compares Drizzle's
-  applied migration count with `EXPECTED_MIGRATION_COUNT`. It returns 503 when either database is
-  unavailable or migrations are pending.
+- `GET /health/ready` runs `select 1` on PostgreSQL and compares Drizzle's applied migration
+  count with `EXPECTED_MIGRATION_COUNT`. It returns 503 when the database is unavailable or
+  migrations are pending.
 - `GET /api/v1/admin/system/health` returns the same checks plus memory and uptime to an admin.
 
 The container healthcheck uses liveness, not readiness. Readiness belongs in the platform's
