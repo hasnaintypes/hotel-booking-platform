@@ -4,7 +4,7 @@ import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertHotel, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const UNKNOWN_HOTEL_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_HOTEL_ID = randomUUID();
 const UNKNOWN_USER_ID = randomUUID();
 
 describe("admin role and hotel state changes", () => {
@@ -139,14 +139,11 @@ describe("admin role and hotel state changes", () => {
       expect(mine.body.name).toBe("Owner Only");
     });
 
-    it("returns 200 with no data for another owner (known-bad: should be 404)", async () => {
-      // Characterisation of current behaviour: the service returns null and the controller
-      // does not translate it to a 404. Nothing leaks, but the status is inconsistent with
-      // every other not-found path. Expected to be fixed with the M1-18 not-found work (#120).
+    it("answers 404 for another owner's hotel", async () => {
       const hotel = await insertHotel(t, owner.user._id, { name: "Not Yours" });
       const res = await other.agent.get(routes.myHotels.byId(hotel.id));
-      expect(res.status).toBe(200);
-      expect(res.body?.name).toBeUndefined();
+      expect(res.status).toBe(404);
+      expect(res.body.code).toBe("NOT_FOUND");
     });
 
     it("requires a session", async () => {

@@ -102,7 +102,7 @@ describe("error responses (problem details)", () => {
   it("returns 400 VALIDATION_FAILED for malformed resource identifiers in a path", async () => {
     // The id pipe rejects the value before it can reach Mongoose. A cast error that slips past
     // is still mapped to INVALID_ID, as the cast-error fault case below shows.
-    const res = await anonymous(t).get(routes.hotels.byId("not-an-object-id"));
+    const res = await anonymous(t).get(routes.hotels.byId("not-a-uuid"));
     expectProblem(res, 400, "VALIDATION_FAILED");
     expect(res.body.errors).toEqual([{ field: "id", message: "must be a valid id" }]);
   });

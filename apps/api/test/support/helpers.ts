@@ -1,5 +1,12 @@
 import request from "supertest";
+import { eq } from "drizzle-orm";
+import { hotels, type Database } from "@hotel-booking/db";
 import type { TestApp } from "./create-app";
+import { DATABASE } from "../../src/database/postgres.database";
+import {
+  HotelsRepository,
+  type HotelWriteInput,
+} from "../../src/database/repositories/hotels.repository";
 import { UsersRepository } from "../../src/database/repositories/users.repository";
 import { routes } from "./routes";
 
@@ -38,6 +45,11 @@ export async function promoteToAdmin(t: TestApp, userId: string) {
 /** The PostgreSQL identity repository, for tests that need direct account state. */
 export function usersRepository(t: TestApp) {
   return t.app.get(UsersRepository);
+}
+
+/** The PostgreSQL hotel repository, for tests that need direct hotel state. */
+export function hotelsRepository(t: TestApp) {
+  return t.app.get(HotelsRepository);
 }
 
 export function anonymous(t: TestApp) {
@@ -99,28 +111,42 @@ export async function insertBooking(
   return { id: String(booking._id) };
 }
 
-/** Inserts a hotel straight into the database (through the model, so the schema still applies). */
+/** Inserts a hotel through the real PostgreSQL repository, bypassing the HTTP validation layer. */
 export async function insertHotel(
   t: TestApp,
   ownerId: string,
   overrides: Record<string, unknown> = {},
 ) {
   hotelCounter += 1;
-  const hotel = (await t.connection.model("Hotel").create({
-    userId: ownerId,
-    name: `Test Hotel ${hotelCounter}`,
-    city: "London",
-    country: "United Kingdom",
-    description: "A hotel used by the integration tests.",
-    type: ["Hotel"],
-    adultCount: 2,
-    childCount: 1,
-    facilities: ["Free WiFi"],
-    pricePerNight: 100,
-    starRating: 4,
-    imageUrls: ["https://res.cloudinary.test/image-0.jpg"],
-    lastUpdated: new Date(),
-    ...overrides,
-  })) as unknown as { _id: unknown; name: string };
-  return { id: String(hotel._id), name: hotel.name };
+  const name = String(overrides.name ?? `Test Hotel ${hotelCounter}`);
+  const input: HotelWriteInput = {
+    name,
+    city: String(overrides.city ?? "London"),
+    country: String(overrides.country ?? "United Kingdom"),
+    description: String(overrides.description ?? "A hotel used by the integration tests."),
+    type: (overrides.type as string[] | undefined) ?? ["Hotel"],
+    facilities: (overrides.facilities as string[] | undefined) ?? ["Free WiFi"],
+    pricePerNight: Number(overrides.pricePerNight ?? 100),
+    starRating: Number(overrides.starRating ?? 4),
+    adultCount: Number(overrides.adultCount ?? 2),
+    childCount: Number(overrides.childCount ?? 1),
+    imageUrls: (overrides.imageUrls as string[] | undefined) ?? [
+      "https://res.cloudinary.test/image-0.jpg",
+    ],
+  };
+
+  const repo = hotelsRepository(t);
+  const id = await repo.create(input, ownerId);
+  if (overrides.isActive === false) {
+    await repo.setStatus(id, false);
+  }
+  if (overrides.isFeatured === true) {
+    await t.app
+      .get<Database>(DATABASE)
+      .update(hotels)
+      .set({ isFeatured: true })
+      .where(eq(hotels.id, id));
+  }
+
+  return { id, name };
 }

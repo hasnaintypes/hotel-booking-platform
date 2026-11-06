@@ -24,6 +24,8 @@ export const routes = {
     byId: (id: string) => `/api/v1/hotels/${id}`,
     paymentIntent: (id: string) => `/api/v1/hotels/${id}/bookings/payment-intent`,
     bookings: (id: string) => `/api/v1/hotels/${id}/bookings`,
+    adminList: "/api/v1/admin/hotels",
+    adminById: (id: string) => `/api/v1/admin/hotels/${id}`,
     active: (id: string) => `/api/v1/admin/hotels/${id}`,
   },
   bookings: {
@@ -55,6 +57,8 @@ export const routes = {
     list: "/api/v1/manage/hotels",
     byId: (id: string) => `/api/v1/manage/hotels/${id}`,
     active: (id: string) => `/api/v1/manage/hotels/${id}/active`,
+    images: (id: string) => `/api/v1/manage/hotels/${id}/images`,
+    stats: (id: string) => `/api/v1/manage/hotels/${id}/stats`,
   },
   partner: { capabilities: "/api/v1/partner/capabilities" },
 } as const;

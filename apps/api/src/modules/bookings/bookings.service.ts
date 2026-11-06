@@ -8,14 +8,15 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { HotelType } from "@hotel-booking/types";
-import { BOOKING_MODEL, HOTEL_MODEL } from "../../database/models";
+import { BOOKING_MODEL } from "../../database/models";
+import { HotelsRepository } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { IBooking } from "./schemas/booking.schema";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { UpdatePaymentDto } from "./dto/update-payment.dto";
 import { UpdateStatusDto } from "./dto/update-status.dto";
+import { toHotelResponse } from "../hotels/hotel-response";
 
 type AuthorizationResult = {
   ok: boolean;
@@ -35,7 +36,7 @@ export class BookingsService {
 
   constructor(
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
-    @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
+    private readonly hotels: HotelsRepository,
     private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
   ) {}
@@ -45,18 +46,12 @@ export class BookingsService {
       return { ok: true };
     }
 
-    const rawHotelId = booking.hotelId as unknown;
-    const hotelId =
-      typeof rawHotelId === "object" && rawHotelId !== null
-        ? String((rawHotelId as { _id?: string })._id || rawHotelId)
-        : String(rawHotelId);
-
-    const hotel = await this.hotelModel.findById(hotelId);
+    const hotel = await this.hotels.findById(String(booking.hotelId));
     if (!hotel) {
       return { ok: false, status: 404, message: "Hotel not found" };
     }
 
-    if (hotel.userId === userId) {
+    if (hotel.ownerUserId === userId) {
       return { ok: true };
     }
 
@@ -69,12 +64,12 @@ export class BookingsService {
   }
 
   private async assertOwnerOrAdmin(hotelId: string, userId: string): Promise<AuthorizationResult> {
-    const hotel = await this.hotelModel.findById(hotelId);
+    const hotel = await this.hotels.findById(hotelId);
     if (!hotel) {
       return { ok: false, status: 404, message: "Hotel not found" };
     }
 
-    if (hotel.userId === userId) {
+    if (hotel.ownerUserId === userId) {
       return { ok: true };
     }
 
@@ -101,12 +96,12 @@ export class BookingsService {
   }
 
   async findForHotel(hotelId: string, userId: string) {
-    const hotel = await this.hotelModel.findById(hotelId);
+    const hotel = await this.hotels.findById(hotelId);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
 
-    if (hotel.userId !== userId) {
+    if (hotel.ownerUserId !== userId) {
       const user = await this.users.findById(userId);
       if (user?.role !== "admin") {
         throw new ForbiddenException("Access denied");
@@ -169,15 +164,6 @@ export class BookingsService {
       booking.cancellationReason = cancellationReason;
     }
     await booking.save();
-
-    if (wasPaid) {
-      await this.hotelModel.findByIdAndUpdate(booking.hotelId, {
-        $inc: {
-          totalBookings: -1,
-          totalRevenue: -(booking.totalCost || 0),
-        },
-      });
-    }
 
     return { booking, refundAmount, refundSkipped };
   }
@@ -242,20 +228,6 @@ export class BookingsService {
       throw new NotFoundException("Booking not found");
     }
 
-    const alreadyAdjusted =
-      booking.status === "cancelled" ||
-      booking.status === "refunded" ||
-      booking.paymentStatus === "refunded";
-
-    if (!alreadyAdjusted) {
-      await this.hotelModel.findByIdAndUpdate(booking.hotelId, {
-        $inc: {
-          totalBookings: -1,
-          totalRevenue: -(booking.totalCost || 0),
-        },
-      });
-    }
-
     return { message: "Booking deleted successfully" };
   }
 
@@ -264,13 +236,13 @@ export class BookingsService {
 
     const results = await Promise.all(
       userBookings.map(async (booking) => {
-        const hotel = await this.hotelModel.findById(booking.hotelId);
+        const hotel = await this.hotels.findById(String(booking.hotelId));
         if (!hotel) {
           return null;
         }
 
         return {
-          ...hotel.toObject(),
+          ...toHotelResponse(hotel),
           bookings: [booking.toObject()],
         };
       }),

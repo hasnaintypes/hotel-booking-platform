@@ -6,8 +6,8 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { HotelType } from "@hotel-booking/types";
-import { BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models";
+import { BOOKING_MODEL, REVIEW_MODEL } from "../../database/models";
+import { HotelsRepository } from "../../database/repositories/hotels.repository";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { CreateReviewDto } from "./dto/create-review.dto";
 import { IReview } from "./schemas/review.schema";
@@ -16,7 +16,7 @@ import { IReview } from "./schemas/review.schema";
 export class ReviewsService {
   constructor(
     @InjectModel(REVIEW_MODEL) private readonly reviewModel: Model<IReview>,
-    @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
+    private readonly hotels: HotelsRepository,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
   ) {}
 
@@ -49,7 +49,7 @@ export class ReviewsService {
   }
 
   async create(dto: CreateReviewDto, userId: string) {
-    const hotel = await this.hotelModel.findById(dto.hotelId);
+    const hotel = await this.hotels.findById(dto.hotelId);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
@@ -81,23 +81,6 @@ export class ReviewsService {
       isVerified: booking.paymentStatus === "paid",
     });
     await review.save();
-
-    const [aggregate] = await this.reviewModel.aggregate([
-      { $match: { hotelId: dto.hotelId } },
-      {
-        $group: {
-          _id: "$hotelId",
-          averageRating: { $avg: "$rating" },
-          reviewCount: { $sum: 1 },
-        },
-      },
-    ]);
-
-    if (aggregate) {
-      hotel.averageRating = Math.round((aggregate.averageRating as number) * 10) / 10;
-      hotel.reviewCount = aggregate.reviewCount as number;
-      await hotel.save();
-    }
 
     return review;
   }

@@ -1,11 +1,10 @@
-import { Types } from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
-import { anonymous, insertHotel, registerUser } from "./support/helpers";
+import { anonymous, hotelsRepository, insertHotel, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
-import { applyFields, hotelFields, jpegBytes, type FieldValue } from "./support/hotel-form";
+import { hotelFields, type FieldValue } from "./support/hotel-form";
 
-// Plain JSON equivalent of hotelFields, for requests that are not multipart.
+// Plain JSON equivalent of hotelFields.
 const jsonFields = (overrides: Record<string, unknown> = {}) => ({
   ...hotelFields(),
   "policies.petPolicy": "",
@@ -27,16 +26,13 @@ describe("owner hotel create and update", () => {
     await t.close();
   });
 
-  const stored = (id: string) =>
-    t.connection.collection("hotels").findOne({ _id: new Types.ObjectId(id) });
+  const stored = (id: string) => hotelsRepository(t).findById(id);
 
   describe("create", () => {
-    it("creates a hotel from the form the web app sends", async () => {
-      const res = await applyFields(owner.agent.post(routes.myHotels.list), hotelFields()).attach(
-        "imageFiles",
-        jpegBytes(),
-        { filename: "photo.jpg", contentType: "image/jpeg" },
-      );
+    it("creates a hotel from the JSON the web app sends", async () => {
+      const res = await owner.agent
+        .post(routes.myHotels.list)
+        .send(jsonFields({ imageUrls: ["https://res.cloudinary.test/image-0.jpg"] }));
 
       expect(res.status).toBe(201);
       expect(res.headers.location).toBe(`/api/v1/manage/hotels/${res.body._id}`);
@@ -57,13 +53,11 @@ describe("owner hotel create and update", () => {
         contact: { phone: "+44 117 000 000", email: "info@harbour.test" },
         policies: { checkInTime: "15:00", checkOutTime: "11:00" },
       });
-      expect(t.cloudinary.uploadImages).toHaveBeenCalled();
     });
 
     it("accepts empty optional contact and policy fields", async () => {
-      const res = await applyFields(
-        owner.agent.post(routes.myHotels.list),
-        hotelFields({
+      const res = await owner.agent.post(routes.myHotels.list).send(
+        jsonFields({
           "contact.phone": "",
           "contact.email": "",
           "contact.website": "",
@@ -75,24 +69,21 @@ describe("owner hotel create and update", () => {
     });
 
     it("ignores server-owned fields sent by the caller", async () => {
-      const res = await applyFields(
-        owner.agent.post(routes.myHotels.list),
-        hotelFields({
-          isFeatured: "true",
-          isActive: "false",
-          totalRevenue: "999999",
-          totalBookings: "10",
-          averageRating: "5",
-          reviewCount: "50",
-          occupancyRate: "99",
-          userId: "000000000000000000000001",
+      const res = await owner.agent.post(routes.myHotels.list).send(
+        jsonFields({
+          isFeatured: true,
+          isActive: false,
+          totalRevenue: 999999,
+          totalBookings: 10,
+          averageRating: 5,
+          reviewCount: 50,
+          occupancyRate: 99,
+          userId: "00000000-0000-4000-8000-000000000001",
           role: "admin",
         }),
       );
       expect(res.status).toBe(201);
-
-      const row = await stored(res.body._id);
-      expect(row).toMatchObject({
+      expect(res.body).toMatchObject({
         userId: owner.user._id,
         isFeatured: false,
         isActive: true,
@@ -102,6 +93,11 @@ describe("owner hotel create and update", () => {
         reviewCount: 0,
         occupancyRate: 0,
       });
+
+      const row = await stored(res.body._id);
+      expect(row?.ownerUserId).toBe(owner.user._id);
+      expect(row?.status).toBe("active");
+      expect(row?.isFeatured).toBe(false);
     });
 
     it.each<[string, Record<string, FieldValue>, string]>([
@@ -121,14 +117,14 @@ describe("owner hotel create and update", () => {
       ["a script URL as website", { "contact.website": "javascript:alert(1)" }, "contact.website"],
       ["a script URL as an image", { imageUrls: ["javascript:alert(1)"] }, "imageUrls"],
     ])("rejects %s with a field-level 400", async (_name, overrides, field) => {
-      const res = await applyFields(owner.agent.post(routes.myHotels.list), hotelFields(overrides));
+      const res = await owner.agent.post(routes.myHotels.list).send(jsonFields(overrides));
       expect(res.status).toBe(400);
       expect(res.body.code).toBe("VALIDATION_FAILED");
       expect(res.body.errors.map((e: { field: string }) => e.field)).toContain(field);
     });
 
     it("reports every missing required field at once", async () => {
-      const res = await owner.agent.post(routes.myHotels.list).field("name", "Only a name");
+      const res = await owner.agent.post(routes.myHotels.list).send({ name: "Only a name" });
       expect(res.status).toBe(400);
       const fields = res.body.errors.map((e: { field: string }) => e.field);
       expect(fields).toEqual(
@@ -147,7 +143,7 @@ describe("owner hotel create and update", () => {
     });
 
     it("requires a signed-in user", async () => {
-      const res = await applyFields(anonymous(t).post(routes.myHotels.list), hotelFields());
+      const res = await anonymous(t).post(routes.myHotels.list).send(jsonFields());
       expect(res.status).toBe(401);
     });
   });
@@ -155,10 +151,9 @@ describe("owner hotel create and update", () => {
   describe("update", () => {
     it("updates the editable fields of the owner's hotel", async () => {
       const hotel = await insertHotel(t, owner.user._id, { name: "Old Name" });
-      const res = await applyFields(
-        owner.agent.put(routes.myHotels.byId(hotel.id)),
-        hotelFields({ name: "New Name", pricePerNight: "150", starRating: "5" }),
-      );
+      const res = await owner.agent
+        .patch(routes.myHotels.byId(hotel.id))
+        .send(jsonFields({ name: "New Name", pricePerNight: "150", starRating: "5" }));
 
       expect(res.status).toBe(200);
       expect(res.body).toMatchObject({ name: "New Name", pricePerNight: 150, starRating: 5 });
@@ -167,52 +162,43 @@ describe("owner hotel create and update", () => {
     it("cannot change server-owned fields", async () => {
       const hotel = await insertHotel(t, owner.user._id, {
         isFeatured: true,
-        totalRevenue: 500,
-        averageRating: 4.5,
         isActive: true,
+        imageUrls: ["https://img.test/keep.jpg"],
       });
 
-      const res = await applyFields(
-        owner.agent.put(routes.myHotels.byId(hotel.id)),
-        hotelFields({
-          isFeatured: "false",
-          totalRevenue: "0",
-          averageRating: "1",
-          isActive: "false",
-          userId: "000000000000000000000001",
+      const res = await owner.agent.patch(routes.myHotels.byId(hotel.id)).send(
+        jsonFields({
+          isFeatured: false,
+          isActive: false,
+          userId: "00000000-0000-4000-8000-000000000001",
         }),
       );
       expect(res.status).toBe(200);
 
       const row = await stored(hotel.id);
       expect(row).toMatchObject({
-        userId: owner.user._id,
+        ownerUserId: owner.user._id,
         isFeatured: true,
-        totalRevenue: 500,
-        averageRating: 4.5,
-        isActive: true,
+        status: "active",
       });
+      expect(row?.images).toEqual(["https://img.test/keep.jpg"]);
     });
 
     it("does not let one owner edit another owner's hotel", async () => {
       const hotel = await insertHotel(t, owner.user._id, { name: "Mine" });
-      const res = await applyFields(
-        other.agent.put(routes.myHotels.byId(hotel.id)),
-        hotelFields({ name: "Taken Over" }),
-      );
+      const res = await other.agent
+        .patch(routes.myHotels.byId(hotel.id))
+        .send(jsonFields({ name: "Taken Over" }));
       expect(res.status).toBe(404);
       expect((await stored(hotel.id))?.name).toBe("Mine");
     });
 
     it("rejects a malformed id and an unauthenticated caller", async () => {
-      const bad = await applyFields(owner.agent.put(routes.myHotels.byId("abc")), hotelFields());
+      const bad = await owner.agent.patch(routes.myHotels.byId("abc")).send(jsonFields());
       expect(bad.status).toBe(400);
 
       const hotel = await insertHotel(t, owner.user._id);
-      const anon = await applyFields(
-        anonymous(t).put(routes.myHotels.byId(hotel.id)),
-        hotelFields(),
-      );
+      const anon = await anonymous(t).patch(routes.myHotels.byId(hotel.id)).send(jsonFields());
       expect(anon.status).toBe(401);
     });
   });
@@ -227,25 +213,12 @@ describe("owner hotel create and update", () => {
         jsonFields({ type: [{ $ne: null }] }),
         jsonFields({ pricePerNight: { $gt: 0 } }),
       ]) {
-        const res = await owner.agent.put(routes.myHotels.byId(hotel.id)).send(body);
+        const res = await owner.agent.patch(routes.myHotels.byId(hotel.id)).send(body);
         expect(res.status).toBe(400);
         expect(res.body.code).toBe("VALIDATION_FAILED");
       }
 
       expect(await stored(hotel.id)).toMatchObject({ name: "Untouched", city: "Leeds" });
-    });
-
-    it("rejects an operator object built with multipart bracket syntax", async () => {
-      const hotel = await insertHotel(t, owner.user._id, { name: "Untouched" });
-      const { name: _name, ...rest } = hotelFields();
-      const res = await applyFields(owner.agent.put(routes.myHotels.byId(hotel.id)), rest).field(
-        "name[$ne]",
-        "x",
-      );
-
-      expect(res.status).toBe(400);
-      expect(res.body.errors.map((e: { field: string }) => e.field)).toContain("name");
-      expect((await stored(hotel.id))?.name).toBe("Untouched");
     });
 
     it("rejects an operator object when creating a hotel", async () => {

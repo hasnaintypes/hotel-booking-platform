@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import {
@@ -9,7 +10,7 @@ import {
 } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const UNKNOWN_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_ID = randomUUID();
 
 const categories = { cleanliness: 4, service: 5, location: 4, value: 3, amenities: 4 };
 

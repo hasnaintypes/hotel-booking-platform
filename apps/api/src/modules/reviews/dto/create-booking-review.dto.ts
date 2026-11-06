@@ -1,9 +1,9 @@
 import { Type } from "class-transformer";
-import { IsInt, IsMongoId, IsString, Max, Min, MinLength, ValidateNested } from "class-validator";
+import { IsInt, IsString, IsUUID, Max, Min, MinLength, ValidateNested } from "class-validator";
 import { ReviewCategoriesDto } from "./create-review.dto";
 
 export class CreateBookingReviewDto {
-  @IsMongoId()
+  @IsUUID()
   hotelId: string;
 
   @IsInt()

@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { HotelType } from "@hotel-booking/types";
-import { ANALYTICS_MODEL, BOOKING_MODEL, HOTEL_MODEL, REVIEW_MODEL } from "../../database/models";
+import { ANALYTICS_MODEL, BOOKING_MODEL, REVIEW_MODEL } from "../../database/models";
+import { HotelsRepository } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { IBooking } from "../bookings/schemas/booking.schema";
 import { IReview } from "../reviews/schemas/review.schema";
@@ -13,18 +13,31 @@ export class AnalyticsService {
   constructor(
     @InjectModel(ANALYTICS_MODEL)
     private readonly analyticsModel: Model<IAnalytics>,
-    @InjectModel(HOTEL_MODEL) private readonly hotelModel: Model<HotelType>,
+    private readonly hotels: HotelsRepository,
     private readonly users: UsersRepository,
     @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
     @InjectModel(REVIEW_MODEL) private readonly reviewModel: Model<IReview>,
   ) {}
 
   private async buildLiveSnapshot() {
-    const [totalHotels, totalUsers, allBookings, reviewAgg] = await Promise.all([
-      this.hotelModel.countDocuments(),
+    const [totalHotels, totalUsers, allBookings, reviewAgg, bookingTotals] = await Promise.all([
+      this.hotels.count(),
       this.users.count(),
       this.bookingModel.find().select("status paymentStatus totalCost hotelId"),
       this.reviewModel.aggregate([{ $group: { _id: null, averageRating: { $avg: "$rating" } } }]),
+      this.bookingModel.aggregate<{
+        _id: string;
+        bookings: number;
+        revenue: number;
+      }>([
+        {
+          $group: {
+            _id: "$hotelId",
+            bookings: { $sum: 1 },
+            revenue: { $sum: "$totalCost" },
+          },
+        },
+      ]),
     ]);
 
     const totalBookings = allBookings.length;
@@ -58,47 +71,35 @@ export class AnalyticsService {
       ? Math.round((reviewAgg[0].averageRating as number) * 10) / 10
       : 0;
 
-    const destAgg = await this.bookingModel.aggregate([
-      { $addFields: { hotelIdObjectId: { $toObjectId: "$hotelId" } } },
-      {
-        $group: {
-          _id: "$hotelIdObjectId",
-          bookings: { $sum: 1 },
-          revenue: { $sum: "$totalCost" },
-        },
-      },
-      {
-        $lookup: {
-          from: "hotels",
-          localField: "_id",
-          foreignField: "_id",
-          as: "hotel",
-        },
-      },
-      { $unwind: "$hotel" },
-      {
-        $group: {
-          _id: "$hotel.city",
-          bookings: { $sum: "$bookings" },
-          revenue: { $sum: "$revenue" },
-        },
-      },
-      { $sort: { bookings: -1 } },
-      { $limit: 10 },
-    ]);
+    const hotelRows = await this.hotels.findByIds(bookingTotals.map((total) => String(total._id)));
+    const hotelsById = new Map(hotelRows.map((hotel) => [hotel.id, hotel]));
 
-    const typeAgg = await this.hotelModel.aggregate([
-      { $unwind: { path: "$type", preserveNullAndEmptyArrays: true } },
-      {
-        $group: {
-          _id: { $ifNull: ["$type", "Unknown"] },
-          bookings: { $sum: { $ifNull: ["$totalBookings", 0] } },
-          revenue: { $sum: { $ifNull: ["$totalRevenue", 0] } },
-        },
-      },
-      { $sort: { bookings: -1 } },
-      { $limit: 10 },
-    ]);
+    const destinations = new Map<string, { bookings: number; revenue: number }>();
+    for (const total of bookingTotals) {
+      const hotel = hotelsById.get(String(total._id));
+      if (!hotel) continue;
+      const destination = destinations.get(hotel.city) ?? { bookings: 0, revenue: 0 };
+      destination.bookings += Number(total.bookings) || 0;
+      destination.revenue += Number(total.revenue) || 0;
+      destinations.set(hotel.city, destination);
+    }
+
+    const bookingTotalsById = new Map(
+      bookingTotals.map((total) => [
+        String(total._id),
+        { bookings: Number(total.bookings) || 0, revenue: Number(total.revenue) || 0 },
+      ]),
+    );
+    const types = new Map<string, { bookings: number; revenue: number }>();
+    for (const hotel of hotelRows) {
+      const totals = bookingTotalsById.get(hotel.id) ?? { bookings: 0, revenue: 0 };
+      for (const type of hotel.types.length > 0 ? hotel.types : ["Unknown"]) {
+        const current = types.get(type) ?? { bookings: 0, revenue: 0 };
+        current.bookings += totals.bookings;
+        current.revenue += totals.revenue;
+        types.set(type, current);
+      }
+    }
 
     return {
       date: new Date(),
@@ -114,16 +115,14 @@ export class AnalyticsService {
       breakdown: {
         byStatus,
         byPaymentStatus,
-        byDestination: destAgg.map((destination) => ({
-          city: destination._id as string,
-          bookings: destination.bookings as number,
-          revenue: destination.revenue as number,
-        })),
-        byHotelType: typeAgg.map((type) => ({
-          type: type._id as string,
-          bookings: type.bookings as number,
-          revenue: type.revenue as number,
-        })),
+        byDestination: [...destinations]
+          .map(([city, totals]) => ({ city, ...totals }))
+          .sort((a, b) => b.bookings - a.bookings)
+          .slice(0, 10),
+        byHotelType: [...types]
+          .map(([type, totals]) => ({ type, ...totals }))
+          .sort((a, b) => b.bookings - a.bookings)
+          .slice(0, 10),
       },
     };
   }

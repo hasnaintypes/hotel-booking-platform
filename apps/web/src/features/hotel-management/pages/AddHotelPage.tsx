@@ -11,7 +11,13 @@ const AddHotel = () => {
   const queryClient = useQueryClient();
 
   const { mutate, isPending: isLoading } = useMutation({
-    mutationFn: hotelManagementApi.addMyHotel,
+    mutationFn: ({
+      payload,
+      imageFiles,
+    }: {
+      payload: hotelManagementApi.HotelFormPayload;
+      imageFiles: File[];
+    }) => hotelManagementApi.addMyHotel(payload, imageFiles),
     onSuccess: async () => {
       // Refresh My Hotels / Home / Search caches without full reload
       await invalidateHotelQueries(queryClient);
@@ -34,8 +40,8 @@ const AddHotel = () => {
     },
   });
 
-  const handleSave = (hotelFormData: FormData) => {
-    mutate(hotelFormData);
+  const handleSave = (payload: hotelManagementApi.HotelFormPayload, imageFiles: File[]) => {
+    mutate({ payload, imageFiles });
   };
 
   return <ManageHotelForm onSave={handleSave} isLoading={isLoading} showBack />;

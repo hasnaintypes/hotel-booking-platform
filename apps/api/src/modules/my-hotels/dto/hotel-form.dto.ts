@@ -16,8 +16,8 @@ import {
   ValidateIf,
 } from "class-validator";
 
-// The form arrives as multipart text fields, so every value is a string (or an array of strings
-// for bracketed keys such as `type[0]`). These transforms read the raw value because implicit
+// Create and update arrive as JSON, but browsers and older clients may still send numbers or
+// comma-free single values as strings. These transforms read the raw value because implicit
 // conversion would already have turned "" into 0 for a number.
 const raw = ({ obj, key }: TransformFnParams): unknown => obj[key];
 

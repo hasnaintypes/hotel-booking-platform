@@ -10,6 +10,7 @@ import { HotelType } from "@hotel-booking/types";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@hotel-booking/ui";
+import type { HotelFormPayload } from "@/features/hotel-management/api";
 
 export type HotelFormData = {
   name: string;
@@ -53,7 +54,7 @@ export type HotelFormData = {
 
 type Props = {
   hotel?: HotelType;
-  onSave: (hotelFormData: FormData) => void;
+  onSave: (payload: HotelFormPayload, imageFiles: File[]) => void;
   isLoading: boolean;
   /** When set, show Cancel (calls this) + Back link to My Hotels */
   onCancel?: () => void;
@@ -87,58 +88,30 @@ const ManageHotelForm = ({ onSave, isLoading, hotel, onCancel, showBack = false 
   }, [hotel, reset]);
 
   const onSubmit = handleSubmit((formDataJson: HotelFormData) => {
-    const formData = new FormData();
-    if (hotel) {
-      formData.append("hotelId", hotel._id);
-    }
-    formData.append("name", formDataJson.name);
-    formData.append("city", formDataJson.city);
-    formData.append("country", formDataJson.country);
-    formData.append("description", formDataJson.description);
-    formDataJson.type.forEach((t, idx) => {
-      formData.append(`type[${idx}]`, t);
-    });
-    formData.append("pricePerNight", formDataJson.pricePerNight.toString());
-    formData.append("starRating", formDataJson.starRating.toString());
-    formData.append("adultCount", formDataJson.adultCount.toString());
-    formData.append("childCount", formDataJson.childCount.toString());
+    const payload: HotelFormPayload = {
+      name: formDataJson.name,
+      city: formDataJson.city,
+      country: formDataJson.country,
+      description: formDataJson.description,
+      type: formDataJson.type,
+      facilities: formDataJson.facilities,
+      pricePerNight: formDataJson.pricePerNight,
+      starRating: formDataJson.starRating,
+      adultCount: formDataJson.adultCount,
+      childCount: formDataJson.childCount,
+      imageUrls: formDataJson.imageUrls ?? [],
+      "contact.phone": formDataJson.contact?.phone || "",
+      "contact.email": formDataJson.contact?.email || "",
+      "contact.website": formDataJson.contact?.website || "",
+      "policies.checkInTime": formDataJson.policies?.checkInTime || "",
+      "policies.checkOutTime": formDataJson.policies?.checkOutTime || "",
+      "policies.cancellationPolicy": formDataJson.policies?.cancellationPolicy || "",
+      "policies.petPolicy": formDataJson.policies?.petPolicy || "",
+      "policies.smokingPolicy": formDataJson.policies?.smokingPolicy || "",
+    };
 
-    formDataJson.facilities.forEach((facility, index) => {
-      formData.append(`facilities[${index}]`, facility);
-    });
-
-    // Add contact information
-    if (formDataJson.contact) {
-      formData.append("contact.phone", formDataJson.contact.phone || "");
-      formData.append("contact.email", formDataJson.contact.email || "");
-      formData.append("contact.website", formDataJson.contact.website || "");
-    }
-
-    // Add policies
-    if (formDataJson.policies) {
-      formData.append("policies.checkInTime", formDataJson.policies.checkInTime || "");
-      formData.append("policies.checkOutTime", formDataJson.policies.checkOutTime || "");
-      formData.append(
-        "policies.cancellationPolicy",
-        formDataJson.policies.cancellationPolicy || "",
-      );
-      formData.append("policies.petPolicy", formDataJson.policies.petPolicy || "");
-      formData.append("policies.smokingPolicy", formDataJson.policies.smokingPolicy || "");
-    }
-
-    if (formDataJson.imageUrls) {
-      formDataJson.imageUrls.forEach((url, index) => {
-        formData.append(`imageUrls[${index}]`, url);
-      });
-    }
-
-    if (formDataJson.imageFiles && formDataJson.imageFiles.length > 0) {
-      Array.from(formDataJson.imageFiles).forEach((imageFile) => {
-        formData.append(`imageFiles`, imageFile);
-      });
-    }
-
-    onSave(formData);
+    const imageFiles = formDataJson.imageFiles ? Array.from(formDataJson.imageFiles) : [];
+    onSave(payload, imageFiles);
   });
 
   return (

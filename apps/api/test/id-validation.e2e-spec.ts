@@ -1,9 +1,11 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const GOOD_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const GOOD_HOTEL_ID = randomUUID();
+const GOOD_BOOKING_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
 
 describe("malformed ids", () => {
   let t: TestApp;
@@ -43,7 +45,7 @@ describe("malformed ids", () => {
   });
 
   it("rejects bad ids in a review body", async () => {
-    const res = await user.agent.post(routes.reviews.create(GOOD_ID)).send({
+    const res = await user.agent.post(routes.reviews.create(GOOD_BOOKING_ID)).send({
       hotelId: "abc",
       rating: 5,
       comment: "Lovely stay",
@@ -56,9 +58,9 @@ describe("malformed ids", () => {
   });
 
   it("lets a well-formed id that matches nothing through to a 404", async () => {
-    const res = await anonymous(t).get(routes.hotels.byId(GOOD_ID));
+    const res = await anonymous(t).get(routes.hotels.byId(GOOD_HOTEL_ID));
     expect(res.status).toBe(404);
-    const booking = await user.agent.get(routes.bookings.byId(GOOD_ID));
+    const booking = await user.agent.get(routes.bookings.byId(GOOD_BOOKING_ID));
     expect(booking.status).toBe(404);
   });
 });
