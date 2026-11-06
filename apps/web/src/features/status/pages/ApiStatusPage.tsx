@@ -16,7 +16,7 @@ import useAuth from "@/features/auth/hooks/useAuth";
 interface HealthData {
   status: string;
   timestamp: string;
-  database?: string;
+  postgres?: string;
   migrations?: string;
 }
 
@@ -33,7 +33,7 @@ interface DetailedHealthData {
     uptime: number;
   };
   checks: {
-    database: string;
+    postgres: string;
     migrations: string;
   };
 }
@@ -219,14 +219,14 @@ const ApiStatus = () => {
           <div className="bg-gray-50 rounded-xl p-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-600">Database</span>
-              {getStatusIcon(healthData?.database || "unknown")}
+              {getStatusIcon(healthData?.postgres || "unknown")}
             </div>
             <span
               className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
-                healthData?.database || "unknown",
+                healthData?.postgres || "unknown",
               )}`}
             >
-              {healthData?.database || "Unknown"}
+              {healthData?.postgres || "Unknown"}
             </span>
           </div>
 
@@ -265,10 +265,10 @@ const ApiStatus = () => {
                 <span className="text-gray-600">Status:</span>
                 <span
                   className={`font-medium ${
-                    detailedData.checks.database === "connected" ? "text-green-600" : "text-red-600"
+                    detailedData.checks.postgres === "connected" ? "text-green-600" : "text-red-600"
                   }`}
                 >
-                  {detailedData.checks.database}
+                  {detailedData.checks.postgres}
                 </span>
               </div>
             </div>

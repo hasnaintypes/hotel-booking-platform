@@ -86,9 +86,6 @@ type ErrorLike = {
   status?: unknown;
   statusCode?: unknown;
   message?: unknown;
-  errors?: Record<string, { path?: string; message?: string }>;
-  kind?: string;
-  path?: string;
 };
 
 const asError = (value: unknown): ErrorLike =>
@@ -152,22 +149,7 @@ export function mapException(exception: unknown): MappedError {
       : make(400, "BAD_REQUEST", "The file upload was rejected.");
   }
 
-  // 4. Database errors (Mongo/Mongoose now; Postgres mapping replaces this in M1)
-  if (err.code === 11000) {
-    return make(409, "CONFLICT", "A resource with the same unique value already exists.");
-  }
-  if (err.name === "CastError") {
-    return make(400, "INVALID_ID", "The supplied identifier is not valid.");
-  }
-  if (err.name === "ValidationError" && err.errors && typeof err.errors === "object") {
-    const errors = Object.entries(err.errors).map(([field, e]) => ({
-      field: e?.path ?? field,
-      message: e?.message ?? "Invalid value",
-    }));
-    return make(422, "UNPROCESSABLE", "The data failed validation.", { errors });
-  }
-
-  // 5. Stripe
+  // 4. Stripe
   if (typeof err.type === "string" && err.type.startsWith("Stripe")) {
     if (err.type === "StripeCardError") {
       return make(402, "PAYMENT_DECLINED", "The card was declined.");
@@ -178,13 +160,13 @@ export function mapException(exception: unknown): MappedError {
     return make(502, "UPSTREAM_ERROR", GENERIC_5XX);
   }
 
-  // 6. Any other http-errors style error with a client status
+  // 5. Any other http-errors style error with a client status
   const status = Number(err.status ?? err.statusCode);
   if (Number.isInteger(status) && status >= 400 && status < 500) {
     return make(status, codeFor(status), "The request could not be processed.");
   }
 
-  // 7. Unexpected
+  // 6. Unexpected
   return make(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", GENERIC_5XX);
 }
 

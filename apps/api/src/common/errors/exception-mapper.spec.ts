@@ -89,8 +89,6 @@ describe("mapException", () => {
       400,
       "BAD_REQUEST",
     ],
-    ["duplicate key", { name: "MongoServerError", code: 11000 }, 409, "CONFLICT"],
-    ["cast error", { name: "CastError" }, 400, "INVALID_ID"],
     ["card declined", { type: "StripeCardError" }, 402, "PAYMENT_DECLINED"],
     ["stripe connection", { type: "StripeConnectionError" }, 502, "UPSTREAM_ERROR"],
     ["stripe rate limit", { type: "StripeRateLimitError" }, 503, "SERVICE_UNAVAILABLE"],
@@ -123,17 +121,6 @@ describe("mapException", () => {
     expect(JSON.stringify(mapped)).not.toMatch(
       /users_email_unique|secret@example.com|query failed/,
     );
-  });
-
-  it("maps mongoose validation errors to 422 with fields", () => {
-    const mapped = mapException(
-      tagged({
-        name: "ValidationError",
-        errors: { rating: { path: "rating", message: "too high" } },
-      }),
-    );
-    expect(mapped).toMatchObject({ status: 422, code: "UNPROCESSABLE" });
-    expect(mapped.errors).toEqual([{ field: "rating", message: "too high" }]);
   });
 
   it("never exposes the message of unexpected errors", () => {

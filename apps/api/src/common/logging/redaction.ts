@@ -23,7 +23,7 @@ export const REDACT_PATHS: string[] = [
 
 export const REDACT_CENSOR = "[Redacted]";
 
-/** Credentials embedded in URLs, e.g. mongodb://user:password@host or https://token@host. */
+/** Credentials embedded in URLs, e.g. postgres://user:password@host or https://token@host. */
 const URL_CREDENTIALS = /(\b[a-z][a-z0-9+.-]*:\/\/)[^\s/@]+@/gi;
 
 /** Removes URL credentials from free text such as error messages and stack traces. */

@@ -100,16 +100,12 @@ describe("error responses (problem details)", () => {
   });
 
   it("returns 400 VALIDATION_FAILED for malformed resource identifiers in a path", async () => {
-    // The id pipe rejects the value before it can reach Mongoose. A cast error that slips past
-    // is still mapped to INVALID_ID, as the cast-error fault case below shows.
     const res = await anonymous(t).get(routes.hotels.byId("not-a-uuid"));
     expectProblem(res, 400, "VALIDATION_FAILED");
     expect(res.body.errors).toEqual([{ field: "id", message: "must be a valid id" }]);
   });
 
   it.each([
-    ["/api/v1/__test__/mongo-duplicate", 409, "CONFLICT"],
-    ["/api/v1/__test__/cast-error", 400, "INVALID_ID"],
     ["/api/v1/__test__/stripe-card", 402, "PAYMENT_DECLINED"],
     ["/api/v1/__test__/stripe-down", 502, "UPSTREAM_ERROR"],
     ["/api/v1/__test__/throttled", 429, "TOO_MANY_REQUESTS"],
@@ -124,7 +120,7 @@ describe("error responses (problem details)", () => {
     expectProblem(res, 500, "INTERNAL_ERROR");
 
     const serialized = JSON.stringify(res.body);
-    expect(serialized).not.toMatch(/hunter2|mongodb:|internal-db|stack|at /);
+    expect(serialized).not.toMatch(/hunter2|postgres:|internal-db|stack|at /);
 
     // The real cause is logged server-side, correlated by request id.
     const logged = t.logs
@@ -135,7 +131,7 @@ describe("error responses (problem details)", () => {
     // The cause is kept for operators, but credentials in URLs are scrubbed from logs.
     expect(logged!.err.message).toContain("connection failed");
     expect(t.logs.raw()).not.toContain("hunter2");
-    expect(logged!.err.message).toContain("mongodb://[Redacted]@internal-db");
+    expect(logged!.err.message).toContain("postgres://[Redacted]@internal-db");
   });
 
   it("does not return a stack trace for any error class", async () => {

@@ -19,7 +19,7 @@ const tagged = (message: string, extra: Record<string, unknown>) =>
 export class FaultController {
   @Get("boom")
   boom() {
-    throw new Error("connection failed: mongodb://admin:hunter2@internal-db:27017");
+    throw new Error("connection failed: postgres://admin:hunter2@internal-db:5432/db");
   }
 
   @Get("stripe-card")
@@ -30,19 +30,6 @@ export class FaultController {
   @Get("stripe-down")
   stripeDown() {
     throw tagged("socket hang up to api.stripe.com", { type: "StripeConnectionError" });
-  }
-
-  @Get("mongo-duplicate")
-  mongoDuplicate() {
-    throw tagged("E11000 duplicate key error collection: users index: email_1", {
-      name: "MongoServerError",
-      code: 11000,
-    });
-  }
-
-  @Get("cast-error")
-  castError() {
-    throw tagged('Cast to ObjectId failed for value "x" (type string)', { name: "CastError" });
   }
 
   @Get("throttled")

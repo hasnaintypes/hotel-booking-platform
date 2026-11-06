@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { validateEnv } from "./env.validation";
 
 const base = {
-  MONGODB_CONNECTION_STRING: "mongodb://localhost:27017/test",
   JWT_SECRET_KEY: "secret",
   CLOUDINARY_CLOUD_NAME: "cloud",
   CLOUDINARY_API_KEY: "key",

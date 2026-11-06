@@ -1,5 +1,3 @@
-import { randomUUID } from "node:crypto";
-
 // Runs in every test worker before any application code is imported.
 process.env.NODE_ENV = "test";
 process.env.JWT_SECRET_KEY = "test-secret-key-that-is-long-enough-for-hs256";
@@ -18,9 +16,6 @@ process.env.AI_ASSIST_ENABLED = "false";
 process.env.BCRYPT_COST = "4";
 process.env.AUTH_RATE_LIMIT = "1000";
 process.env.AUTH_MAX_FAILED_LOGINS = "100";
-
-const base = process.env.TEST_MONGO_BASE_URI ?? "mongodb://127.0.0.1:27017";
-process.env.MONGODB_CONNECTION_STRING = `${base}/test_${randomUUID().replace(/-/g, "")}`;
 
 // Tests that touch PostgreSQL must never reach a development database. TEST_DATABASE_URL wins;
 // otherwise use the conventional disposable database that docker compose and CI provide.

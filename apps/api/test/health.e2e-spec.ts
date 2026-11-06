@@ -18,12 +18,11 @@ describe("health", () => {
     expect(res.body.status).toBe("ok");
   });
 
-  it("reports readiness from the databases and applied migrations", async () => {
+  it("reports readiness from PostgreSQL and applied migrations", async () => {
     const res = await anonymous(t).get(routes.healthReady);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       status: "ready",
-      database: "connected",
       postgres: "connected",
       migrations: "ready",
     });
@@ -43,7 +42,7 @@ describe("health", () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       status: "healthy",
-      checks: { database: "connected", postgres: "connected", migrations: "ready" },
+      checks: { postgres: "connected", migrations: "ready" },
       performance: {
         memory: {
           usedMb: expect.any(Number),

@@ -1,4 +1,7 @@
+import { count } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { hotels, type Database } from "@hotel-booking/db";
+import { DATABASE } from "../src/database/postgres.database";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, registerAdmin, registerUser, withEnv } from "./support/helpers";
 import { routes } from "./support/routes";
@@ -113,9 +116,11 @@ describe("AI suggestions when enabled", () => {
   });
 
   it("does not save anything: it only returns text", async () => {
-    const before = await t.connection.collection("hotels").countDocuments();
+    const db = t.app.get<Database>(DATABASE);
+    const [before] = await db.select({ value: count() }).from(hotels);
     await suggest(user.agent, draft("hotel_description", "A hotel"));
-    expect(await t.connection.collection("hotels").countDocuments()).toBe(before);
+    const [after] = await db.select({ value: count() }).from(hotels);
+    expect(after.value).toBe(before.value);
   });
 });
 

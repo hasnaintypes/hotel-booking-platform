@@ -27,9 +27,6 @@ export const configuration = () => {
     frontendUrl: stripTrailingSlash(process.env.FRONTEND_URL) || "http://localhost:5174",
     adminUrl: stripTrailingSlash(process.env.ADMIN_URL) || "http://localhost:5175",
     backendUrl: stripTrailingSlash(process.env.BACKEND_URL) || `http://localhost:${port}`,
-    mongodb: {
-      uri: process.env.MONGODB_CONNECTION_STRING,
-    },
     database: {
       url: process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/hotel_booking",
       maxConnections: parseInt(process.env.DATABASE_POOL_MAX || "10", 10),

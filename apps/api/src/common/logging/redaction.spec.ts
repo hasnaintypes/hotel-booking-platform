@@ -5,8 +5,8 @@ import { resolveRequestId } from "./request-id";
 
 describe("scrubSecrets", () => {
   it("removes credentials from URLs", () => {
-    expect(scrubSecrets("failed: mongodb+srv://admin:p%40ss@cluster0.example.net/db")).toBe(
-      "failed: mongodb+srv://[Redacted]@cluster0.example.net/db",
+    expect(scrubSecrets("failed: postgres://admin:p%40ss@db.example.net/app")).toBe(
+      "failed: postgres://[Redacted]@db.example.net/app",
     );
     expect(scrubSecrets("GET https://token123@api.example.test/v1")).toBe(
       "GET https://[Redacted]@api.example.test/v1",

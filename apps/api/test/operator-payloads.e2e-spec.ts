@@ -9,7 +9,7 @@ const SOME_USER_ID = randomUUID();
 
 /**
  * Evidence for the CodeQL js/sql-injection alerts on the auth, bookings, hotels, reviews and
- * users services: a request that smuggles a Mongo operator object into a field is rejected by
+ * users services: a request that smuggles an operator-shaped object into a field is rejected by
  * validation before any query is built.
  */
 describe("operator payloads are rejected before they reach a query", () => {
