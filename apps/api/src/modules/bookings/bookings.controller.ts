@@ -1,19 +1,24 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Param,
   Post,
-  Body,
+  Res,
   UseGuards,
 } from "@nestjs/common";
+import { Throttle } from "@nestjs/throttler";
+import type { Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
-import { MongoIdPipe } from "../../common/pipes/mongo-id.pipe";
+import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { BookingsService } from "./bookings.service";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
+import { CreateBookingDto } from "./dto/create-booking.dto";
+import { PaymentIntentDto } from "./dto/payment-intent.dto";
 
 @Controller("bookings")
 @UseGuards(JwtAuthGuard)
@@ -25,15 +30,34 @@ export class BookingsController {
     return this.bookingsService.myBookings(user.userId);
   }
 
+  @Post("payment-intents")
+  @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { limit: 50, ttl: 900000 } })
+  createPaymentIntent(@Body() dto: PaymentIntentDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.bookingsService.createPaymentIntent(dto, user.userId);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  async create(
+    @Body() dto: CreateBookingDto,
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const booking = await this.bookingsService.create(dto, user.userId);
+    res.setHeader("Location", `/api/v1/bookings/${booking._id}`);
+    return booking;
+  }
+
   @Get(":id")
-  findOne(@Param("id", MongoIdPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
+  findOne(@Param("id", UuidPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.bookingsService.findOne(id, user.userId);
   }
 
   @Post(":id/cancellations")
   @HttpCode(HttpStatus.OK)
   cancel(
-    @Param("id", MongoIdPipe) id: string,
+    @Param("id", UuidPipe) id: string,
     @Body() dto: CancelBookingDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {

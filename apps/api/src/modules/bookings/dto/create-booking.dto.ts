@@ -8,6 +8,7 @@ import {
   IsString,
   Matches,
   Max,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -20,6 +21,9 @@ const trim = ({ value }: TransformFnParams) => (typeof value === "string" ? valu
  * check-in, not in the past, maximum stay, guest capacity) are enforced in HotelsService.
  */
 export class CreateBookingDto {
+  @IsUUID()
+  hotelId: string;
+
   @Transform(trim)
   @IsString()
   @MinLength(1)

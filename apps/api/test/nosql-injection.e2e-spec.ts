@@ -4,7 +4,7 @@ import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertHotel, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const SOME_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const SOME_ID = randomUUID();
 const SOME_USER_ID = randomUUID();
 
 /**
@@ -71,22 +71,27 @@ describe("operator payloads are rejected before they reach a query", () => {
     );
   });
 
-  it("booking status and payment updates: operators are not valid values", async () => {
+  it("booking creation: operators are not valid hotel or date values", async () => {
     expectRejected(
-      await user.agent.patch(routes.bookings.status(SOME_ID)).send({ status: { $ne: "x" } }),
-      "status",
+      await user.agent.post(routes.bookings.create).send({
+        hotelId: { $ne: null },
+        firstName: "Gus",
+        lastName: "Guest",
+        email: "guest@example.test",
+        adultCount: 1,
+        childCount: 0,
+        checkIn: "2030-01-01T00:00:00.000Z",
+        checkOut: "2030-01-03T00:00:00.000Z",
+        totalCost: 200,
+        paymentIntentId: "pi_test_operator",
+      }),
+      "hotelId",
     );
     expectRejected(
       await user.agent
-        .patch(routes.bookings.payment(SOME_ID))
-        .send({ paymentStatus: "paid", paymentMethod: { $ne: null } }),
-      "paymentMethod",
-    );
-    expectRejected(
-      await user.agent
-        .patch(routes.bookings.payment(SOME_ID))
-        .send({ paymentStatus: { $ne: null } }),
-      "paymentStatus",
+        .post(routes.bookings.paymentIntent)
+        .send({ hotelId, numberOfNights: { $ne: null } }),
+      "numberOfNights",
     );
   });
 

@@ -1,8 +1,10 @@
+import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { eq } from "drizzle-orm";
-import { hotels, type Database } from "@hotel-booking/db";
+import { bookingEvents, bookings, hotels, payments, type Database } from "@hotel-booking/db";
 import type { TestApp } from "./create-app";
 import { DATABASE } from "../../src/database/postgres.database";
+import { BookingsRepository } from "../../src/database/repositories/bookings.repository";
 import {
   HotelsRepository,
   type HotelWriteInput,
@@ -52,6 +54,11 @@ export function hotelsRepository(t: TestApp) {
   return t.app.get(HotelsRepository);
 }
 
+/** The PostgreSQL booking repository, for tests that need direct booking state. */
+export function bookingsRepository(t: TestApp) {
+  return t.app.get(BookingsRepository);
+}
+
 export function anonymous(t: TestApp) {
   return request(t.app.getHttpServer());
 }
@@ -85,7 +92,11 @@ let hotelCounter = 0;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Inserts a booking straight into the database, bypassing the Stripe payment flow. */
+/**
+ * Inserts a booking straight into PostgreSQL, bypassing the Stripe payment flow. A paid booking
+ * gets a payment row: `stripe` when a PaymentIntent id is supplied, otherwise a `manual` charge
+ * so cancellation can still tell that no Stripe refund is possible.
+ */
 export async function insertBooking(
   t: TestApp,
   userId: string,
@@ -93,22 +104,70 @@ export async function insertBooking(
   overrides: Record<string, unknown> = {},
 ) {
   const now = Date.now();
-  const booking = (await t.connection.model("Booking").create({
-    userId,
-    hotelId,
-    firstName: "Gus",
-    lastName: "Guest",
-    email: "guest@example.test",
-    adultCount: 1,
-    childCount: 0,
-    checkIn: new Date(now + 10 * DAY_MS),
-    checkOut: new Date(now + 12 * DAY_MS),
-    totalCost: 200,
-    status: "confirmed",
-    paymentStatus: "paid",
-    ...overrides,
-  })) as unknown as { _id: unknown };
-  return { id: String(booking._id) };
+  const totalCost = Number(overrides.totalCost ?? 200);
+  const status =
+    (overrides.status as
+      "pending" | "confirmed" | "cancelled" | "completed" | "refunded" | undefined) ?? "confirmed";
+  const paymentStatus =
+    (overrides.paymentStatus as
+      "pending" | "authorized" | "paid" | "failed" | "refunded" | undefined) ?? "paid";
+  const stripePaymentIntentId =
+    typeof overrides.stripePaymentIntentId === "string"
+      ? overrides.stripePaymentIntentId
+      : undefined;
+  const paymentMethod =
+    typeof overrides.paymentMethod === "string" ? overrides.paymentMethod : undefined;
+
+  const db = t.app.get<Database>(DATABASE);
+  const [booking] = await db
+    .insert(bookings)
+    .values({
+      ownerUserId: userId,
+      createdByUserId: userId,
+      hotelId,
+      guestFirstName: String(overrides.firstName ?? "Gus"),
+      guestLastName: String(overrides.lastName ?? "Guest"),
+      guestEmail: String(overrides.email ?? "guest@example.test"),
+      guestPhone: overrides.phone ? String(overrides.phone) : null,
+      adultCount: Number(overrides.adultCount ?? 1),
+      childCount: Number(overrides.childCount ?? 0),
+      checkIn: new Date((overrides.checkIn as string | Date | undefined) ?? now + 10 * DAY_MS),
+      checkOut: new Date((overrides.checkOut as string | Date | undefined) ?? now + 12 * DAY_MS),
+      status,
+      totalAmountMinor: Math.round(totalCost * 100),
+      currencyCode: "GBP",
+      priceSnapshot: {
+        totalCost,
+        currency: "GBP",
+        ...(paymentMethod ? { paymentMethod } : {}),
+      },
+      specialRequests: overrides.specialRequests ? String(overrides.specialRequests) : null,
+      cancellationReason: overrides.cancellationReason
+        ? String(overrides.cancellationReason)
+        : null,
+    })
+    .returning();
+
+  await db.insert(bookingEvents).values({
+    bookingId: booking.id,
+    fromStatus: null,
+    toStatus: status,
+    actorUserId: userId,
+    reason: "test fixture",
+  });
+
+  if (paymentStatus !== "pending" || stripePaymentIntentId) {
+    await db.insert(payments).values({
+      bookingId: booking.id,
+      provider: stripePaymentIntentId ? "stripe" : "manual",
+      providerPaymentId: stripePaymentIntentId ?? `manual_${randomUUID()}`,
+      amountMinor: Math.round(totalCost * 100),
+      currencyCode: "GBP",
+      status: paymentStatus,
+    });
+  }
+
+  return { id: booking.id };
 }
 
 /** Inserts a hotel through the real PostgreSQL repository, bypassing the HTTP validation layer. */

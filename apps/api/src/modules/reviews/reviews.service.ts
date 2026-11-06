@@ -6,9 +6,9 @@ import {
 } from "@nestjs/common";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import { BOOKING_MODEL, REVIEW_MODEL } from "../../database/models";
+import { REVIEW_MODEL } from "../../database/models";
+import { BookingsRepository } from "../../database/repositories/bookings.repository";
 import { HotelsRepository } from "../../database/repositories/hotels.repository";
-import { IBooking } from "../bookings/schemas/booking.schema";
 import { CreateReviewDto } from "./dto/create-review.dto";
 import { IReview } from "./schemas/review.schema";
 
@@ -17,7 +17,7 @@ export class ReviewsService {
   constructor(
     @InjectModel(REVIEW_MODEL) private readonly reviewModel: Model<IReview>,
     private readonly hotels: HotelsRepository,
-    @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
+    private readonly bookings: BookingsRepository,
   ) {}
 
   listAdmin(limit?: string) {
@@ -54,12 +54,12 @@ export class ReviewsService {
       throw new NotFoundException("Hotel not found");
     }
 
-    const booking = await this.bookingModel.findOne({
-      _id: dto.bookingId,
-      userId,
-      hotelId: dto.hotelId,
-    });
-    if (!booking) {
+    const booking = await this.bookings.findById(dto.bookingId);
+    if (
+      !booking ||
+      booking.booking.ownerUserId !== userId ||
+      booking.booking.hotelId !== dto.hotelId
+    ) {
       throw new ForbiddenException("Booking not found for this user/hotel");
     }
 
@@ -78,7 +78,7 @@ export class ReviewsService {
       rating: dto.rating,
       comment: dto.comment,
       categories: dto.categories,
-      isVerified: booking.paymentStatus === "paid",
+      isVerified: booking.payments.find((payment) => !payment.originalPaymentId)?.status === "paid",
     });
     await review.save();
 
