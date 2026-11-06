@@ -87,7 +87,7 @@ const ApiDocs = () => {
       endpoints: [
         {
           method: "POST",
-          path: "/api/v1/hotels/:hotelId/bookings",
+          path: "/api/v1/bookings",
           description: "Create booking",
         },
         {
@@ -102,7 +102,7 @@ const ApiDocs = () => {
         },
         {
           method: "POST",
-          path: "/api/v1/hotels/:hotelId/bookings/payment-intent",
+          path: "/api/v1/bookings/payment-intents",
           description: "Create payment intent",
         },
         {
