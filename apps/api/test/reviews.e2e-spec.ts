@@ -126,17 +126,30 @@ describe("reviews", () => {
       expect(res.body.errors.map((e: { field: string }) => e.field).join(",")).toContain(field);
     });
 
-    it("rejects missing categories with 422 (known-bad: the DTO does not require the object)", async () => {
-      // Characterisation: @ValidateNested() alone does not reject an absent property, so the
-      // request reaches Mongoose and fails there with 422 instead of a field-level 400.
+    it("rejects missing categories with a field-level 400", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId);
       const res = await guest.agent
         .post(routes.reviews.create(fresh.id))
         .send(reviewBody(hotelId, fresh.id, { categories: undefined }));
-      expect(res.status).toBe(422);
-      expect(res.body.code).toBe("UNPROCESSABLE");
-      const fields = res.body.errors.map((e: { field: string }) => e.field);
-      expect(fields.some((field: string) => field.startsWith("categories"))).toBe(true);
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe("VALIDATION_FAILED");
+      expect(res.body.errors.map((e: { field: string }) => e.field)).toContain("categories");
+    });
+
+    it("allows exactly one of two concurrent reviews for the same booking", async () => {
+      const concurrentHotelId = (await insertHotel(t, owner.user._id, { name: "Concurrent Inn" }))
+        .id;
+      const fresh = await insertBooking(t, guest.user._id, concurrentHotelId);
+      const body = reviewBody(concurrentHotelId, fresh.id);
+
+      const responses = await Promise.all([
+        guest.agent.post(routes.reviews.create(fresh.id)).send(body),
+        guest.agent.post(routes.reviews.create(fresh.id)).send(body),
+      ]);
+
+      expect(responses.map((response) => response.status).sort()).toEqual([201, 409]);
+      const summary = await anonymous(t).get(routes.reviews.summary(concurrentHotelId));
+      expect(summary.body.reviewCount).toBe(1);
     });
   });
 

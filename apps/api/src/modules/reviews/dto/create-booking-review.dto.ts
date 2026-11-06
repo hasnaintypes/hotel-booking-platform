@@ -1,6 +1,15 @@
 import { Type } from "class-transformer";
-import { IsInt, IsString, IsUUID, Max, Min, MinLength, ValidateNested } from "class-validator";
-import { ReviewCategoriesDto } from "./create-review.dto";
+import {
+  IsDefined,
+  IsInt,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+  MinLength,
+  ValidateNested,
+} from "class-validator";
+import { ReviewCategoriesDto } from "./review-categories.dto";
 
 export class CreateBookingReviewDto {
   @IsUUID()
@@ -15,6 +24,7 @@ export class CreateBookingReviewDto {
   @MinLength(3)
   comment: string;
 
+  @IsDefined()
   @ValidateNested()
   @Type(() => ReviewCategoriesDto)
   categories: ReviewCategoriesDto;
