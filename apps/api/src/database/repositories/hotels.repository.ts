@@ -69,13 +69,23 @@ export type HotelSearchFilters = {
 export const HOTEL_SEARCH_PAGE_SIZE = 5;
 export const HOTEL_LIST_LIMIT = 500;
 
-const slug = (value: string) =>
-  value
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+/** A stable code for a facility/type name without running regexes over user input. */
+const slug = (value: string) => {
+  const parts: string[] = [];
+  let current = "";
+  for (const character of value.normalize("NFKD").toLowerCase()) {
+    const code = character.codePointAt(0) ?? 0;
+    if (code >= 0x0300 && code <= 0x036f) continue;
+    if ((code >= 97 && code <= 122) || (code >= 48 && code <= 57)) {
+      current += character;
+    } else if (current) {
+      parts.push(current);
+      current = "";
+    }
+  }
+  if (current) parts.push(current);
+  return parts.join("-");
+};
 
 const uniqueNames = (values: string[]) => {
   const seen = new Set<string>();
