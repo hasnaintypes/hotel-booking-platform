@@ -1,6 +1,7 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createTestApp, type TestApp } from "./support/create-app";
-import { insertHotel, registerUser } from "./support/helpers";
+import { bookingsRepository, insertHotel, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -14,8 +15,10 @@ describe("booking input validation", () => {
   let t: TestApp;
   let guest: Awaited<ReturnType<typeof registerUser>>;
   let hotelId: string;
+  let paymentIntentId: string;
 
   const body = (overrides: Record<string, unknown> = {}) => ({
+    hotelId,
     firstName: "Gus",
     lastName: "Guest",
     email: "guest@example.test",
@@ -25,13 +28,13 @@ describe("booking input validation", () => {
     checkIn: inDays(10),
     checkOut: inDays(12),
     totalCost: 200,
-    paymentIntentId: "pi_test_ok",
+    paymentIntentId,
     specialRequests: "Quiet room",
     ...overrides,
   });
 
   const book = (overrides: Record<string, unknown> = {}) =>
-    guest.agent.post(routes.hotels.bookings(hotelId)).send(body(overrides));
+    guest.agent.post(routes.bookings.create).send(body(overrides));
 
   beforeAll(async () => {
     t = await createTestApp();
@@ -45,9 +48,10 @@ describe("booking input validation", () => {
   });
 
   beforeEach(() => {
+    paymentIntentId = `pi_test_${randomUUID().replace(/-/g, "")}`;
     t.stripe.client.paymentIntents.retrieve.mockReset();
     t.stripe.client.paymentIntents.retrieve.mockResolvedValue({
-      id: "pi_test_ok",
+      id: paymentIntentId,
       status: "succeeded",
       metadata: { hotelId, userId: guest.user._id },
     });
@@ -121,11 +125,21 @@ describe("booking input validation", () => {
   });
 
   it("does not contact Stripe or create a booking for invalid input", async () => {
-    const before = await t.connection.collection("bookings").countDocuments();
+    const before = await bookingsRepository(t).count();
     await book({ email: "nope" });
     await book({ checkOut: inDays(5) });
     expect(t.stripe.client.paymentIntents.retrieve).not.toHaveBeenCalled();
-    expect(await t.connection.collection("bookings").countDocuments()).toBe(before);
+    expect(await bookingsRepository(t).count()).toBe(before);
+  });
+
+  it("rejects a replayed payment intent with 409 and creates one booking", async () => {
+    const before = await bookingsRepository(t).count();
+    expect((await book()).status).toBe(201);
+
+    const replay = await book();
+    expect(replay.status).toBe(409);
+    expect(replay.body.code).toBe("CONFLICT");
+    expect(await bookingsRepository(t).count()).toBe(before + 1);
   });
 
   it("ignores fields a guest should not control", async () => {
@@ -155,7 +169,7 @@ describe("payment intent night count", () => {
   });
 
   const intent = (numberOfNights: unknown) =>
-    guest.agent.post(routes.hotels.paymentIntent(hotelId)).send({ numberOfNights });
+    guest.agent.post(routes.bookings.paymentIntent).send({ hotelId, numberOfNights });
 
   it("prices whole nights up to the maximum", async () => {
     const res = await intent("3");

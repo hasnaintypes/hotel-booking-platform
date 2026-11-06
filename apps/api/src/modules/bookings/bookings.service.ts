@@ -1,22 +1,32 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
+  InternalServerErrorException,
   Logger,
+  NotFoundException,
 } from "@nestjs/common";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
-import { BOOKING_MODEL } from "../../database/models";
-import { HotelsRepository } from "../../database/repositories/hotels.repository";
+import { ConfigService } from "@nestjs/config";
+import type { FieldError } from "../../common/errors/problem";
+import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
+import { BookingsRepository } from "../../database/repositories/bookings.repository";
+import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
-import { IBooking } from "./schemas/booking.schema";
-import { CancelBookingDto } from "./dto/cancel-booking.dto";
-import { UpdatePaymentDto } from "./dto/update-payment.dto";
-import { UpdateStatusDto } from "./dto/update-status.dto";
 import { toHotelResponse } from "../hotels/hotel-response";
+import { toBookingResponse, type BookingResponse } from "./booking-response";
+import { CancelBookingDto } from "./dto/cancel-booking.dto";
+import { CreateBookingDto } from "./dto/create-booking.dto";
+import { PaymentIntentDto } from "./dto/payment-intent.dto";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const isCancellable = (booking: { status: string; checkIn: Date }) => {
+  if (booking.status !== "pending" && booking.status !== "confirmed") return false;
+  return booking.checkIn.getTime() > Date.now();
+};
 
 type AuthorizationResult = {
   ok: boolean;
@@ -24,29 +34,76 @@ type AuthorizationResult = {
   message?: string;
 };
 
-const isCancellable = (booking: { status?: string; checkIn: Date }) => {
-  const status = booking.status || "pending";
-  if (status !== "pending" && status !== "confirmed") return false;
-  return new Date(booking.checkIn).getTime() > Date.now();
-};
-
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
 
   constructor(
-    @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<IBooking>,
+    private readonly bookings: BookingsRepository,
     private readonly hotels: HotelsRepository,
     private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
+    private readonly config: ConfigService,
   ) {}
 
-  private async assertCanCancel(booking: IBooking, userId: string): Promise<AuthorizationResult> {
-    if (String(booking.userId) === userId) {
+  private get maxNights(): number {
+    return this.config.get<number>("booking.maxNights") ?? 30;
+  }
+
+  /**
+   * Rules that depend on the hotel or on today's date. Field formats are checked earlier by
+   * CreateBookingDto. Check-in may be one day before today (UTC) so a guest in a time zone ahead
+   * of UTC can still book "today".
+   */
+  private validateStay(
+    dto: CreateBookingDto,
+    hotel: Pick<HotelRecord, "adultCount" | "childCount">,
+  ) {
+    const errors: FieldError[] = [];
+    const checkIn = new Date(dto.checkIn).getTime();
+    const checkOut = new Date(dto.checkOut).getTime();
+
+    const startOfTodayUtc = new Date().setUTCHours(0, 0, 0, 0);
+    if (checkIn < startOfTodayUtc - DAY_MS) {
+      errors.push({ field: "checkIn", message: "check-in cannot be in the past" });
+    }
+
+    if (checkOut <= checkIn) {
+      errors.push({ field: "checkOut", message: "check-out must be after check-in" });
+    } else if (Math.ceil((checkOut - checkIn) / DAY_MS) > this.maxNights) {
+      errors.push({
+        field: "checkOut",
+        message: `a stay cannot exceed ${this.maxNights} nights`,
+      });
+    }
+
+    if (dto.adultCount > hotel.adultCount) {
+      errors.push({
+        field: "adultCount",
+        message: `this hotel allows at most ${hotel.adultCount} adults`,
+      });
+    }
+    if (dto.childCount > hotel.childCount) {
+      errors.push({
+        field: "childCount",
+        message: `this hotel allows at most ${hotel.childCount} children`,
+      });
+    }
+
+    if (errors.length > 0) {
+      throw new ValidationFailedException(errors);
+    }
+  }
+
+  private async assertCanAccess(
+    booking: { ownerUserId: string; hotelId: string },
+    userId: string,
+  ): Promise<AuthorizationResult> {
+    if (booking.ownerUserId === userId) {
       return { ok: true };
     }
 
-    const hotel = await this.hotels.findById(String(booking.hotelId));
+    const hotel = await this.hotels.findById(booking.hotelId);
     if (!hotel) {
       return { ok: false, status: 404, message: "Hotel not found" };
     }
@@ -63,22 +120,18 @@ export class BookingsService {
     return { ok: false, status: 403, message: "Access denied" };
   }
 
-  private async assertOwnerOrAdmin(hotelId: string, userId: string): Promise<AuthorizationResult> {
+  private async assertOwnerOrAdmin(hotelId: string, userId: string) {
     const hotel = await this.hotels.findById(hotelId);
     if (!hotel) {
-      return { ok: false, status: 404, message: "Hotel not found" };
+      throw new NotFoundException("Hotel not found");
     }
 
-    if (hotel.ownerUserId === userId) {
-      return { ok: true };
-    }
+    if (hotel.ownerUserId === userId) return;
 
     const user = await this.users.findById(userId);
-    if (user?.role === "admin") {
-      return { ok: true };
+    if (user?.role !== "admin") {
+      throw new ForbiddenException("Access denied");
     }
-
-    return { ok: false, status: 403, message: "Access denied" };
   }
 
   private assertAuthorized(result: AuthorizationResult) {
@@ -88,41 +141,174 @@ export class BookingsService {
     throw new BadRequestException(result.message);
   }
 
-  findAllAdmin() {
-    return this.bookingModel
-      .find()
-      .sort({ createdAt: -1 })
-      .populate("hotelId", "name city country");
+  async createPaymentIntent(dto: PaymentIntentDto, userId: string) {
+    const hotel = await this.hotels.findById(dto.hotelId);
+    if (!hotel) {
+      throw new BadRequestException("Hotel not found");
+    }
+
+    if (hotel.status !== "active") {
+      throw new ConflictException("This hotel is not available for booking");
+    }
+
+    const nights = Number(dto.numberOfNights);
+    if (nights > this.maxNights) {
+      throw new ValidationFailedException([
+        { field: "numberOfNights", message: `a stay cannot exceed ${this.maxNights} nights` },
+      ]);
+    }
+
+    const totalCost = (hotel.pricePerNightMinor / 100) * nights;
+
+    const paymentIntent = await this.stripeService.client.paymentIntents.create({
+      amount: Math.round(totalCost * 100),
+      currency: "gbp",
+      metadata: {
+        hotelId: hotel.id,
+        userId,
+      },
+    });
+
+    if (!paymentIntent.client_secret) {
+      throw new InternalServerErrorException("Error creating payment intent");
+    }
+
+    return {
+      paymentIntentId: paymentIntent.id,
+      clientSecret: paymentIntent.client_secret.toString(),
+      totalCost,
+    };
   }
 
-  async findForHotel(hotelId: string, userId: string) {
-    const hotel = await this.hotels.findById(hotelId);
+  async create(dto: CreateBookingDto, userId: string): Promise<BookingResponse> {
+    const hotel = await this.hotels.findById(dto.hotelId);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
+    if (hotel.status !== "active") {
+      throw new ConflictException("This hotel is not available for booking");
+    }
+    this.validateStay(dto, hotel);
 
-    if (hotel.ownerUserId !== userId) {
-      const user = await this.users.findById(userId);
-      if (user?.role !== "admin") {
-        throw new ForbiddenException("Access denied");
-      }
+    const paymentIntent = await this.stripeService.client.paymentIntents.retrieve(
+      dto.paymentIntentId,
+    );
+
+    if (!paymentIntent) {
+      throw new BadRequestException("payment intent not found");
     }
 
-    return this.bookingModel
-      .find({ hotelId })
-      .sort({ createdAt: -1 })
-      .populate("userId", "firstName lastName email");
+    if (
+      paymentIntent.metadata.hotelId !== dto.hotelId ||
+      paymentIntent.metadata.userId !== userId
+    ) {
+      throw new BadRequestException("payment intent mismatch");
+    }
+
+    if (paymentIntent.status !== "succeeded") {
+      throw new BadRequestException(
+        `payment intent not succeeded. Status: ${paymentIntent.status}`,
+      );
+    }
+
+    const checkIn = new Date(dto.checkIn);
+    const checkOut = new Date(dto.checkOut);
+
+    const created = await this.bookings.create({
+      ownerUserId: userId,
+      createdByUserId: userId,
+      hotelId: hotel.id,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      email: dto.email,
+      phone: dto.phone,
+      adultCount: dto.adultCount,
+      childCount: dto.childCount,
+      checkIn,
+      checkOut,
+      totalCost: dto.totalCost,
+      currencyCode: "GBP",
+      specialRequests: dto.specialRequests,
+      priceSnapshot: {
+        totalCost: dto.totalCost,
+        currency: "GBP",
+        paymentIntentId: paymentIntent.id,
+        numberOfNights: Math.ceil((checkOut.getTime() - checkIn.getTime()) / DAY_MS),
+      },
+      payment: {
+        provider: "stripe",
+        providerPaymentId: paymentIntent.id,
+        amountMinor: Math.round(dto.totalCost * 100),
+        currencyCode: "GBP",
+        status: "paid",
+      },
+    });
+
+    return toBookingResponse(created);
   }
 
-  async cancel(id: string, dto: CancelBookingDto, userId: string) {
-    const booking = await this.bookingModel.findById(id);
+  async findAllAdmin(): Promise<BookingResponse[]> {
+    const rows = await this.bookings.listAll();
+    return rows.map(toBookingResponse);
+  }
+
+  async findOneAdmin(id: string): Promise<BookingResponse> {
+    const booking = await this.bookings.findById(id);
+    if (!booking) {
+      throw new NotFoundException("Booking not found");
+    }
+    return toBookingResponse(booking);
+  }
+
+  async findForHotel(hotelId: string, userId: string): Promise<BookingResponse[]> {
+    await this.assertOwnerOrAdmin(hotelId, userId);
+    const rows = await this.bookings.listByHotel(hotelId);
+    return rows.map(toBookingResponse);
+  }
+
+  async findOne(id: string, userId: string): Promise<BookingResponse> {
+    const booking = await this.bookings.findById(id);
     if (!booking) {
       throw new NotFoundException("Booking not found");
     }
 
-    this.assertAuthorized(await this.assertCanCancel(booking, userId));
+    this.assertAuthorized(await this.assertCanAccess(booking.booking, userId));
+    return toBookingResponse(booking);
+  }
 
-    if (!isCancellable(booking)) {
+  async myBookings(userId: string) {
+    const rows = await this.bookings.listByOwner(userId);
+    if (rows.length === 0) return [];
+
+    const hotelRecords = await this.hotels.findByIds(rows.map((row) => row.booking.hotelId));
+    const hotelsById = new Map(hotelRecords.map((hotel) => [hotel.id, hotel]));
+
+    const grouped = new Map<string, BookingResponse[]>();
+    for (const row of rows) {
+      const hotel = hotelsById.get(row.booking.hotelId);
+      if (!hotel) continue;
+      const list = grouped.get(hotel.id) ?? [];
+      list.push(toBookingResponse(row));
+      grouped.set(hotel.id, list);
+    }
+
+    return hotelRecords
+      .filter((hotel) => grouped.has(hotel.id))
+      .map((hotel) => ({
+        ...toHotelResponse(hotel),
+        bookings: grouped.get(hotel.id) ?? [],
+      }));
+  }
+
+  async cancel(id: string, dto: CancelBookingDto, userId: string) {
+    const record = await this.bookings.findById(id);
+    if (!record) {
+      throw new NotFoundException("Booking not found");
+    }
+
+    this.assertAuthorized(await this.assertCanAccess(record.booking, userId));
+
+    if (!isCancellable(record.booking)) {
       throw new BadRequestException(
         "Booking cannot be cancelled (must be upcoming pending/confirmed)",
       );
@@ -131,16 +317,30 @@ export class BookingsService {
     const cancellationReason =
       typeof dto?.cancellationReason === "string" ? dto.cancellationReason.trim() : "";
 
+    const charge = record.payments.find((payment) => !payment.originalPaymentId);
+    const wasPaid = charge?.status === "paid";
+    const stripePaymentIntentId =
+      charge?.provider === "stripe" ? charge.providerPaymentId : undefined;
+
     let refundAmount = 0;
     let refundSkipped: string | undefined;
-    const wasPaid = booking.paymentStatus === "paid";
+    let refund: { providerPaymentId: string; amountMinor: number } | undefined;
 
-    if (wasPaid && booking.stripePaymentIntentId) {
+    if (wasPaid && stripePaymentIntentId) {
       try {
-        const refund = await this.stripeService.client.refunds.create({
-          payment_intent: booking.stripePaymentIntentId,
+        const stripeRefund = await this.stripeService.client.refunds.create({
+          payment_intent: stripePaymentIntentId,
         });
-        refundAmount = typeof refund.amount === "number" ? refund.amount / 100 : booking.totalCost;
+        refundAmount =
+          typeof stripeRefund.amount === "number"
+            ? stripeRefund.amount / 100
+            : record.booking.totalAmountMinor / 100;
+        if (refundAmount > 0) {
+          refund = {
+            providerPaymentId: stripeRefund.id,
+            amountMinor: Math.round(refundAmount * 100),
+          };
+        }
       } catch (error) {
         const message = error instanceof Error ? error.message : "Stripe refund failed";
         this.logger.error(
@@ -149,105 +349,33 @@ export class BookingsService {
         );
         throw new BadGatewayException(message);
       }
-    } else if (wasPaid && !booking.stripePaymentIntentId) {
+    } else if (wasPaid && !stripePaymentIntentId) {
       refundSkipped = "Cancelled without Stripe refund (no payment intent on file)";
     }
 
-    booking.status = "cancelled";
-    if (wasPaid && booking.stripePaymentIntentId && refundAmount > 0) {
-      booking.paymentStatus = "refunded";
-      booking.refundAmount = refundAmount;
-    } else if (wasPaid && !booking.stripePaymentIntentId) {
-      booking.refundAmount = 0;
-    }
-    if (cancellationReason) {
-      booking.cancellationReason = cancellationReason;
-    }
-    await booking.save();
+    const cancelled = await this.bookings.cancel({
+      id,
+      actorUserId: userId,
+      cancellationReason,
+      ...(refund && charge
+        ? {
+            refund: {
+              provider: "stripe",
+              providerPaymentId: refund.providerPaymentId,
+              amountMinor: refund.amountMinor,
+              currencyCode: record.booking.currencyCode,
+              originalPaymentId: charge.id,
+            },
+          }
+        : {}),
+    });
 
-    return { booking, refundAmount, refundSkipped };
-  }
-
-  async findOne(id: string, userId: string) {
-    const booking = await this.bookingModel
-      .findById(id)
-      .populate("hotelId", "name city country imageUrls");
-
-    if (!booking) {
-      throw new NotFoundException("Booking not found");
-    }
-
-    this.assertAuthorized(await this.assertCanCancel(booking, userId));
-    return booking;
-  }
-
-  async updateStatus(id: string, dto: UpdateStatusDto, userId: string) {
-    const existing = await this.bookingModel.findById(id);
-    if (!existing) {
-      throw new NotFoundException("Booking not found");
-    }
-
-    this.assertAuthorized(await this.assertOwnerOrAdmin(existing.hotelId, userId));
-
-    if (dto.status === "cancelled" || dto.status === "refunded") {
+    if (!cancelled) {
       throw new BadRequestException(
-        "Use POST /api/v1/bookings/:id/cancellations for cancel/refund",
+        "Booking cannot be cancelled (must be upcoming pending/confirmed)",
       );
     }
 
-    const updateData: Record<string, unknown> = { status: dto.status };
-    if (dto.cancellationReason) {
-      updateData.cancellationReason = dto.cancellationReason;
-    }
-
-    return this.bookingModel.findByIdAndUpdate(id, updateData, { new: true });
-  }
-
-  async updatePayment(id: string, dto: UpdatePaymentDto, userId: string) {
-    const existing = await this.bookingModel.findById(id);
-    if (!existing) {
-      throw new NotFoundException("Booking not found");
-    }
-
-    this.assertAuthorized(await this.assertOwnerOrAdmin(existing.hotelId, userId));
-
-    const updateData: Record<string, unknown> = {
-      paymentStatus: dto.paymentStatus,
-    };
-    if (dto.paymentMethod) {
-      updateData.paymentMethod = dto.paymentMethod;
-    }
-
-    return this.bookingModel.findByIdAndUpdate(id, updateData, { new: true });
-  }
-
-  async remove(id: string) {
-    const booking = await this.bookingModel.findByIdAndDelete(id);
-
-    if (!booking) {
-      throw new NotFoundException("Booking not found");
-    }
-
-    return { message: "Booking deleted successfully" };
-  }
-
-  async myBookings(userId: string) {
-    const userBookings = await this.bookingModel.find({ userId }).sort({ createdAt: -1 });
-
-    const results = await Promise.all(
-      userBookings.map(async (booking) => {
-        const hotel = await this.hotels.findById(String(booking.hotelId));
-        if (!hotel) {
-          return null;
-        }
-
-        return {
-          ...toHotelResponse(hotel),
-          bookings: [booking.toObject()],
-        };
-      }),
-    );
-
-    return results.filter((result) => result !== null);
+    return { booking: toBookingResponse(cancelled), refundAmount, refundSkipped };
   }
 }

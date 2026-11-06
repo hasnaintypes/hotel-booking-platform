@@ -1,12 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { Types } from "mongoose";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ROUTE_TABLE } from "../src/common/routing/route-table";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const id = new Types.ObjectId().toString();
+const id = randomUUID();
 const hotelId = randomUUID();
 
 type Case = {
@@ -25,8 +24,8 @@ type Case = {
  * Remaining deviations, fixed when their routes are rebuilt:
  * - `POST /api/v1/bookings/:id/cancellations` returns 200 until M2 gives cancellations a
  *   created-resource response.
- * - The temporary checkout routes under `/api/v1/hotels/:id/bookings` are replaced by
- *   `POST /api/v1/bookings` in M2.
+ * - The temporary two-step checkout paths (`POST /api/v1/bookings/payment-intents` then
+ *   `POST /api/v1/bookings`) are replaced by the single `POST /api/v1/bookings` flow in M2.
  * - `POST /api/v1/bookings/:id/reviews` and rollup creation have no `Location` because neither
  *   resource has a GET-by-id route yet.
  */
@@ -68,16 +67,15 @@ const MATRIX: Case[] = [
     path: routes.hotels.adminById(hotelId),
     status: 401,
   },
+  { name: "list bookings", method: "get", path: routes.bookings.list, status: 401 },
+  { name: "my bookings", method: "get", path: routes.bookings.myBookings, status: 401 },
   {
     name: "payment intent",
     method: "post",
-    path: routes.hotels.paymentIntent(hotelId),
+    path: routes.bookings.paymentIntent,
     status: 401,
   },
-  { name: "create booking", method: "post", path: routes.hotels.bookings(hotelId), status: 401 },
-
-  { name: "list bookings", method: "get", path: routes.bookings.list, status: 401 },
-  { name: "my bookings", method: "get", path: routes.bookings.myBookings, status: 401 },
+  { name: "create booking", method: "post", path: routes.bookings.create, status: 401 },
   {
     name: "bookings for hotel",
     method: "get",
@@ -93,14 +91,6 @@ const MATRIX: Case[] = [
     status: 401,
   },
   { name: "admin booking detail", method: "get", path: routes.bookings.adminById(id), status: 401 },
-  { name: "update booking status", method: "patch", path: routes.bookings.status(id), status: 401 },
-  {
-    name: "update booking payment",
-    method: "patch",
-    path: routes.bookings.payment(id),
-    status: 401,
-  },
-  { name: "delete booking", method: "delete", path: routes.bookings.remove(id), status: 401 },
 
   { name: "list reviews", method: "get", path: routes.reviews.list, status: 401 },
   { name: "hotel reviews", method: "get", path: routes.reviews.byHotel(hotelId), status: 200 },

@@ -1,24 +1,8 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Param,
-  Post,
-  Query,
-  Res,
-  UseGuards,
-} from "@nestjs/common";
-import { Throttle } from "@nestjs/throttler";
-import type { Response } from "express";
+import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
-import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { OptionalJwtAuthGuard } from "../../common/guards/optional-jwt-auth.guard";
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
-import { CreateBookingDto } from "./dto/create-booking.dto";
-import { PaymentIntentDto } from "./dto/payment-intent.dto";
 import { SearchHotelsDto } from "./dto/search-hotels.dto";
 import { HotelsService } from "./hotels.service";
 
@@ -40,31 +24,5 @@ export class HotelsController {
   @UseGuards(OptionalJwtAuthGuard)
   findOne(@Param("id", UuidPipe) id: string, @CurrentUser() viewer: AuthenticatedUser | undefined) {
     return this.hotelsService.findOne(id, viewer);
-  }
-
-  @Post(":hotelId/bookings/payment-intent")
-  @HttpCode(HttpStatus.CREATED)
-  @UseGuards(JwtAuthGuard)
-  @Throttle({ default: { limit: 50, ttl: 900000 } })
-  createPaymentIntent(
-    @Param("hotelId", UuidPipe) hotelId: string,
-    @Body() dto: PaymentIntentDto,
-    @CurrentUser() user: AuthenticatedUser,
-  ) {
-    return this.hotelsService.createPaymentIntent(hotelId, dto, user.userId);
-  }
-
-  @Post(":hotelId/bookings")
-  @HttpCode(HttpStatus.CREATED)
-  @UseGuards(JwtAuthGuard)
-  async createBooking(
-    @Param("hotelId", UuidPipe) hotelId: string,
-    @Body() dto: CreateBookingDto,
-    @CurrentUser() user: AuthenticatedUser,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const booking = await this.hotelsService.createBooking(hotelId, dto, user.userId);
-    res.setHeader("Location", `/api/v1/bookings/${booking._id}`);
-    return booking;
   }
 }

@@ -5,11 +5,9 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { InjectModel } from "@nestjs/mongoose";
-import { Model } from "mongoose";
 import { UniqueViolationError } from "../../common/errors/postgres-errors";
 import { hashPassword } from "../../common/security/password";
-import { BOOKING_MODEL } from "../../database/models";
+import { BookingsRepository } from "../../database/repositories/bookings.repository";
 import {
   toPublicUser,
   UsersRepository,
@@ -19,14 +17,12 @@ import { RegisterDto } from "./dto/register.dto";
 import { UpdateProfileDto } from "./dto/update-profile.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 
-type BookingStats = { _id: string; totalBookings: number; totalSpent: number };
-
 @Injectable()
 export class UsersService {
   constructor(
     private readonly users: UsersRepository,
     private readonly jwtService: JwtService,
-    @InjectModel(BOOKING_MODEL) private readonly bookingModel: Model<any>,
+    private readonly bookings: BookingsRepository,
   ) {}
 
   async me(userId: string): Promise<PublicUser> {
@@ -49,29 +45,12 @@ export class UsersService {
     const rows = await this.users.list();
     if (rows.length === 0) return [];
 
-    const stats = (await this.bookingModel.aggregate([
-      {
-        $match: {
-          userId: { $in: rows.map((user) => user.id) },
-          // User counters were decremented when a booking was cancelled, so cancelled and
-          // refunded bookings must not count towards the computed totals.
-          status: { $nin: ["cancelled", "refunded"] },
-        },
-      },
-      {
-        $group: {
-          _id: "$userId",
-          totalBookings: { $sum: 1 },
-          totalSpent: { $sum: "$totalCost" },
-        },
-      },
-    ])) as BookingStats[];
-    const byUser = new Map(stats.map((row) => [row._id, row]));
+    const stats = await this.bookings.userStats(rows.map((user) => user.id));
 
     return rows.map((user) => ({
       ...toPublicUser(user),
-      totalBookings: byUser.get(user.id)?.totalBookings ?? 0,
-      totalSpent: byUser.get(user.id)?.totalSpent ?? 0,
+      totalBookings: stats.get(user.id)?.totalBookings ?? 0,
+      totalSpent: stats.get(user.id)?.totalSpent ?? 0,
     }));
   }
 

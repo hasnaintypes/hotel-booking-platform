@@ -10,7 +10,7 @@ import {
 } from "./support/helpers";
 import { routes } from "./support/routes";
 
-const UNKNOWN_BOOKING_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const UNKNOWN_BOOKING_ID = randomUUID();
 const UNKNOWN_HOTEL_ID = randomUUID();
 
 describe("bookings", () => {
@@ -59,7 +59,7 @@ describe("bookings", () => {
         _id: bookingId,
         status: "confirmed",
         paymentStatus: "paid",
-        // Known behaviour: hotelId/userId are plain strings, so `.populate()` is a no-op.
+        // Response ids are PostgreSQL UUID strings.
         hotelId,
       });
     });
@@ -77,7 +77,7 @@ describe("bookings", () => {
       expect(res.body).toMatchObject({
         _id: bookingId,
         specialRequests: "Late check-in",
-        // Known behaviour: `.populate()` does nothing on a string-typed id.
+        // Response ids are PostgreSQL UUID strings.
         hotelId,
       });
     });
@@ -104,7 +104,7 @@ describe("bookings", () => {
       expect(asOwner.body).toHaveLength(1);
       expect(asOwner.body[0]).toMatchObject({
         _id: bookingId,
-        // Known behaviour: `.populate("userId")` is a no-op on a string-typed id.
+        // Response ids are PostgreSQL UUID strings.
         userId: guest.user._id,
       });
 
@@ -115,83 +115,6 @@ describe("bookings", () => {
       expect((await other.agent.get(routes.bookings.forHotel(hotelId))).status).toBe(403);
       expect((await owner.agent.get(routes.bookings.forHotel(UNKNOWN_HOTEL_ID))).status).toBe(404);
       expect((await anonymous(t).get(routes.bookings.forHotel(hotelId))).status).toBe(401);
-    });
-  });
-
-  describe("PATCH /api/bookings/:id/status", () => {
-    it("lets the hotel owner move a booking to completed", async () => {
-      const res = await owner.agent
-        .patch(routes.bookings.status(bookingId))
-        .send({ status: "completed" });
-      expect(res.status).toBe(200);
-      expect(res.body.status).toBe("completed");
-
-      const stored = await guest.agent.get(routes.bookings.byId(bookingId));
-      expect(stored.body.status).toBe("completed");
-
-      await owner.agent.patch(routes.bookings.status(bookingId)).send({ status: "confirmed" });
-    });
-
-    it("refuses cancel/refund through the status endpoint", async () => {
-      for (const status of ["cancelled", "refunded"]) {
-        const res = await owner.agent.patch(routes.bookings.status(bookingId)).send({ status });
-        expect(res.status).toBe(400);
-        expect(res.body.message).toMatch(/cancel/i);
-      }
-    });
-
-    it("rejects an unknown status and an unauthorised caller", async () => {
-      const invalid = await owner.agent
-        .patch(routes.bookings.status(bookingId))
-        .send({ status: "archived" });
-      expect(invalid.status).toBe(400);
-
-      expect(
-        (await other.agent.patch(routes.bookings.status(bookingId)).send({ status: "completed" }))
-          .status,
-      ).toBe(403);
-      expect(
-        (await anonymous(t).patch(routes.bookings.status(bookingId)).send({ status: "completed" }))
-          .status,
-      ).toBe(401);
-    });
-  });
-
-  describe("PATCH /api/bookings/:id/payment", () => {
-    it("lets the hotel owner record a payment update", async () => {
-      const res = await owner.agent
-        .patch(routes.bookings.payment(bookingId))
-        .send({ paymentStatus: "refunded", paymentMethod: "card" });
-      expect(res.status).toBe(200);
-      expect(res.body).toMatchObject({ paymentStatus: "refunded", paymentMethod: "card" });
-
-      await owner.agent
-        .patch(routes.bookings.payment(bookingId))
-        .send({ paymentStatus: "paid", paymentMethod: "card" });
-    });
-
-    it("rejects an unknown payment status and an unauthorised caller", async () => {
-      expect(
-        (
-          await owner.agent
-            .patch(routes.bookings.payment(bookingId))
-            .send({ paymentStatus: "settled" })
-        ).status,
-      ).toBe(400);
-      expect(
-        (
-          await other.agent
-            .patch(routes.bookings.payment(bookingId))
-            .send({ paymentStatus: "paid" })
-        ).status,
-      ).toBe(403);
-      expect(
-        (
-          await anonymous(t)
-            .patch(routes.bookings.payment(bookingId))
-            .send({ paymentStatus: "paid" })
-        ).status,
-      ).toBe(401);
     });
   });
 
@@ -240,29 +163,6 @@ describe("bookings", () => {
       expect((await other.agent.post(routes.bookings.cancel(bookingId))).status).toBe(403);
       expect((await guest.agent.post(routes.bookings.cancel(UNKNOWN_BOOKING_ID))).status).toBe(404);
       expect((await anonymous(t).post(routes.bookings.cancel(bookingId))).status).toBe(401);
-    });
-  });
-
-  describe("DELETE /api/bookings/:id", () => {
-    it("lets an admin delete a booking", async () => {
-      const fresh = await insertBooking(t, guest.user._id, hotelId, { totalCost: 120 });
-
-      const res = await admin.agent.delete(routes.bookings.remove(fresh.id));
-      expect(res.status).toBe(204);
-      expect(res.text).toBe("");
-
-      expect((await admin.agent.delete(routes.bookings.remove(fresh.id))).status).toBe(404);
-    });
-
-    it("deletes an already-cancelled booking", async () => {
-      const fresh = await insertBooking(t, guest.user._id, hotelId, { status: "cancelled" });
-
-      expect((await admin.agent.delete(routes.bookings.remove(fresh.id))).status).toBe(204);
-    });
-
-    it("is closed to non-admins and anonymous callers", async () => {
-      expect((await guest.agent.delete(routes.bookings.remove(bookingId))).status).toBe(403);
-      expect((await anonymous(t).delete(routes.bookings.remove(bookingId))).status).toBe(401);
     });
   });
 

@@ -5,7 +5,7 @@ import { anonymous, registerAdmin, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
 
 const GOOD_HOTEL_ID = randomUUID();
-const GOOD_BOOKING_ID = "64b7f0f0f0f0f0f0f0f0f0f0";
+const GOOD_BOOKING_ID = randomUUID();
 
 describe("malformed ids", () => {
   let t: TestApp;

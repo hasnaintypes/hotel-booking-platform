@@ -102,8 +102,8 @@ describe("inactive hotels", () => {
 
   it("refuses payment intents for an inactive hotel", async () => {
     const res = await other.agent
-      .post(routes.hotels.paymentIntent(hidden.id))
-      .send({ numberOfNights: "2" });
+      .post(routes.bookings.paymentIntent)
+      .send({ hotelId: hidden.id, numberOfNights: "2" });
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/not available/i);
     expect(t.stripe.client.paymentIntents.create).not.toHaveBeenCalled();
@@ -111,21 +111,25 @@ describe("inactive hotels", () => {
 
   it("still creates payment intents for an active hotel", async () => {
     const res = await other.agent
-      .post(routes.hotels.paymentIntent(active.id))
-      .send({ numberOfNights: "2" });
+      .post(routes.bookings.paymentIntent)
+      .send({ hotelId: active.id, numberOfNights: "2" });
     expect(res.status).toBe(201);
     expect(res.body.totalCost).toBe(200);
   });
 
   it("refuses bookings for an inactive hotel without contacting Stripe", async () => {
-    const res = await other.agent.post(routes.hotels.bookings(hidden.id)).send(bookingBody());
+    const res = await other.agent
+      .post(routes.bookings.create)
+      .send({ ...bookingBody(), hotelId: hidden.id });
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/not available/i);
     expect(t.stripe.client.paymentIntents.retrieve).not.toHaveBeenCalled();
   });
 
   it("answers 404 for a booking against an unknown hotel", async () => {
-    const res = await other.agent.post(routes.hotels.bookings(UNKNOWN_ID)).send(bookingBody());
+    const res = await other.agent
+      .post(routes.bookings.create)
+      .send({ ...bookingBody(), hotelId: UNKNOWN_ID });
     expect(res.status).toBe(404);
   });
 });
