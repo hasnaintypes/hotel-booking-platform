@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-pnpm 10.15.0 / Turborepo monorepo, Node 22. Three apps (`apps/api` NestJS + MongoDB, `apps/web` guest/owner React SPA, `apps/admin` admin React SPA) share `packages/types`, `packages/api-client`, `packages/ui`, and the new `packages/db` (PostgreSQL + Drizzle). `docs/` holds a source-based map (start at `docs/INDEX.md`); it is git-ignored, as are `AGENTS.md` and `.claude/`.
+pnpm 10.15.0 / Turborepo monorepo, Node 22. Three apps (`apps/api` NestJS + PostgreSQL, `apps/web` guest/owner React SPA, `apps/admin` admin React SPA) share `packages/types`, `packages/api-client`, `packages/ui`, and the new `packages/db` (PostgreSQL + Drizzle). `docs/` holds a source-based map (start at `docs/INDEX.md`); it is git-ignored, as are `AGENTS.md` and `.claude/`.
 
 ## Commands
 
@@ -10,7 +10,7 @@ Run from the repo root.
 
 ```bash
 pnpm install --frozen-lockfile
-docker compose up -d mongo postgres        # MongoDB 7 on :27017, PostgreSQL 17 on :5432
+docker compose up -d postgres              # PostgreSQL 17 on :5432
 pnpm db:migrate                            # apply PostgreSQL migrations (reads DATABASE_URL)
 pnpm dev                                   # all apps; or filter:
 pnpm --filter @hotel-booking/api dev       # :5001 (Swagger at /api-docs, health at /health/live)
@@ -36,23 +36,23 @@ pnpm --filter @hotel-booking/web exec vitest run -t "notifies subscribers"
 
 **Never run `pnpm --filter @hotel-booking/api seed` against data you need**: it writes deterministic PostgreSQL fixtures and refuses non-local targets unless `ALLOW_SEED=true` and `SEED_DATABASE_NAME` match the disposable database. Supply `SEED_PASSWORD`; there is no default. Use Stripe test keys and a disposable DB for payment, refund, upload and seed checks.
 
-Setup: copy each app's `.env.example` to `.env`. The API refuses to start without `MONGODB_CONNECTION_STRING`, `JWT_SECRET_KEY`, the three `CLOUDINARY_*` vars and `STRIPE_API_KEY` (`apps/api/src/config/env.validation.ts`). `ADMIN_URL` is read by the API but missing from its `.env.example`.
+Setup: copy each app's `.env.example` to `.env`. The API refuses to start without `DATABASE_URL` (or its local default), `JWT_SECRET_KEY`, the three `CLOUDINARY_*` vars and `STRIPE_API_KEY` (`apps/api/src/config/env.validation.ts`). `ADMIN_URL` is read by the API but missing from its `.env.example`.
 
 ## Architecture
 
 **Packages are consumed as TypeScript source.** `packages/*` point `main`/`types` at `src/index.ts`, and the SPA Vite configs alias `@hotel-booking/ui` and `api-client` to those `src` dirs, so editing a package hot-reloads with no build. `apps/api` depends only on `@hotel-booking/types`. Each app maps `@/` to its own `src/`.
 
-**API** (`apps/api/src`): modular monolith, one Nest module per domain under `modules/`. Mongo-backed services still inject Mongoose models directly (`@InjectModel(HOTEL_MODEL)`, tokens in `database/models.ts`) and `DatabaseModule` registers all five models globally, so a service may touch models owned by another module; PostgreSQL-backed domains use typed repositories in `database/repositories/`. `configureApp` applies the global `api` prefix and URI version 1; controllers declare only their resource path. Audience groups live in `src/routes`: public/customer at `/api/v1`, `manage`, `admin`, and reserved `partner`, each with its own OpenAPI document at `/api/docs/<audience>`. Health is unversioned at `/health/live` and `/health/ready`; detailed diagnostics are admin-only at `/api/v1/admin/system/health`. Integrations (Stripe, Cloudinary, LLM) are wrapped in `integrations/`. Request pipeline: Helmet, CORS, global `ThrottlerGuard`, global `OriginGuard` (`main.ts`), global `ValidationPipe` (`whitelist`, `transform`, no implicit type conversion: DTOs that accept text input such as query strings or multipart forms convert explicitly with `@Transform`), `AllExceptionsFilter`.
+**API** (`apps/api/src`): modular monolith, one Nest module per domain under `modules/`. Domain services use typed repositories in `database/repositories/`; the global `PostgresModule` provides the Drizzle handle. `configureApp` applies the global `api` prefix and URI version 1; controllers declare only their resource path. Audience groups live in `src/routes`: public/customer at `/api/v1`, `manage`, `admin`, and reserved `partner`, each with its own OpenAPI document at `/api/docs/<audience>`. Health is unversioned at `/health/live` and `/health/ready`; detailed diagnostics are admin-only at `/api/v1/admin/system/health`. Integrations (Stripe, Cloudinary, LLM) are wrapped in `integrations/`. Request pipeline: Helmet, CORS, global `ThrottlerGuard`, global `OriginGuard` (`main.ts`), global `ValidationPipe` (`whitelist`, `transform`, no implicit type conversion: DTOs that accept text input such as query strings or multipart forms convert explicitly with `@Transform`), `AllExceptionsFilter`.
 
 **Auth is split across layers.**
 - The JWT lives in an httpOnly `session_id` cookie (`common/auth-cookie.ts`), set by login, register and the Google callback. `JwtAuthGuard` also accepts a Bearer header, which wins when present.
 - `OriginGuard` is the CSRF defence: unsafe methods with an untrusted `Origin`/`Referer` are rejected. Bearer requests and requests with no Origin/Referer are exempt. The allow-list is exact-match on `FRONTEND_URL`, `ADMIN_URL`, `BACKEND_URL` and localhost ports 5173–5175 (`common/security/allowed-origins.ts`).
-- `RolesGuard` re-reads the user's role from MongoDB on every `@Roles("admin")` call. Hotel-owner checks are ad hoc inside services (compare `hotel.userId`, as in `bookings.service.ts`); the `hotel_owner` role value is not used for authorization.
+- `RolesGuard` re-reads the user's role from PostgreSQL on every `@Roles("admin")` call. Hotel-owner checks are ad hoc inside services (compare `hotel.userId`, as in `bookings.service.ts`); the `hotel_owner` role value is not used for authorization.
 - The SPAs hold no credential. They keep a non-sensitive `auth_session=1` flag in localStorage, managed by the shared store in `packages/api-client/src/auth-session.ts`, to drive optimistic UI. `AuthProvider` only calls `/api/v1/me` when the flag is set, and a 401 from the Axios interceptor clears it.
 
 **Booking and money flow** (spans web → `HotelsService` → Stripe → `BookingsService`): the browser asks `POST /api/v1/hotels/:id/bookings/payment-intent`, confirms the card with Stripe.js, then calls `POST /api/v1/hotels/:id/bookings`, where `HotelsService.createBooking` verifies the PaymentIntent (metadata hotel and user match, status `succeeded`) and saves a `confirmed`/`paid` booking. Cancellation goes only through `POST /api/v1/bookings/:id/cancellations`, which issues the Stripe refund; `PATCH :id/status` rejects `cancelled`/`refunded`. Hotel and User carry denormalized counters (`totalBookings`, `totalRevenue`/`totalSpent`) adjusted by separate `$inc` writes with no transaction, so any new code path that creates, cancels or deletes bookings must keep Booking, Hotel and User in step. Known gaps: `totalCost` is trusted from the client, and there is no availability or date-overlap check (dates, guest counts and stay length are validated, but nothing is reserved). Payments are not production-ready until milestone M2, so `config/env.validation.ts` refuses to start with `NODE_ENV=production` and a live Stripe key.
 
-**Data**: all cross-collection links (`userId`, `hotelId`, `bookingId`) are plain strings, not ObjectId refs or foreign keys. PostgreSQL schema changes go through Drizzle migrations in `packages/db`; MongoDB remains schemaless.
+**Data**: PostgreSQL access goes through typed repositories; schema changes go through Drizzle migrations in `packages/db`.
 
 **SPAs**: feature folders under `src/features/<domain>/` with a feature-local `api.ts` (the only place endpoint paths live), `pages/*Page.tsx` (default-exported, `React.lazy` in `app/App.tsx`), and components. TanStack Query keys come from factories in `shared/lib/query-keys.ts`, and mutations call the helpers in `shared/lib/query-invalidation.ts` (admin has its own copies). `packages/api-client/src/http.ts` is the one Axios instance (`withCredentials`, 429 and network-error retries) and `query-client.ts` sets shared defaults (4xx never retried). Web provider order is `QueryClient → Toast → Auth → Search → App`. Web routes for booking and hotel add/edit are only registered when `isLoggedIn`; `/my-hotels` and `/my-bookings` are always registered and rely on API 401s. New pages must stay within the bundle budget; add a `prefetch*Route` in `shared/lib/route-prefetch.ts` for nav-reachable pages.
 

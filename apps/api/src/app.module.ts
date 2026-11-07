@@ -7,7 +7,7 @@ import { CommonModule } from "./common/common.module";
 import { AppLoggingModule } from "./common/logging/logging.module";
 import { configuration } from "./config/configuration";
 import { validateEnv } from "./config/env.validation";
-import { DatabaseModule } from "./database/database.module";
+import { PostgresModule } from "./database/postgres.module";
 import { DatabaseRepositoriesModule } from "./database/repositories/repositories.module";
 import { CloudinaryModule } from "./integrations/cloudinary/cloudinary.module";
 import { LlmModule } from "./integrations/llm/llm.module";
@@ -34,7 +34,7 @@ import { RoutesModule } from "./routes/routes.module";
     }),
     ThrottlerModule.forRoot([{ name: "default", ttl: 900000, limit: 200 }]),
     CommonModule,
-    DatabaseModule,
+    PostgresModule,
     DatabaseRepositoriesModule,
     StripeModule,
     CloudinaryModule,

@@ -47,7 +47,7 @@ All errors are produced by the single global filter (`src/common/errors/global-e
 ```
 
 - `code` is the stable machine-readable value; `message` is a compatibility alias of `detail` kept until the SPAs migrate.
-- 5xx responses carry a generic `detail`; the real cause is logged server-side with the same `requestId`. No stack traces, SQL, Mongo or Stripe internals reach clients.
+- 5xx responses carry a generic `detail`; the real cause is logged server-side with the same `requestId`. No stack traces, SQL, database or Stripe internals reach clients.
 - Throw Nest `HttpException` subclasses (`NotFoundException`, `ConflictException`, …) from services. Do not build error bodies in controllers.
 - Success status codes: `201` for creates (with the created resource), `204` for empty success (for example logout), `200` otherwise.
 - Every mutating handler declares its status with `@HttpCode`; `controller-status.spec.ts` fails when one does not.

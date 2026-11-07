@@ -1,8 +1,6 @@
 import { INestApplication, Type } from "@nestjs/common";
 import { NestExpressApplication } from "@nestjs/platform-express";
-import { getConnectionToken } from "@nestjs/mongoose";
 import { Test } from "@nestjs/testing";
-import { Connection } from "mongoose";
 import { sql } from "drizzle-orm";
 import type { Database } from "@hotel-booking/db";
 import { DATABASE } from "../../src/database/postgres.database";
@@ -19,7 +17,6 @@ import { LogSink } from "./log-sink";
 
 export type TestApp = {
   app: INestApplication;
-  connection: Connection;
   stripe: ReturnType<typeof createFakeStripe>;
   cloudinary: ReturnType<typeof createFakeCloudinary>;
   logs: LogSink;
@@ -67,18 +64,15 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
   await app.get<Database>(DATABASE).transaction(async (tx) => {
     await tx.execute(sql`set local session_replication_role = replica`);
     await tx.execute(sql`truncate table "users" cascade`);
+    await tx.execute(sql`truncate table "analytics_snapshots"`);
   });
-
-  const connection = app.get<Connection>(getConnectionToken());
 
   return {
     app,
-    connection,
     stripe,
     cloudinary,
     logs,
     close: async () => {
-      await connection.dropDatabase();
       await app.close();
     },
   };

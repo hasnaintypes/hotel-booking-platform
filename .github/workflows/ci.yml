@@ -18,15 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
       postgres:
         image: postgres:17-alpine
         env:
@@ -41,8 +32,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      # API integration tests use this server; locally an in-memory MongoDB is used instead.
-      MONGODB_TEST_URI: mongodb://localhost:27017
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/hotel_booking_test
       TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/hotel_booking_test
     steps:
@@ -77,12 +66,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
-      mongo:
-        image: mongo:7
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hotel_booking_test
         ports:
-          - 27017:27017
+          - 5432:5432
         options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-cmd "pg_isready -U postgres -d hotel_booking_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 10
@@ -104,7 +97,7 @@ jobs:
         run: |
           docker run -d --name api --network host --read-only --tmpfs /tmp \
             -e PORT=5001 \
-            -e MONGODB_CONNECTION_STRING=mongodb://localhost:27017/container_smoke \
+            -e DATABASE_URL=postgres://postgres:postgres@localhost:5432/hotel_booking_test \
             -e JWT_SECRET_KEY=ci-only-secret-used-nowhere-else \
             -e CLOUDINARY_CLOUD_NAME=ci -e CLOUDINARY_API_KEY=ci -e CLOUDINARY_API_SECRET=ci \
             -e STRIPE_API_KEY=sk_test_ci \

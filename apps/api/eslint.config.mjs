@@ -49,6 +49,26 @@ export default [
               message:
                 "Use a repository under src/database/repositories instead of importing the database package directly.",
             },
+            {
+              name: "mongoose",
+              message: "MongoDB has been removed; use repositories backed by PostgreSQL.",
+            },
+            {
+              name: "@nestjs/mongoose",
+              message: "MongoDB has been removed; use repositories backed by PostgreSQL.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["../*/schemas/**", "../../*/schemas/**"],
+              message:
+                "Import another module's exported service or type instead of its internal schema.",
+            },
+            {
+              group: ["../*/repositories/**"],
+              message:
+                "Import another module's exported service or type instead of its repository.",
+            },
           ],
         },
       ],

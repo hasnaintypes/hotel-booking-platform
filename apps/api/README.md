@@ -1,17 +1,15 @@
 # @hotel-booking/api
 
 NestJS 11 REST API for the hotel booking platform. It serves the `/api/v1` HTTP contract and is
-organised as a modular monolith: one Nest module per domain. Mongo-backed services still inject
-Mongoose models directly while the M1 PostgreSQL port is in progress; PostgreSQL-backed domains
-use typed repositories.
+organised as a modular monolith: one Nest module per domain, with PostgreSQL access isolated behind
+typed repositories.
 
 See the [root README](../../README.md) for setup, environment variables, deployment and the
 production-readiness warning. This file only covers what is specific to the API.
 
 ## Stack
 
-Node 22, TypeScript, NestJS 11 (`@nestjs/platform-express`), MongoDB + Mongoose 9, PostgreSQL 17
-+ Drizzle ORM, `@nestjs/jwt` + bcryptjs, `class-validator`/`class-transformer`,
+Node 22, TypeScript, NestJS 11 (`@nestjs/platform-express`), PostgreSQL 17 + Drizzle ORM, `@nestjs/jwt` + bcryptjs, `class-validator`/`class-transformer`,
 `@nestjs/swagger`, `@nestjs/throttler`, Pino logging, Stripe PaymentIntents, Cloudinary, and an
 optional LLM provider chain.
 
@@ -25,9 +23,9 @@ src/
 ├── config/                 # typed config, env validation, Swagger
 ├── common/                 # auth guards, routing, errors, logging, uploads, security
 ├── routes/                 # audience route groups (public, manage, admin, partner)
-├── database/               # Mongoose registration, PostgreSQL provider, repositories, seed script
+├── database/               # PostgreSQL provider, repositories, seed script
 ├── integrations/           # Stripe, Cloudinary, LLM
-└── modules/<domain>/       # controller, service, DTOs, schema
+└── modules/<domain>/       # controller, service, DTOs
 ```
 
 ## Data access
@@ -43,8 +41,6 @@ may run more than once, so keep external side effects outside it.
 PostgreSQL errors are mapped centrally to typed HTTP problems: unique violations become 409,
 constraint violations 422, invalid values 400, and exhausted transaction conflicts 409. Repositories
 can use `throwPostgresError(error)` to translate an error at the boundary.
-
-Mongoose remains the runtime store for existing domains until they are ported.
 
 ## Request lifecycle
 
@@ -76,18 +72,15 @@ at `/api/v1/admin/system/health`.
 
 ## Configuration
 
-Copy `.env.example` to `.env`. The app refuses to start without `MONGODB_CONNECTION_STRING`,
-`JWT_SECRET_KEY`, the three `CLOUDINARY_*` values and `STRIPE_API_KEY`; the root README lists every
+Copy `.env.example` to `.env`. The app refuses to start without `JWT_SECRET_KEY`, the three `CLOUDINARY_*` values and `STRIPE_API_KEY`; the root README lists every
 variable. `NODE_ENV=production` with a live Stripe key is rejected until milestone M2.
 
 ## Tests
 
 `test/` holds end-to-end specs that boot the real `AppModule` through `app.setup.ts` with Stripe,
-Cloudinary and the log sink replaced by fakes. `test/global-setup.ts` starts an in-memory MongoDB
-locally, while CI points `MONGODB_TEST_URI` at a `mongo:7` service. Controller routes are referenced
+Cloudinary and the log sink replaced by fakes. The suite uses a disposable PostgreSQL database
+(`TEST_DATABASE_URL`) that CI migrates before running the tests. Controller routes are referenced
 through `test/support/routes.ts`. Unit specs live beside their sources as `*.spec.ts`.
-PostgreSQL integration specs are skipped unless `TEST_DATABASE_URL` points at a migrated
-database; CI supplies it after running the migrations.
 
 ## Docker
 

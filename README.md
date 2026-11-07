@@ -4,7 +4,7 @@
 [![Node](https://img.shields.io/badge/Node-22-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-3178C6)](https://www.typescriptlang.org/)
 
-A full-stack hotel marketplace. Guests search hotels and pay for stays with Stripe, hotel owners list and manage properties, and admins moderate the platform from a separate console. It is a TypeScript pnpm/Turborepo monorepo with a NestJS + MongoDB API and two React single-page apps.
+A full-stack hotel marketplace. Guests search hotels and pay for stays with Stripe, hotel owners list and manage properties, and admins moderate the platform from a separate console. It is a TypeScript pnpm/Turborepo monorepo with a NestJS + PostgreSQL API and two React single-page apps.
 
 ## Features
 
@@ -21,7 +21,7 @@ A full-stack hotel marketplace. Guests search hotels and pay for stays with Stri
         │  HTTPS + httpOnly session cookie
         └───────────────┬───────────────┘
                         ▼
-                NestJS API :5001 ── MongoDB
+                NestJS API :5001 ── PostgreSQL
                         ├────────── Stripe
                         ├────────── Cloudinary
                         └────────── Google OAuth (optional)
@@ -29,24 +29,24 @@ A full-stack hotel marketplace. Guests search hotels and pay for stays with Stri
 
 | Path | Package | Purpose |
 | --- | --- | --- |
-| `apps/api` | `@hotel-booking/api` | NestJS REST API, Mongoose models, integrations |
+| `apps/api` | `@hotel-booking/api` | NestJS REST API, PostgreSQL repositories, integrations |
 | `apps/web` | `@hotel-booking/web` | Guest and hotel-owner SPA (React 19, Vite) |
 | `apps/admin` | `@hotel-booking/admin` | Admin SPA |
 | `packages/types` | `@hotel-booking/types` | Shared TypeScript contracts |
 | `packages/api-client` | `@hotel-booking/api-client` | Axios instance, session store, TanStack Query client |
 | `packages/ui` | `@hotel-booking/ui` | Shared UI components and Tailwind preset |
 
-**Stack:** NestJS 11, Mongoose 9, MongoDB, React 19, Vite 8, React Router 7, TanStack Query 5, Tailwind CSS 4, Radix UI, Stripe, Cloudinary, Vitest.
+**Stack:** NestJS 11, PostgreSQL 17, Drizzle ORM, React 19, Vite 8, React Router 7, TanStack Query 5, Tailwind CSS 4, Radix UI, Stripe, Cloudinary, Vitest.
 
 Deeper documentation (architecture, API, data model, patterns, deployment) is in [`docs/`](docs/INDEX.md) when present locally.
 
 ## Getting started
 
-**Prerequisites:** Node 22, pnpm 10.15 (`corepack enable`), Docker (PostgreSQL 17 and MongoDB 7 locally, or a MongoDB Atlas URI), and Stripe and Cloudinary test accounts.
+**Prerequisites:** Node 22, pnpm 10.15 (`corepack enable`), Docker (PostgreSQL 17 locally), and Stripe and Cloudinary test accounts.
 
 ```bash
 pnpm install --frozen-lockfile
-docker compose up -d mongo postgres   # MongoDB on :27017 and PostgreSQL on :5432
+docker compose up -d postgres         # PostgreSQL on :5432
 
 cp apps/api/.env.example   apps/api/.env      # fill in the required values
 cp apps/web/.env.example   apps/web/.env
@@ -62,7 +62,7 @@ pnpm dev                              # API, web and admin together
 | Web | http://localhost:5174 |
 | Admin | http://localhost:5175 |
 
-To use the admin console, register a user in the web app and set that user's `role` to `admin` in MongoDB.
+To use the admin console, register a user in the web app and set that user's `role` to `admin` in PostgreSQL.
 
 ## Configuration
 
@@ -70,7 +70,6 @@ The API exits at startup if a required variable is missing. Browser apps only re
 
 | Variable | App | Required | Purpose |
 | --- | --- | --- | --- |
-| `MONGODB_CONNECTION_STRING` | api | Yes | MongoDB URI (runtime store until the M1 port completes) |
 | `DATABASE_URL` | api | For `db:*` | PostgreSQL connection string |
 | `TEST_DATABASE_URL` | api | For DB tests | Disposable PostgreSQL database for integration tests |
 | `DATABASE_POOL_MAX`, `DATABASE_STATEMENT_TIMEOUT_MS`, `DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS`, `DATABASE_LOCK_TIMEOUT_MS` | api | No | PostgreSQL pool and timeout defaults (see [database operations](packages/db/OPERATIONS.md)) |
@@ -125,13 +124,13 @@ SEED_PASSWORD='choose-a-strong-demo-password' pnpm --filter @hotel-booking/api s
 Local databases run without extra flags. A non-local target is refused unless both
 `ALLOW_SEED=true` and `SEED_DATABASE_NAME` (the exact disposable database name) are set. The seed
 inserts fixtures idempotently and never truncates tables or deletes unrelated data. It no longer
-uses the old weak demo password and does not touch MongoDB.
+uses the old weak demo password.
 
 ## Quality and CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs install, licence and formatting checks, a high-severity dependency audit, the unused-dependency check, lint, typecheck, the full test suite, build and the bundle check on every pull request and push to `main`. A second job builds the API image and checks that it runs as non-root, starts read-only, passes its health check and serves no API docs. CodeQL, secret scanning and push protection are enabled.
 
-The API has an end-to-end harness that boots the real application against a disposable MongoDB and fakes Stripe, Cloudinary and logging; see `apps/api/test/`. The SPAs and shared packages have unit and component tests.
+The API has an end-to-end harness that boots the real application against a disposable PostgreSQL database and fakes Stripe, Cloudinary and logging; see `apps/api/test/`. The SPAs and shared packages have unit and component tests.
 
 ## Deployment
 
