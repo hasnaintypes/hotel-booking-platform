@@ -4,7 +4,6 @@ import { AiFillStar } from "react-icons/ai";
 import {
   MapPin,
   Building2,
-  Users,
   Wifi,
   Car,
   Waves,
@@ -55,11 +54,6 @@ const SearchResultsCard = ({ hotel }: Props) => {
             <div className="bg-primary-600 text-white rounded-full px-3 py-1">
               <span className="text-sm font-medium">£{hotel.pricePerNight}</span>
             </div>
-            {hotel.isFeatured && (
-              <div className="bg-yellow-500 text-white rounded-full px-3 py-1">
-                <span className="text-xs font-medium">Featured</span>
-              </div>
-            )}
           </div>
 
           {/* Star Rating Badge */}
@@ -119,12 +113,6 @@ const SearchResultsCard = ({ hotel }: Props) => {
 
             {/* Hotel Stats */}
             <div className="flex items-center space-x-6 text-sm text-gray-600">
-              {hotel.totalBookings && (
-                <div className="flex items-center space-x-1">
-                  <Users className="w-4 h-4" />
-                  <span>{hotel.totalBookings} bookings</span>
-                </div>
-              )}
               <div className="flex items-center space-x-1">
                 <AiFillStar className="w-4 h-4 text-yellow-400" />
                 <span>
