@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-pnpm 10.15.0 / Turborepo monorepo, Node 22. Three apps (`apps/api` NestJS + PostgreSQL, `apps/web` guest/owner React SPA, `apps/admin` admin React SPA) share `packages/types`, `packages/api-client`, `packages/ui`, and the new `packages/db` (PostgreSQL + Drizzle). `docs/` holds a source-based map (start at `docs/INDEX.md`); it is git-ignored, as are `AGENTS.md` and `.claude/`.
+pnpm 10.15.0 / Turborepo monorepo, Node 22. Three apps (`apps/api` NestJS + PostgreSQL, `apps/web` guest/owner React SPA, `apps/admin` admin React SPA) share `packages/types`, `packages/api-client`, `packages/ui`, `packages/db` (PostgreSQL + Drizzle) and `packages/pricing` (money and immutable price snapshots). `docs/` holds a source-based map (start at `docs/INDEX.md`); it is git-ignored, as are `AGENTS.md` and `.claude/`.
 
 ## Commands
 
@@ -73,3 +73,5 @@ Contributor-facing rules live in `CONTRIBUTING.md`; keep that file and this sect
 ## Conventions
 
 Two-space indent, LF, double quotes, semicolons, trailing commas, 100-column Prettier. API files are `*.controller.ts`, `*.service.ts`, `*.module.ts`; request DTOs live in `dto/` next to the controller. Shared contracts belong in `packages/types`, reusable UI in `packages/ui`. New tests are colocated as `*.test.ts(x)` and must be run before being described as passing. Generate API controllers with `pnpm --filter @hotel-booking/api gen:controller <audience> <resource>`; the routing unit check rejects hard-coded `api/` prefixes.
+
+**Money review checklist:** all monetary values are integer minor units plus an ISO currency. Use `@hotel-booking/pricing` for arithmetic, rounding, FX conversion and snapshots; do not multiply, divide or round money with plain `number` arithmetic outside that package. Persist the versioned snapshot rather than recomputing an agreed price. Unknown currencies must fail rather than defaulting to two decimals.
