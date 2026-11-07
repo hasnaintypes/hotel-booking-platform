@@ -59,7 +59,7 @@ export const bookings = pgTable(
     childCount: smallint("child_count").notNull().default(0),
     checkIn: date("check_in", { mode: "date" }).notNull(),
     checkOut: date("check_out", { mode: "date" }).notNull(),
-    status: bookingStatus("status").notNull().default("pending"),
+    status: bookingStatus("status").notNull().default("pending_payment"),
     version: integer("version").notNull().default(0),
     totalAmountMinor: integer("total_amount_minor").notNull().default(0),
     currencyCode: char("currency_code", { length: 3 })

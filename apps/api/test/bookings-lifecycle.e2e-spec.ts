@@ -58,6 +58,7 @@ describe("bookings", () => {
       expect(res.body[0]).toMatchObject({
         _id: bookingId,
         status: "confirmed",
+        allowedTransitions: expect.arrayContaining(["cancelling", "cancelled", "needs_review"]),
         paymentStatus: "paid",
         // Response ids are PostgreSQL UUID strings.
         hotelId,
@@ -131,6 +132,7 @@ describe("bookings", () => {
       expect(res.status).toBe(200);
       expect(res.body.booking).toMatchObject({
         status: "cancelled",
+        allowedTransitions: ["needs_review"],
         paymentStatus: "refunded",
         cancellationReason: "Plans changed",
         refundAmount: 150,

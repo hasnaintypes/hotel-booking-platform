@@ -23,8 +23,10 @@ import { PaymentIntentDto } from "./dto/payment-intent.dto";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+const CANCELLABLE_STATUSES = new Set(["pending_payment", "authorized", "confirming", "confirmed"]);
+
 const isCancellable = (booking: { status: string; checkIn: Date }) => {
-  if (booking.status !== "pending" && booking.status !== "confirmed") return false;
+  if (!CANCELLABLE_STATUSES.has(booking.status)) return false;
   return booking.checkIn.getTime() > Date.now();
 };
 
@@ -180,7 +182,11 @@ export class BookingsService {
     };
   }
 
-  async create(dto: CreateBookingDto, userId: string): Promise<BookingResponse> {
+  async create(
+    dto: CreateBookingDto,
+    userId: string,
+    requestId?: string,
+  ): Promise<BookingResponse> {
     const hotel = await this.hotels.findById(dto.hotelId);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
@@ -235,6 +241,7 @@ export class BookingsService {
         paymentIntentId: paymentIntent.id,
         numberOfNights: Math.ceil((checkOut.getTime() - checkIn.getTime()) / DAY_MS),
       },
+      requestId,
       payment: {
         provider: "stripe",
         providerPaymentId: paymentIntent.id,
@@ -300,7 +307,7 @@ export class BookingsService {
       }));
   }
 
-  async cancel(id: string, dto: CancelBookingDto, userId: string) {
+  async cancel(id: string, dto: CancelBookingDto, userId: string, requestId?: string) {
     const record = await this.bookings.findById(id);
     if (!record) {
       throw new NotFoundException("Booking not found");
@@ -310,7 +317,7 @@ export class BookingsService {
 
     if (!isCancellable(record.booking)) {
       throw new BadRequestException(
-        "Booking cannot be cancelled (must be upcoming pending/confirmed)",
+        "Booking cannot be cancelled (must be upcoming and not already terminal)",
       );
     }
 
@@ -357,6 +364,7 @@ export class BookingsService {
       id,
       actorUserId: userId,
       cancellationReason,
+      requestId,
       ...(refund && charge
         ? {
             refund: {
@@ -372,7 +380,7 @@ export class BookingsService {
 
     if (!cancelled) {
       throw new BadRequestException(
-        "Booking cannot be cancelled (must be upcoming pending/confirmed)",
+        "Booking cannot be cancelled (must be upcoming and not already terminal)",
       );
     }
 

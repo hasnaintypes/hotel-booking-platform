@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import type { BookingType } from "@hotel-booking/types";
+import { bookingStatusLabel, type BookingType } from "@hotel-booking/types";
 import { Badge, DataTable } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchBookings } from "../api";
@@ -11,13 +11,16 @@ const statusClass = (status?: string) => {
   switch (status) {
     case "confirmed":
       return "bg-green-100 text-green-800";
-    case "pending":
+    case "pending_payment":
       return "bg-yellow-100 text-yellow-800";
-    case "cancelled":
-      return "bg-red-100 text-red-800";
-    case "completed":
+    case "authorized":
+    case "confirming":
+    case "cancelling":
       return "bg-blue-100 text-blue-800";
-    case "refunded":
+    case "cancelled":
+    case "failed":
+      return "bg-red-100 text-red-800";
+    case "needs_review":
       return "bg-purple-100 text-purple-800";
     default:
       return "bg-slate-100 text-slate-800";
@@ -47,7 +50,7 @@ const BookingsPage = () => {
         header: "Status",
         cell: ({ row }) => (
           <Badge className={statusClass(row.original.status)}>
-            {row.original.status || "pending"}
+            {bookingStatusLabel(row.original.status)}
           </Badge>
         ),
       },
@@ -70,6 +73,17 @@ const BookingsPage = () => {
         accessorKey: "totalCost",
         header: "Total",
         cell: ({ row }) => `£${row.original.totalCost?.toLocaleString() ?? 0}`,
+      },
+      {
+        id: "allowedTransitions",
+        header: "Allowed next",
+        cell: ({ row }) => (
+          <span className="text-xs text-slate-600">
+            {row.original.allowedTransitions?.length
+              ? row.original.allowedTransitions.map(bookingStatusLabel).join(", ")
+              : "None"}
+          </span>
+        ),
       },
       {
         id: "actions",

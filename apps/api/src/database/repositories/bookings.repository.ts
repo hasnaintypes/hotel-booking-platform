@@ -9,9 +9,15 @@ import {
   type Database,
   type Payment,
   type PaymentStatus,
+  type Transaction,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
 import { isUuid } from "../../common/utils/uuid";
+import {
+  assertBookingTransition,
+  BookingTransitionConflictError,
+  type BookingTransitionInput,
+} from "../../domain/bookings/booking-state-machine";
 import { DATABASE } from "../postgres.database";
 
 export type BookingWithPayments = {
@@ -35,6 +41,7 @@ export type NewBookingInput = {
   currencyCode?: string;
   specialRequests?: string;
   priceSnapshot?: Record<string, unknown>;
+  requestId?: string;
   payment: {
     provider: string;
     providerPaymentId: string;
@@ -49,6 +56,7 @@ export type CancelBookingInput = {
   id: string;
   actorUserId: string;
   cancellationReason?: string;
+  requestId?: string;
   refund?: {
     provider: string;
     providerPaymentId: string;
@@ -160,6 +168,7 @@ export class BookingsRepository {
           toStatus: "confirmed",
           actorUserId: input.ownerUserId,
           reason: "booking created",
+          requestId: input.requestId ?? null,
         });
 
         const [payment] = await tx
@@ -182,6 +191,53 @@ export class BookingsRepository {
   }
 
   /**
+   * Applies one legal state change and appends its event in the same transaction. The `from`
+   * predicate makes concurrent identical transitions race safely: exactly one update wins and
+   * every loser receives a typed conflict instead of overwriting the winner.
+   */
+  async transition(input: BookingTransitionInput): Promise<Booking> {
+    if (!isUuid(input.bookingId)) {
+      throw new BookingTransitionConflictError(input.bookingId, input.from, input.to);
+    }
+    assertBookingTransition(input.from, input.to);
+    return withTransaction(this.db, (tx) => this.transitionInTransaction(tx, input));
+  }
+
+  private async transitionInTransaction(
+    tx: Transaction,
+    input: BookingTransitionInput,
+  ): Promise<Booking> {
+    assertBookingTransition(input.from, input.to);
+    const systemActor = input.actor.type === "system" ? { actor: input.actor.name } : {};
+    const [booking] = await tx
+      .update(bookings)
+      .set({
+        status: input.to,
+        version: sql`${bookings.version} + 1`,
+        updatedAt: new Date(),
+        ...(input.to === "cancelled" && input.reason ? { cancellationReason: input.reason } : {}),
+      })
+      .where(and(eq(bookings.id, input.bookingId), eq(bookings.status, input.from)))
+      .returning();
+
+    if (!booking) {
+      throw new BookingTransitionConflictError(input.bookingId, input.from, input.to);
+    }
+
+    await tx.insert(bookingEvents).values({
+      bookingId: booking.id,
+      fromStatus: input.from,
+      toStatus: input.to,
+      actorUserId: input.actor.type === "user" ? input.actor.userId : null,
+      reason: input.reason ?? null,
+      requestId: input.requestId ?? null,
+      metadata: { ...input.metadata, ...systemActor },
+    });
+
+    return booking;
+  }
+
+  /**
    * Moves a cancellable booking to `cancelled` and, when a refund applies, records a separate
    * refund payment row that points at the original charge. Returns undefined when the booking
    * does not exist or is no longer cancellable.
@@ -198,25 +254,29 @@ export class BookingsRepository {
           .for("update")
           .limit(1);
         if (!existing) return undefined;
-        if (existing.status !== "pending" && existing.status !== "confirmed") return undefined;
+        if (
+          existing.status !== "pending_payment" &&
+          existing.status !== "authorized" &&
+          existing.status !== "confirming" &&
+          existing.status !== "confirmed"
+        ) {
+          return undefined;
+        }
 
-        const [booking] = await tx
-          .update(bookings)
-          .set({
-            status: "cancelled",
-            cancellationReason: input.cancellationReason || existing.cancellationReason,
-            updatedAt: new Date(),
-          })
-          .where(eq(bookings.id, input.id))
-          .returning();
-
-        await tx.insert(bookingEvents).values({
-          bookingId: booking.id,
-          fromStatus: existing.status,
-          toStatus: "cancelled",
-          actorUserId: input.actorUserId,
-          reason: input.cancellationReason || null,
-        });
+        let booking: Booking;
+        try {
+          booking = await this.transitionInTransaction(tx, {
+            bookingId: existing.id,
+            from: existing.status,
+            to: "cancelled",
+            actor: { type: "user", userId: input.actorUserId },
+            reason: input.cancellationReason || existing.cancellationReason || undefined,
+            requestId: input.requestId,
+          });
+        } catch (error) {
+          if (error instanceof BookingTransitionConflictError) return undefined;
+          throw error;
+        }
 
         if (input.refund) {
           await tx.insert(payments).values({
@@ -259,7 +319,7 @@ export class BookingsRepository {
       .where(
         and(
           inArray(bookings.hotelId, ids),
-          sql`${bookings.status} not in ('cancelled', 'refunded')`,
+          sql`${bookings.status} not in ('cancelled', 'failed', 'expired')`,
         ),
       )
       .groupBy(bookings.hotelId);
@@ -282,9 +342,9 @@ export class BookingsRepository {
     const rows = await this.db
       .select({
         hotelId: bookings.hotelId,
-        upcomingBookings: sql<number>`count(*) filter (where ${bookings.status} not in ('cancelled', 'refunded', 'completed') and ${bookings.checkOut} >= current_date)::int`,
-        completedBookings: sql<number>`count(*) filter (where ${bookings.status} not in ('cancelled', 'refunded') and (${bookings.status} = 'completed' or ${bookings.checkOut} < current_date))::int`,
-        cancelledBookings: sql<number>`count(*) filter (where ${bookings.status} in ('cancelled', 'refunded'))::int`,
+        upcomingBookings: sql<number>`count(*) filter (where ${bookings.status} not in ('cancelled', 'failed', 'expired') and ${bookings.checkOut} >= current_date)::int`,
+        completedBookings: sql<number>`count(*) filter (where ${bookings.status} = 'confirmed' and ${bookings.checkOut} < current_date)::int`,
+        cancelledBookings: sql<number>`count(*) filter (where ${bookings.status} = 'cancelled')::int`,
       })
       .from(bookings)
       .where(inArray(bookings.hotelId, ids))
@@ -315,7 +375,7 @@ export class BookingsRepository {
       .where(
         and(
           inArray(bookings.ownerUserId, ids),
-          sql`${bookings.status} not in ('cancelled', 'refunded')`,
+          sql`${bookings.status} not in ('cancelled', 'failed', 'expired')`,
         ),
       )
       .groupBy(bookings.ownerUserId);

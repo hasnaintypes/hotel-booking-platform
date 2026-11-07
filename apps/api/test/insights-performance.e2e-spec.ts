@@ -9,7 +9,17 @@ import { routes } from "./support/routes";
 const TOTAL_BOOKINGS = 100_000;
 const CHUNK = 1_000;
 const DAY_MS = 24 * 60 * 60 * 1000;
-const STATUSES = ["pending", "confirmed", "cancelled", "completed", "refunded"] as const;
+const STATUSES = [
+  "pending_payment",
+  "authorized",
+  "confirming",
+  "confirmed",
+  "cancelling",
+  "cancelled",
+  "failed",
+  "expired",
+  "needs_review",
+] as const;
 
 describe("business insights at scale", () => {
   let t: TestApp;

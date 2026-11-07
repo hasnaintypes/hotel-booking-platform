@@ -87,11 +87,15 @@ export type ReviewAnalytics = {
 export type SnapshotInput = Omit<NewAnalyticsSnapshot, "id" | "date" | "createdAt" | "updatedAt">;
 
 const emptyStatusBreakdown = (): AnalyticsStatusBreakdown => ({
-  pending: 0,
+  pending_payment: 0,
+  authorized: 0,
+  confirming: 0,
   confirmed: 0,
+  cancelling: 0,
   cancelled: 0,
-  completed: 0,
-  refunded: 0,
+  failed: 0,
+  expired: 0,
+  needs_review: 0,
 });
 
 const emptyPaymentBreakdown = (): AnalyticsPaymentBreakdown => ({
@@ -149,12 +153,12 @@ export class AnalyticsRepository {
         )::int`,
         cancelledBookings: sql<number>`count(*) filter (where ${bookings.status} = 'cancelled')::int`,
         confirmedBookings: sql<number>`count(*) filter (
-          where ${bookings.status} in ('confirmed', 'completed')
+          where ${bookings.status} = 'confirmed'
         )::int`,
-        pendingBookings: sql<number>`count(*) filter (where ${bookings.status} = 'pending')::int`,
-        refundedBookings: sql<number>`count(*) filter (
-          where ${bookings.status} = 'refunded' or ${refundedPaymentExists}
+        pendingBookings: sql<number>`count(*) filter (
+          where ${bookings.status} in ('pending_payment', 'authorized', 'confirming')
         )::int`,
+        refundedBookings: sql<number>`count(*) filter (where ${refundedPaymentExists})::int`,
         totalNights: sql<number>`coalesce(sum(greatest(1, ${bookings.checkOut} - ${bookings.checkIn})), 0)::int`,
         totalAdults: sql<number>`coalesce(sum(${bookings.adultCount}), 0)::int`,
         totalChildren: sql<number>`coalesce(sum(${bookings.childCount}), 0)::int`,
@@ -212,7 +216,7 @@ export class AnalyticsRepository {
       order by charge.created_at asc
       limit 1
     ), 'pending')`;
-    const refunded = sql<boolean>`${bookings.status} = 'refunded' or exists (
+    const refunded = sql<boolean>`exists (
       select 1 from ${payments} refund
       where refund.booking_id = ${bookings.id}
         and refund.original_payment_id is not null
@@ -494,9 +498,10 @@ export class AnalyticsRepository {
         this.reviewAnalytics(),
       ]);
 
-    const cancelled = byStatus.cancelled + byStatus.refunded;
     const cancellationRate =
-      overview.totalBookings > 0 ? Math.round((cancelled / overview.totalBookings) * 1000) / 10 : 0;
+      overview.totalBookings > 0
+        ? Math.round((byStatus.cancelled / overview.totalBookings) * 1000) / 10
+        : 0;
     const averageBookingValueMinor =
       overview.totalBookings > 0
         ? Math.round(overview.totalRevenueMinor / overview.totalBookings)

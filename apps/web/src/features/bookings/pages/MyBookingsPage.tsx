@@ -136,14 +136,19 @@ const MyBookings = () => {
     switch (status) {
       case "confirmed":
         return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
+      case "pending_payment":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "completed":
+      case "authorized":
+      case "confirming":
+      case "cancelling":
         return "bg-blue-100 text-blue-800 border-blue-200";
-      case "refunded":
+      case "cancelled":
+      case "failed":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "expired":
         return "bg-gray-100 text-gray-700 border-gray-200";
+      case "needs_review":
+        return "bg-purple-100 text-purple-800 border-purple-200";
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
@@ -168,13 +173,18 @@ const MyBookings = () => {
     switch (status) {
       case "confirmed":
         return <TrendingUp className="w-4 h-4" />;
-      case "pending":
+      case "pending_payment":
+        return <Clock className="w-4 h-4" />;
+      case "authorized":
+      case "confirming":
+      case "cancelling":
         return <Clock className="w-4 h-4" />;
       case "cancelled":
+      case "failed":
         return <Building className="w-4 h-4" />;
-      case "completed":
+      case "expired":
         return <Star className="w-4 h-4" />;
-      case "refunded":
+      case "needs_review":
         return <CreditCard className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
@@ -271,10 +281,10 @@ const MyBookings = () => {
                         <div className="flex items-center gap-3">
                           <div
                             className={`p-2 rounded-xl ${getStatusColor(
-                              booking.status || "pending",
+                              booking.status || "pending_payment",
                             )}`}
                           >
-                            {getStatusIcon(booking.status || "pending")}
+                            {getStatusIcon(booking.status || "pending_payment")}
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-700">
@@ -287,10 +297,10 @@ const MyBookings = () => {
                         </div>
                         <div className="flex gap-2">
                           <Badge
-                            className={`${getStatusColor(booking.status || "pending")} border`}
+                            className={`${getStatusColor(booking.status || "pending_payment")} border`}
                           >
-                            {getStatusIcon(booking.status || "pending")}
-                            <span className="ml-1">{booking.status || "pending"}</span>
+                            {getStatusIcon(booking.status || "pending_payment")}
+                            <span className="ml-1">{booking.status || "pending_payment"}</span>
                           </Badge>
                           <Badge
                             className={`${getPaymentStatusColor(
@@ -409,11 +419,13 @@ const MyBookings = () => {
                       {/* Cancel upcoming stay */}
                       <CancelBookingButton booking={booking} className="mt-4" />
 
-                      {/* Review after stay (completed or past check-out, not cancelled) */}
-                      {(booking.status === "completed" ||
+                      {/* Review after stay: confirmed, or any live booking past check-out. */}
+                      {(booking.status === "confirmed" ||
                         (checkOutDate < new Date() &&
                           booking.status !== "cancelled" &&
-                          booking.status !== "refunded")) && (
+                          booking.status !== "failed" &&
+                          booking.status !== "expired" &&
+                          booking.status !== "needs_review")) && (
                         <div className="mt-4">
                           <WriteReviewForm hotelId={hotel._id} bookingId={booking._id} />
                         </div>

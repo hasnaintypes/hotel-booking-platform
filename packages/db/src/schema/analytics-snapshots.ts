@@ -12,11 +12,15 @@ import {
 } from "drizzle-orm/pg-core";
 
 export type AnalyticsStatusBreakdown = {
-  pending: number;
+  pending_payment: number;
+  authorized: number;
+  confirming: number;
   confirmed: number;
+  cancelling: number;
   cancelled: number;
-  completed: number;
-  refunded: number;
+  failed: number;
+  expired: number;
+  needs_review: number;
 };
 
 export type AnalyticsPaymentBreakdown = {

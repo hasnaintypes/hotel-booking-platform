@@ -11,13 +11,20 @@ const booking = (overrides: Partial<BookingType> = {}): BookingType =>
   }) as BookingType;
 
 describe("isBookingCancellable", () => {
-  it("allows pending and confirmed future bookings", () => {
-    expect(isBookingCancellable(booking({ status: "pending" }))).toBe(true);
-    expect(isBookingCancellable(booking({ status: "confirmed" }))).toBe(true);
+  it("allows upcoming pre-terminal bookings", () => {
+    for (const status of ["pending_payment", "authorized", "confirming", "confirmed"] as const) {
+      expect(isBookingCancellable(booking({ status }))).toBe(true);
+    }
   });
 
-  it("rejects terminal statuses", () => {
-    for (const status of ["cancelled", "completed", "refunded"] as const) {
+  it("rejects terminal and in-progress statuses", () => {
+    for (const status of [
+      "cancelling",
+      "cancelled",
+      "failed",
+      "expired",
+      "needs_review",
+    ] as const) {
       expect(isBookingCancellable(booking({ status }))).toBe(false);
     }
   });
@@ -28,7 +35,7 @@ describe("isBookingCancellable", () => {
     );
   });
 
-  it("treats a missing status as pending", () => {
-    expect(isBookingCancellable(booking({ status: undefined }))).toBe(true);
+  it("rejects a booking with no status", () => {
+    expect(isBookingCancellable(booking({ status: undefined }))).toBe(false);
   });
 });

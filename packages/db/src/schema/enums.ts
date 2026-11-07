@@ -12,13 +12,20 @@ export const hotelSource = pgEnum("hotel_source", ["managed", "supplier"]);
 /** Listing lifecycle. `inactive` keeps the row while hiding it from search. */
 export const hotelStatus = pgEnum("hotel_status", ["draft", "active", "inactive", "archived"]);
 
-/** Booking lifecycle carried over from the current API contract. */
+/**
+ * Booking lifecycle. `needs_review` is the only state without a normal forward path; it is the
+ * recovery bucket for payment/supplier inconsistencies and requires an explicit operator action.
+ */
 export const bookingStatus = pgEnum("booking_status", [
-  "pending",
+  "pending_payment",
+  "authorized",
+  "confirming",
   "confirmed",
+  "cancelling",
   "cancelled",
-  "completed",
-  "refunded",
+  "failed",
+  "expired",
+  "needs_review",
 ]);
 
 /** Where the booked inventory came from. Managed rows belong to a hotel we operate. */
