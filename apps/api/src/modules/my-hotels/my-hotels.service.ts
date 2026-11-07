@@ -10,7 +10,7 @@ import {
   type HotelWriteInput,
 } from "../../database/repositories/hotels.repository";
 import { CloudinaryService } from "../../integrations/cloudinary/cloudinary.service";
-import { toHotelResponse } from "../hotels/hotel-response";
+import { toManageHotelResponse } from "../hotels/hotel-response";
 import { HotelStatsService } from "../hotels/hotel-stats.service";
 import { HotelFormDto } from "./dto/hotel-form.dto";
 
@@ -72,7 +72,7 @@ export class MyHotelsService {
       userId,
     );
     const hotel = await this.owned(id, userId);
-    return toHotelResponse(hotel);
+    return toManageHotelResponse(hotel);
   }
 
   async findAll(userId: string) {
@@ -86,7 +86,7 @@ export class MyHotelsService {
     ]);
 
     return hotels.map((hotel) => ({
-      ...toHotelResponse(hotel, stats.get(hotel.id)),
+      ...toManageHotelResponse(hotel, stats.get(hotel.id)),
       upcomingBookings: counts.get(hotel.id)?.upcomingBookings ?? 0,
       completedBookings: counts.get(hotel.id)?.completedBookings ?? 0,
       cancelledBookings: counts.get(hotel.id)?.cancelledBookings ?? 0,
@@ -95,7 +95,7 @@ export class MyHotelsService {
 
   async findOne(id: string, userId: string) {
     const hotel = await this.owned(id, userId);
-    return toHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
+    return toManageHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
   }
 
   async setActive(id: string, isActive: boolean, userId: string) {
@@ -103,7 +103,7 @@ export class MyHotelsService {
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
-    return toHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
+    return toManageHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
   }
 
   async stats(id: string, userId: string) {
@@ -131,7 +131,7 @@ export class MyHotelsService {
     await this.hotels.update(hotelId, userId, input);
 
     const updated = await this.owned(hotelId, userId);
-    return toHotelResponse(updated, await this.hotelStats.forHotel(updated.id));
+    return toManageHotelResponse(updated, await this.hotelStats.forHotel(updated.id));
   }
 
   async addImages(hotelId: string, files: Express.Multer.File[], userId: string) {
@@ -153,7 +153,7 @@ export class MyHotelsService {
     }
 
     const updated = await this.owned(hotelId, userId);
-    return toHotelResponse(updated, await this.hotelStats.forHotel(updated.id));
+    return toManageHotelResponse(updated, await this.hotelStats.forHotel(updated.id));
   }
 
   async removeImage(hotelId: string, url: string, userId: string) {
@@ -166,6 +166,6 @@ export class MyHotelsService {
 
     await this.hotels.removeImage(hotelId, url);
     const updated = await this.owned(hotelId, userId);
-    return toHotelResponse(updated, await this.hotelStats.forHotel(updated.id));
+    return toManageHotelResponse(updated, await this.hotelStats.forHotel(updated.id));
   }
 }

@@ -1,4 +1,3 @@
-import type { HotelType } from "@hotel-booking/types";
 import type { HotelRecord } from "../../database/repositories/hotels.repository";
 
 export type HotelStats = {
@@ -15,14 +14,93 @@ export const EMPTY_HOTEL_STATS: HotelStats = {
   reviewCount: 0,
 };
 
-/** Maps the canonical PostgreSQL row to the response shape the existing SPAs consume. */
-export function toHotelResponse(hotel: HotelRecord, stats = EMPTY_HOTEL_STATS): HotelType {
-  const latitude = hotel.latitude === null ? null : Number(hotel.latitude);
-  const longitude = hotel.longitude === null ? null : Number(hotel.longitude);
+type HotelLocation = {
+  latitude: number;
+  longitude: number;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+  };
+};
 
+type HotelContact = {
+  phone: string;
+  email: string;
+  website: string;
+};
+
+type HotelPolicies = {
+  checkInTime: string;
+  checkOutTime: string;
+  cancellationPolicy: string;
+  petPolicy: string;
+  smokingPolicy: string;
+};
+
+/** Fields every anonymous or signed-in customer may see. */
+export type PublicHotelResponse = {
+  _id: string;
+  name: string;
+  city: string;
+  country: string;
+  description: string;
+  type: string[];
+  adultCount: number;
+  childCount: number;
+  facilities: string[];
+  pricePerNight: number;
+  starRating: number;
+  imageUrls: string[];
+  lastUpdated: Date;
+  location?: HotelLocation;
+  contact: HotelContact;
+  policies: HotelPolicies;
+  averageRating: number;
+  reviewCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PublicHotelSearchResponse = {
+  data: PublicHotelResponse[];
+  pagination: {
+    total: number;
+    page: number;
+    pages: number;
+  };
+};
+
+/** Public fields plus the owner's own counters and listing controls. */
+export type ManageHotelResponse = PublicHotelResponse & {
+  userId: string;
+  totalBookings: number;
+  totalRevenue: number;
+  upcomingBookings?: number;
+  completedBookings?: number;
+  cancelledBookings?: number;
+  occupancyRate: number;
+  isActive: boolean;
+  isFeatured: boolean;
+};
+
+/** Owner fields plus internal ownership and moderation fields. */
+export type AdminHotelResponse = ManageHotelResponse & {
+  ownerUserId: string | null;
+  createdByUserId: string | null;
+  organisationId: string | null;
+  source: HotelRecord["source"];
+  status: HotelRecord["status"];
+};
+
+const withBaseFields = (
+  hotel: HotelRecord,
+  stats: HotelStats,
+): Omit<PublicHotelResponse, "location"> => {
   return {
     _id: hotel.id,
-    userId: hotel.ownerUserId ?? hotel.createdByUserId ?? "",
     name: hotel.name,
     city: hotel.city,
     country: hotel.country,
@@ -35,21 +113,6 @@ export function toHotelResponse(hotel: HotelRecord, stats = EMPTY_HOTEL_STATS): 
     starRating: hotel.starRating,
     imageUrls: hotel.images,
     lastUpdated: hotel.updatedAt,
-    ...(latitude !== null && longitude !== null
-      ? {
-          location: {
-            latitude,
-            longitude,
-            address: {
-              street: hotel.addressLine1 ?? "",
-              city: hotel.city,
-              state: hotel.state ?? "",
-              country: hotel.country,
-              zipCode: hotel.postalCode ?? "",
-            },
-          },
-        }
-      : {}),
     contact: {
       phone: hotel.contactPhone ?? "",
       email: hotel.contactEmail ?? "",
@@ -62,14 +125,68 @@ export function toHotelResponse(hotel: HotelRecord, stats = EMPTY_HOTEL_STATS): 
       petPolicy: hotel.petPolicy ?? "",
       smokingPolicy: hotel.smokingPolicy ?? "",
     },
-    totalBookings: stats.totalBookings,
-    totalRevenue: stats.totalRevenue,
     averageRating: stats.averageRating,
     reviewCount: stats.reviewCount,
+    createdAt: hotel.createdAt,
+    updatedAt: hotel.updatedAt,
+  };
+};
+
+const withLocation = (hotel: HotelRecord): Pick<PublicHotelResponse, "location"> => {
+  if (hotel.latitude === null || hotel.longitude === null) return {};
+  return {
+    location: {
+      latitude: Number(hotel.latitude),
+      longitude: Number(hotel.longitude),
+      address: {
+        street: hotel.addressLine1 ?? "",
+        city: hotel.city,
+        state: hotel.state ?? "",
+        country: hotel.country,
+        zipCode: hotel.postalCode ?? "",
+      },
+    },
+  };
+};
+
+/** Public and customer allow-list: no owner identity, financial counters or internal flags. */
+export function toPublicHotelResponse(
+  hotel: HotelRecord,
+  stats = EMPTY_HOTEL_STATS,
+): PublicHotelResponse {
+  return {
+    ...withBaseFields(hotel, stats),
+    ...withLocation(hotel),
+  };
+}
+
+/** Owner allow-list: adds the viewer's own ownership, counters and listing state. */
+export function toManageHotelResponse(
+  hotel: HotelRecord,
+  stats = EMPTY_HOTEL_STATS,
+): ManageHotelResponse {
+  return {
+    ...toPublicHotelResponse(hotel, stats),
+    userId: hotel.ownerUserId ?? hotel.createdByUserId ?? "",
+    totalBookings: stats.totalBookings,
+    totalRevenue: stats.totalRevenue,
     occupancyRate: 0,
     isActive: hotel.status === "active",
     isFeatured: hotel.isFeatured,
-    createdAt: hotel.createdAt,
-    updatedAt: hotel.updatedAt,
+  };
+}
+
+/** Admin allow-list: owner fields plus internal ownership and moderation fields. */
+export function toAdminHotelResponse(
+  hotel: HotelRecord,
+  stats = EMPTY_HOTEL_STATS,
+): AdminHotelResponse {
+  return {
+    ...toManageHotelResponse(hotel, stats),
+    ownerUserId: hotel.ownerUserId,
+    createdByUserId: hotel.createdByUserId,
+    organisationId: hotel.organisationId,
+    source: hotel.source,
+    status: hotel.status,
   };
 }

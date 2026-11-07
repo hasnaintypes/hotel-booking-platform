@@ -15,7 +15,7 @@ import { BookingsRepository } from "../../database/repositories/bookings.reposit
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
-import { toHotelResponse } from "../hotels/hotel-response";
+import { toPublicHotelResponse } from "../hotels/hotel-response";
 import { toBookingResponse, type BookingResponse } from "./booking-response";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
@@ -295,7 +295,7 @@ export class BookingsService {
     return hotelRecords
       .filter((hotel) => grouped.has(hotel.id))
       .map((hotel) => ({
-        ...toHotelResponse(hotel),
+        ...toPublicHotelResponse(hotel),
         bookings: grouped.get(hotel.id) ?? [],
       }));
   }

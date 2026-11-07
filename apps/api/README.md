@@ -42,6 +42,11 @@ PostgreSQL errors are mapped centrally to typed HTTP problems: unique violations
 constraint violations 422, invalid values 400, and exhausted transaction conflicts 409. Repositories
 can use `throwPostgresError(error)` to translate an error at the boundary.
 
+Responses are serialised through audience-specific allow-lists in
+`src/modules/hotels/hotel-response.ts`. Public and customer hotel payloads omit owner ids, revenue
+and booking counters, and internal listing flags; owner (`manage`) and admin responses add only the
+fields those audiences need.
+
 ## Request lifecycle
 
 `app.setup.ts` applies the global `api` prefix and URI version 1, then wires Helmet, CORS, cookie parsing, the global `ThrottlerGuard`, `OriginGuard`

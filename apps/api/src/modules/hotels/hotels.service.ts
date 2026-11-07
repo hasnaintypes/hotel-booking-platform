@@ -1,11 +1,16 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { HotelSearchResponse, HotelType } from "@hotel-booking/types";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { SearchHotelsDto } from "./dto/search-hotels.dto";
 import { ToggleActiveDto } from "./dto/toggle-active.dto";
-import { toHotelResponse } from "./hotel-response";
+import {
+  toAdminHotelResponse,
+  toPublicHotelResponse,
+  type AdminHotelResponse,
+  type PublicHotelResponse,
+  type PublicHotelSearchResponse,
+} from "./hotel-response";
 import { HotelStatsService } from "./hotel-stats.service";
 
 @Injectable()
@@ -22,16 +27,25 @@ export class HotelsService {
     return user?.role === "admin";
   }
 
-  private async enrich(records: HotelRecord[]): Promise<HotelType[]> {
+  private async enrich(records: HotelRecord[]): Promise<PublicHotelResponse[]> {
     const stats = await this.hotelStats.forHotels(records.map((hotel) => hotel.id));
-    return records.map((hotel) => toHotelResponse(hotel, stats.get(hotel.id)));
+    return records.map((hotel) => toPublicHotelResponse(hotel, stats.get(hotel.id)));
   }
 
-  private async enrichOne(hotel: HotelRecord): Promise<HotelType> {
-    return toHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
+  private async enrichAdmin(records: HotelRecord[]): Promise<AdminHotelResponse[]> {
+    const stats = await this.hotelStats.forHotels(records.map((hotel) => hotel.id));
+    return records.map((hotel) => toAdminHotelResponse(hotel, stats.get(hotel.id)));
   }
 
-  async search(queryParams: SearchHotelsDto): Promise<HotelSearchResponse> {
+  private async enrichOne(hotel: HotelRecord): Promise<PublicHotelResponse> {
+    return toPublicHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
+  }
+
+  private async enrichOneAdmin(hotel: HotelRecord): Promise<AdminHotelResponse> {
+    return toAdminHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
+  }
+
+  async search(queryParams: SearchHotelsDto): Promise<PublicHotelSearchResponse> {
     const result = await this.hotels.search({
       destination: queryParams.destination,
       adultCount: queryParams.adultCount,
@@ -56,7 +70,7 @@ export class HotelsService {
   }
 
   findAllAdmin() {
-    return this.hotels.listAll().then((records) => this.enrich(records));
+    return this.hotels.listAll().then((records) => this.enrichAdmin(records));
   }
 
   async setActive(id: string, dto: ToggleActiveDto) {
@@ -72,11 +86,11 @@ export class HotelsService {
       throw new NotFoundException("Hotel not found");
     }
 
-    return this.enrichOne(hotel);
+    return this.enrichOneAdmin(hotel);
   }
 
   /** An inactive hotel is visible only to its owner and to admins; everyone else gets a 404. */
-  async findOne(id: string, viewer?: AuthenticatedUser): Promise<HotelType> {
+  async findOne(id: string, viewer?: AuthenticatedUser): Promise<PublicHotelResponse> {
     const hotel = await this.hotels.findById(id);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
@@ -92,11 +106,11 @@ export class HotelsService {
     return this.enrichOne(hotel);
   }
 
-  async findOneAdmin(id: string): Promise<HotelType> {
+  async findOneAdmin(id: string): Promise<AdminHotelResponse> {
     const hotel = await this.hotels.findById(id);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
     }
-    return this.enrichOne(hotel);
+    return this.enrichOneAdmin(hotel);
   }
 }
