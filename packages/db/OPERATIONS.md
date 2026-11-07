@@ -1,6 +1,6 @@
 # Database operations
 
-> Last updated: 2026-11-05
+> Last updated: 2026-11-07
 
 This is the operating baseline for the `@hotel-booking/db` package and every service that uses
 PostgreSQL. PostgreSQL is the system of record for every domain and booking path.
@@ -52,6 +52,22 @@ the pool.
 
 The container healthcheck uses liveness, not readiness. Readiness belongs in the platform's
 deploy/traffic gate so a pending migration stops traffic without killing the process.
+
+## Database naming
+
+Each environment uses its own PostgreSQL database and credentials. The database name is not part
+of the schema; it is a deployment setting. Never point one environment at another's database.
+
+| Environment | Default database | Notes |
+| --- | --- | --- |
+| Local development | `hotel_booking` | Started by `docker compose up -d postgres`; safe to reset. |
+| Local and CI tests | `hotel_booking_test` | Disposable; the API harness truncates it between suites. Set `TEST_DATABASE_URL`, never `DATABASE_URL`, for tests. |
+| Staging | Provider-assigned, for example `hotel_booking_staging` | Treat as shared data: no destructive seed. If seeding is required, set `ALLOW_SEED=true` and `SEED_DATABASE_NAME` to the exact staging database name. |
+| Production | Provider-assigned | Never seeded, restored only through the restore drill, and reachable only with production credentials. |
+
+`DATABASE_URL` is required outside local development; the local fallback is
+`postgres://postgres:postgres@localhost:5432/hotel_booking`. Migration and seed commands read
+`DATABASE_URL`, so export the target environment's value explicitly before running them.
 
 ## Migration policy
 
@@ -106,7 +122,7 @@ are verified, and only then replace a production target.
 7. Drop the scratch database and delete the dump.
 
 **Executed:** 2026-11-05 against a local `postgres:17-alpine` instance. A custom-format dump of the
-migrated test database restored into a scratch database with all 6 migrations present and was then
+migrated test database restored into a scratch database with all 8 migrations present and was then
 dropped. This proves the procedure; repeat it on the provisioned Render instance before launch and
 after any plan or storage change.
 
