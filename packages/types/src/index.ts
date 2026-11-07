@@ -119,6 +119,17 @@ export type ReviewType = {
   updatedAt?: Date;
 };
 
+export type BookingStatus =
+  | "pending_payment"
+  | "authorized"
+  | "confirming"
+  | "confirmed"
+  | "cancelling"
+  | "cancelled"
+  | "failed"
+  | "expired"
+  | "needs_review";
+
 export type BookingType = {
   _id: string;
   userId: string;
@@ -132,7 +143,8 @@ export type BookingType = {
   checkIn: Date;
   checkOut: Date;
   totalCost: number;
-  status?: "pending" | "confirmed" | "cancelled" | "completed" | "refunded";
+  status?: BookingStatus;
+  allowedTransitions?: BookingStatus[];
   paymentStatus?: "pending" | "paid" | "failed" | "refunded";
   paymentMethod?: string;
   specialRequests?: string;
@@ -163,4 +175,4 @@ export type PaymentIntentResponse = {
   totalCost: number;
 };
 
-export { isBookingCancellable } from "./booking";
+export { bookingStatusLabel, isBookingCancellable } from "./booking";

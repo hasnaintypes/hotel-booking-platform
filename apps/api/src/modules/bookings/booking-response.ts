@@ -1,4 +1,8 @@
 import type { BookingWithPayments } from "../../database/repositories/bookings.repository";
+import {
+  allowedNextStatuses,
+  type BookingStatus,
+} from "../../domain/bookings/booking-state-machine";
 
 type Payment = BookingWithPayments["payments"][number];
 
@@ -17,7 +21,8 @@ export type BookingResponse = {
   checkIn: Date;
   checkOut: Date;
   totalCost: number;
-  status: "pending" | "confirmed" | "cancelled" | "completed" | "refunded";
+  status: BookingStatus;
+  allowedTransitions: BookingStatus[];
   paymentStatus: BookingPaymentStatus;
   paymentMethod?: string;
   specialRequests?: string;
@@ -73,6 +78,7 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
     checkOut: booking.checkOut,
     totalCost: booking.totalAmountMinor / 100,
     status: booking.status,
+    allowedTransitions: [...allowedNextStatuses(booking.status)],
     paymentStatus: toPaymentStatus(charge, refunds.length > 0),
     ...(paymentMethod ? { paymentMethod } : {}),
     ...(booking.specialRequests ? { specialRequests: booking.specialRequests } : {}),

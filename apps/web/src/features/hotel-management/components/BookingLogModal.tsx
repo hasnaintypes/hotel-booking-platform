@@ -56,14 +56,18 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
     switch (status) {
       case "confirmed":
         return "bg-green-100 text-green-800 border-green-200";
-      case "pending":
+      case "pending_payment":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "cancelled":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "completed":
+      case "authorized":
+      case "confirming":
+      case "cancelling":
         return "bg-blue-100 text-blue-800 border-blue-200";
-      case "refunded":
+      case "cancelled":
+      case "failed":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "needs_review":
         return "bg-purple-100 text-purple-800 border-purple-200";
+      case "expired":
       default:
         return "bg-gray-100 text-gray-700 border-gray-200";
     }
@@ -182,20 +186,32 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               <SelectItem value="all">
                 <SelectOptionLabel icon={List}>All Status</SelectOptionLabel>
               </SelectItem>
-              <SelectItem value="pending">
-                <SelectOptionLabel icon={Clock}>Pending</SelectOptionLabel>
+              <SelectItem value="pending_payment">
+                <SelectOptionLabel icon={Clock}>Pending payment</SelectOptionLabel>
+              </SelectItem>
+              <SelectItem value="authorized">
+                <SelectOptionLabel icon={CreditCard}>Authorized</SelectOptionLabel>
+              </SelectItem>
+              <SelectItem value="confirming">
+                <SelectOptionLabel icon={Clock}>Confirming</SelectOptionLabel>
               </SelectItem>
               <SelectItem value="confirmed">
                 <SelectOptionLabel icon={CheckCircle2}>Confirmed</SelectOptionLabel>
               </SelectItem>
+              <SelectItem value="cancelling">
+                <SelectOptionLabel icon={Clock}>Cancelling</SelectOptionLabel>
+              </SelectItem>
               <SelectItem value="cancelled">
                 <SelectOptionLabel icon={XCircle}>Cancelled</SelectOptionLabel>
               </SelectItem>
-              <SelectItem value="completed">
-                <SelectOptionLabel icon={BadgeCheck}>Completed</SelectOptionLabel>
+              <SelectItem value="failed">
+                <SelectOptionLabel icon={XCircle}>Failed</SelectOptionLabel>
               </SelectItem>
-              <SelectItem value="refunded">
-                <SelectOptionLabel icon={RotateCcw}>Refunded</SelectOptionLabel>
+              <SelectItem value="expired">
+                <SelectOptionLabel icon={RotateCcw}>Expired</SelectOptionLabel>
+              </SelectItem>
+              <SelectItem value="needs_review">
+                <SelectOptionLabel icon={BadgeCheck}>Needs review</SelectOptionLabel>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -282,7 +298,14 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                   <div>
                     <p className="text-sm font-medium text-gray-600">Pending</p>
                     <p className="text-lg md:text-2xl font-medium text-yellow-600">
-                      {bookings.filter((b: BookingType) => b.status === "pending").length}
+                      {
+                        bookings.filter(
+                          (b: BookingType) =>
+                            b.status === "pending_payment" ||
+                            b.status === "authorized" ||
+                            b.status === "confirming",
+                        ).length
+                      }
                     </p>
                   </div>
                   <div className="bg-yellow-100 p-2 rounded-xl">
@@ -302,21 +325,24 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               {
                 bookings.filter(
                   (b: BookingType) =>
-                    (b.status === "confirmed" || b.status === "pending") &&
+                    (b.status === "pending_payment" ||
+                      b.status === "authorized" ||
+                      b.status === "confirming" ||
+                      b.status === "confirmed") &&
                     new Date(b.checkIn) > new Date(),
                 ).length
               }
             </Badge>
             <Badge className="bg-blue-100 text-blue-800 border-blue-200 border">
-              Completed: {bookings.filter((b: BookingType) => b.status === "completed").length}
-            </Badge>
-            <Badge className="bg-red-100 text-red-800 border-red-200 border">
-              Cancelled:{" "}
+              Completed:{" "}
               {
                 bookings.filter(
-                  (b: BookingType) => b.status === "cancelled" || b.status === "refunded",
+                  (b: BookingType) => b.status === "confirmed" && new Date(b.checkOut) < new Date(),
                 ).length
               }
+            </Badge>
+            <Badge className="bg-red-100 text-red-800 border-red-200 border">
+              Cancelled: {bookings.filter((b: BookingType) => b.status === "cancelled").length}
             </Badge>
           </div>
         )}

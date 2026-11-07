@@ -28,7 +28,7 @@ const ActivityPage = () => {
       id: `b-${booking._id}`,
       at: new Date(booking.createdAt || booking.checkIn).getTime(),
       kind: "booking",
-      title: `Booking ${booking.status || "pending"} — ${booking.firstName} ${booking.lastName}`,
+      title: `Booking ${booking.status || "pending_payment"} — ${booking.firstName} ${booking.lastName}`,
       detail: `£${booking.totalCost} · check-in ${new Date(booking.checkIn).toLocaleDateString()}`,
     });
   });

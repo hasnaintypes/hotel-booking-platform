@@ -20,6 +20,7 @@ export const bookingEvents = pgTable(
     toStatus: bookingStatus("to_status").notNull(),
     actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "restrict" }),
     reason: text("reason"),
+    requestId: text("request_id"),
     metadata: jsonb("metadata")
       .notNull()
       .default(sql`'{}'::jsonb`),
@@ -33,6 +34,7 @@ export const bookingEvents = pgTable(
     check("booking_events_metadata_check", sql`jsonb_typeof(${table.metadata}) = 'object'`),
     index("booking_events_booking_created_at_idx").on(table.bookingId, table.createdAt),
     index("booking_events_actor_idx").on(table.actorUserId),
+    index("booking_events_request_idx").on(table.requestId),
   ],
 );
 

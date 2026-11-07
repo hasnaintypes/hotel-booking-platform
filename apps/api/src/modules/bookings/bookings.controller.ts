@@ -6,11 +6,12 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
   Res,
   UseGuards,
 } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
@@ -42,9 +43,10 @@ export class BookingsController {
   async create(
     @Body() dto: CreateBookingDto,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request & { id?: string },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const booking = await this.bookingsService.create(dto, user.userId);
+    const booking = await this.bookingsService.create(dto, user.userId, request.id);
     res.setHeader("Location", `/api/v1/bookings/${booking._id}`);
     return booking;
   }
@@ -60,7 +62,8 @@ export class BookingsController {
     @Param("id", UuidPipe) id: string,
     @Body() dto: CancelBookingDto,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request & { id?: string },
   ) {
-    return this.bookingsService.cancel(id, dto, user.userId);
+    return this.bookingsService.cancel(id, dto, user.userId, request.id);
   }
 }

@@ -107,7 +107,16 @@ export async function insertBooking(
   const totalCost = Number(overrides.totalCost ?? 200);
   const status =
     (overrides.status as
-      "pending" | "confirmed" | "cancelled" | "completed" | "refunded" | undefined) ?? "confirmed";
+      | "pending_payment"
+      | "authorized"
+      | "confirming"
+      | "confirmed"
+      | "cancelling"
+      | "cancelled"
+      | "failed"
+      | "expired"
+      | "needs_review"
+      | undefined) ?? "confirmed";
   const paymentStatus =
     (overrides.paymentStatus as
       "pending" | "authorized" | "paid" | "failed" | "refunded" | undefined) ?? "paid";
