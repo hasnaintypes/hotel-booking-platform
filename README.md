@@ -54,6 +54,9 @@ cp apps/admin/.env.example apps/admin/.env
 
 pnpm db:migrate                       # apply PostgreSQL migrations
 pnpm dev                              # API, web and admin together
+
+# In another terminal: the API is ready only when PostgreSQL is connected and migrations applied
+curl -fsS http://localhost:5001/health/ready
 ```
 
 | App | URL |
@@ -70,9 +73,10 @@ The API exits at startup if a required variable is missing. Browser apps only re
 
 | Variable | App | Required | Purpose |
 | --- | --- | --- | --- |
-| `DATABASE_URL` | api | For `db:*` | PostgreSQL connection string |
-| `TEST_DATABASE_URL` | api | For DB tests | Disposable PostgreSQL database for integration tests |
+| `DATABASE_URL` | api | Yes outside local | PostgreSQL connection string; local default is `postgres://postgres:postgres@localhost:5432/hotel_booking`. Used at runtime and by `db:*` scripts. |
+| `TEST_DATABASE_URL` | api | For DB tests | Disposable `hotel_booking_test` database; tests reset it and never use the developer database. |
 | `DATABASE_POOL_MAX`, `DATABASE_STATEMENT_TIMEOUT_MS`, `DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS`, `DATABASE_LOCK_TIMEOUT_MS` | api | No | PostgreSQL pool and timeout defaults (see [database operations](packages/db/OPERATIONS.md)) |
+| `NODE_ENV` | api | No | `development` locally; database naming for each environment is in [database operations](packages/db/OPERATIONS.md#database-naming) |
 | `JWT_SECRET_KEY` | api | Yes | JWT signing secret (`openssl rand -base64 64`) |
 | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` | api | Yes | Image uploads |
 | `STRIPE_API_KEY` | api | Yes | Stripe secret key (`sk_test_…` locally) |
