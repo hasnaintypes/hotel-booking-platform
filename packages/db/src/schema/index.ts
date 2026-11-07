@@ -9,10 +9,12 @@ import { facilities, hotelFacilities } from "./facilities.js";
 import { hotelImages } from "./hotel-images.js";
 import { hotelHotelTypes, hotelTypes } from "./hotel-types.js";
 import { hotels } from "./hotels.js";
+import { inboxEvents } from "./inbox-events.js";
 import { ledgerEntries } from "./ledger-entries.js";
 import { memberships } from "./memberships.js";
 import { oauthAccounts } from "./oauth-accounts.js";
 import { organisationRoles, organisations, rolePermissions } from "./organisations.js";
+import { outboxEvents } from "./outbox-events.js";
 import { payments } from "./payments.js";
 import { reviews } from "./reviews.js";
 import { users } from "./users.js";
@@ -92,6 +94,12 @@ export type {
 export { reviews };
 export type { NewReview, Review } from "./reviews.js";
 
+export { outboxEvents };
+export type { NewOutboxEvent, OutboxEvent } from "./outbox-events.js";
+
+export { inboxEvents };
+export type { InboxEvent, NewInboxEvent } from "./inbox-events.js";
+
 export {
   bookingStatus,
   hotelSource,
@@ -136,4 +144,6 @@ export const schema = {
   bookingEvents,
   analyticsSnapshots,
   reviews,
+  outboxEvents,
+  inboxEvents,
 };

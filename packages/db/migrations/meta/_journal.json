@@ -64,6 +64,13 @@
       "when": 1794039918813,
       "tag": "0008_booking_state_machine",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794043118797,
+      "tag": "0009_outbox_inbox",
+      "breakpoints": true
     }
   ]
 }
