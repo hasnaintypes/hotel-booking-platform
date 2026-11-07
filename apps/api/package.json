@@ -6,7 +6,7 @@
   "description": "Hotel booking platform API",
   "main": "./dist/apps/api/src/main.js",
   "scripts": {
-    "dev": "nest start --watch",
+    "dev": "pnpm --filter @hotel-booking/db build && nest start --watch --entryFile ../apps/api/src/main",
     "build": "nest build",
     "start": "node dist/apps/api/src/main.js",
     "seed": "tsx src/database/seeds/seed.ts",
