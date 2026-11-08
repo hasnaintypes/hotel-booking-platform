@@ -33,6 +33,18 @@ describe("request pipeline (CORS and origin guard)", () => {
     expect(res.headers["x-powered-by"]).toBeUndefined();
   });
 
+  it("allows the Idempotency-Key header in CORS preflight", async () => {
+    const res = await anonymous(t)
+      .options(routes.bookings.create)
+      .set("Origin", TRUSTED)
+      .set("Access-Control-Request-Method", "POST")
+      .set("Access-Control-Request-Headers", "Idempotency-Key");
+
+    expect(String(res.headers["access-control-allow-headers"]).toLowerCase()).toContain(
+      "idempotency-key",
+    );
+  });
+
   it("does not grant CORS access to unknown origins", async () => {
     const res = await anonymous(t).get(routes.health).set("Origin", UNTRUSTED);
     expect(res.headers["access-control-allow-origin"]).toBeUndefined();

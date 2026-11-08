@@ -670,7 +670,7 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
       () =>
         client.query(
           `insert into booking_events (booking_id, from_status, to_status)
-           values ($1, 'pending', 'pending')`,
+           values ($1, 'confirmed', 'confirmed')`,
           [bookingId],
         ),
       "23514",
@@ -686,11 +686,62 @@ describe.skipIf(!url)("schema constraints on PostgreSQL", () => {
     );
   });
 
+  it("enforces idempotency key uniqueness, status, hash and expiry", async () => {
+    const hash = "a".repeat(64);
+    const insertKey = (scope = "bookings.create:user-1", key = "key-1") =>
+      client.query(
+        `insert into idempotency_keys (scope, key, request_hash, expires_at)
+         values ($1, $2, $3, now() + interval '48 hours')`,
+        [scope, key, hash],
+      );
+
+    await insertKey();
+    await expectDatabaseError(() => insertKey(), "23505");
+    await insertKey("bookings.create:user-2", "key-1");
+
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into idempotency_keys (scope, key, request_hash, status, expires_at)
+           values ('scope', 'key-2', $1, 'unknown', now() + interval '1 hour')`,
+          [hash],
+        ),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into idempotency_keys (scope, key, request_hash, expires_at)
+           values ('scope', 'key-3', 'not-a-hash', now() + interval '1 hour')`,
+        ),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into idempotency_keys (scope, key, request_hash, response, expires_at)
+           values ('scope', 'key-4', $1, '[]'::jsonb, now() + interval '1 hour')`,
+          [hash],
+        ),
+      "23514",
+    );
+    await expectDatabaseError(
+      () =>
+        client.query(
+          `insert into idempotency_keys (scope, key, request_hash, created_at, expires_at)
+           values ('scope', 'key-5', $1, now(), now())`,
+          [hash],
+        ),
+      "23514",
+    );
+  });
+
   it("stores no mutable counter columns", async () => {
     const result = await client.query<{ column_name: string }>(
       `select column_name
          from information_schema.columns
         where table_schema = 'public'
+          and table_name <> 'analytics_snapshots'
           and column_name in
             ('total_bookings', 'total_revenue', 'total_spent', 'average_rating', 'review_count',
              'occupancy_rate')

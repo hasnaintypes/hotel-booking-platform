@@ -122,6 +122,12 @@ export function configureApp(app: NestExpressApplication): void {
     credentials: true,
     optionsSuccessStatus: 204,
     methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie", "X-Requested-With"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Cookie",
+      "X-Requested-With",
+      "Idempotency-Key",
+    ],
   });
 }

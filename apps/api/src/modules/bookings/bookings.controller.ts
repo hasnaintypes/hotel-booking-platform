@@ -13,6 +13,7 @@ import {
 import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Idempotent } from "../../common/idempotency/idempotent.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
@@ -40,6 +41,7 @@ export class BookingsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Idempotent("bookings.create")
   async create(
     @Body() dto: CreateBookingDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -58,6 +60,7 @@ export class BookingsController {
 
   @Post(":id/cancellations")
   @HttpCode(HttpStatus.OK)
+  @Idempotent("bookings.cancel")
   cancel(
     @Param("id", UuidPipe) id: string,
     @Body() dto: CancelBookingDto,

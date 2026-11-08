@@ -4,6 +4,7 @@ import { BookingsRepository } from "./bookings.repository";
 import { MigrationsRepository } from "./migrations.repository";
 import { ReviewsRepository } from "./reviews.repository";
 import { HotelsRepository } from "./hotels.repository";
+import { IdempotencyRepository } from "./idempotency.repository";
 import { InboxRepository } from "./inbox.repository";
 import { OutboxRepository } from "./outbox.repository";
 import { UsersRepository } from "./users.repository";
@@ -19,6 +20,7 @@ import { UsersRepository } from "./users.repository";
     MigrationsRepository,
     OutboxRepository,
     InboxRepository,
+    IdempotencyRepository,
   ],
   exports: [
     AnalyticsRepository,
@@ -29,6 +31,7 @@ import { UsersRepository } from "./users.repository";
     MigrationsRepository,
     OutboxRepository,
     InboxRepository,
+    IdempotencyRepository,
   ],
 })
 export class DatabaseRepositoriesModule {}
