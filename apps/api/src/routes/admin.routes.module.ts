@@ -6,6 +6,7 @@ import { AdminBookingsController } from "../modules/bookings/admin-bookings.cont
 import { BusinessInsightsModule } from "../modules/business-insights/business-insights.module";
 import { AdminReportsController } from "../modules/business-insights/admin-reports.controller";
 import { HealthServiceModule } from "../modules/health/health-service.module";
+import { JobsModule } from "../modules/jobs/jobs.module";
 import { AdminSystemController } from "../modules/health/admin-system.controller";
 import { HotelsModule } from "../modules/hotels/hotels.module";
 import { AdminHotelsController } from "../modules/hotels/admin-hotels.controller";
@@ -24,6 +25,7 @@ import { AdminUsersController } from "../modules/users/admin-users.controller";
     BusinessInsightsModule,
     AnalyticsModule,
     HealthServiceModule,
+    JobsModule,
   ],
   controllers: [
     AdminUsersController,

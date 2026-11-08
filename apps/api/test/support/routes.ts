@@ -6,6 +6,7 @@ export const routes = {
   health: "/health/live",
   healthReady: "/health/ready",
   healthDetailed: "/api/v1/admin/system/health",
+  jobs: "/api/v1/admin/system/jobs",
   auth: {
     register: "/api/v1/auth/register",
     login: "/api/v1/auth/login",

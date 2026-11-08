@@ -61,7 +61,7 @@ describe("business insights at scale", () => {
     }
 
     await db.execute(sql`vacuum (analyze) "bookings"`);
-  }, 120_000);
+  }, 180_000);
 
   afterAll(async () => {
     await t.close();

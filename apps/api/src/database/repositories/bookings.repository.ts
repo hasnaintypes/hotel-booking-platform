@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   bookingEvents,
   bookings,
@@ -392,6 +392,51 @@ export class BookingsRepository {
   async count(): Promise<number> {
     const [row] = await this.db.select({ count: sql<number>`count(*)::int` }).from(bookings);
     return Number(row?.count ?? 0);
+  }
+
+  /** Pending bookings old enough for the expiry job to release. */
+  async listPendingPaymentBefore(cutoff: Date, limit = 100): Promise<Booking[]> {
+    return this.db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.status, "pending_payment"), lt(bookings.createdAt, cutoff)))
+      .orderBy(asc(bookings.createdAt), asc(bookings.id))
+      .limit(Math.min(Math.max(limit, 1), 500));
+  }
+
+  /** Counts the reconciliation job needs to spot work that has not moved. */
+  async reconciliationCounts(cutoff: Date): Promise<{
+    pendingPayments: number;
+    authorizedPayments: number;
+    pendingBookings: number;
+    confirmingBookings: number;
+    needsReviewBookings: number;
+  }> {
+    const [paymentRows, bookingRows] = await Promise.all([
+      this.db
+        .select({
+          pending: sql<number>`count(*) filter (where ${payments.status} = 'pending')::int`,
+          authorized: sql<number>`count(*) filter (where ${payments.status} = 'authorized')::int`,
+        })
+        .from(payments)
+        .where(lt(payments.createdAt, cutoff)),
+      this.db
+        .select({
+          pending: sql<number>`count(*) filter (where ${bookings.status} = 'pending_payment')::int`,
+          confirming: sql<number>`count(*) filter (where ${bookings.status} = 'confirming')::int`,
+          needsReview: sql<number>`count(*) filter (where ${bookings.status} = 'needs_review')::int`,
+        })
+        .from(bookings)
+        .where(lt(bookings.updatedAt, cutoff)),
+    ]);
+
+    return {
+      pendingPayments: Number(paymentRows[0]?.pending ?? 0),
+      authorizedPayments: Number(paymentRows[0]?.authorized ?? 0),
+      pendingBookings: Number(bookingRows[0]?.pending ?? 0),
+      confirmingBookings: Number(bookingRows[0]?.confirming ?? 0),
+      needsReviewBookings: Number(bookingRows[0]?.needsReview ?? 0),
+    };
   }
 
   private async withPayments(rows: Booking[]): Promise<BookingWithPayments[]> {

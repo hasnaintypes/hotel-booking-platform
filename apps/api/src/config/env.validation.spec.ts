@@ -106,6 +106,44 @@ describe("validateEnv", () => {
     });
   });
 
+  describe("background job settings", () => {
+    it.each(["true", "false", undefined])("accepts RUN_WORKER=%s", (value) => {
+      expect(() => validateEnv({ ...base, RUN_WORKER: value })).not.toThrow();
+    });
+
+    it.each(["1", "yes", "TRUE"])("rejects RUN_WORKER=%s", (value) => {
+      expect(() => validateEnv({ ...base, RUN_WORKER: value })).toThrow(/RUN_WORKER/);
+    });
+
+    it("accepts values inside the allowed ranges", () => {
+      expect(() =>
+        validateEnv({
+          ...base,
+          JOB_OUTBOX_POLL_MS: "1000",
+          JOB_OUTBOX_BATCH_SIZE: "25",
+          JOB_OUTBOX_MAX_ATTEMPTS: "10",
+          JOB_RETRY_LIMIT: "3",
+          JOB_EXPIRE_SECONDS: "900",
+          JOB_LOCAL_CONCURRENCY: "5",
+          JOB_PAYMENT_HOLD_MINUTES: "30",
+        }),
+      ).not.toThrow();
+    });
+
+    it.each([
+      ["JOB_OUTBOX_POLL_MS", "50"],
+      ["JOB_OUTBOX_BATCH_SIZE", "501"],
+      ["JOB_OUTBOX_MAX_ATTEMPTS", "0"],
+      ["JOB_RETRY_LIMIT", "-1"],
+      ["JOB_EXPIRE_SECONDS", "0"],
+      ["JOB_LOCAL_CONCURRENCY", "101"],
+      ["JOB_PAYMENT_HOLD_MINUTES", "0"],
+      ["JOB_PAYMENT_HOLD_MINUTES", "30m"],
+    ])("rejects %s=%s", (name, value) => {
+      expect(() => validateEnv({ ...base, [name]: value })).toThrow(new RegExp(name));
+    });
+  });
+
   it("still validates the log settings", () => {
     expect(() => validateEnv({ ...base, LOG_LEVEL: "loud" })).toThrow(/LOG_LEVEL/);
     expect(() => validateEnv({ ...base, LOG_FORMAT: "xml" })).toThrow(/LOG_FORMAT/);

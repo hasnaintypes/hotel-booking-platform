@@ -19,6 +19,23 @@ const INTEGER_SETTINGS: Array<[string, number, number]> = [
   ["DATABASE_STATEMENT_TIMEOUT_MS", 100, 120_000],
   ["DATABASE_IDLE_IN_TRANSACTION_TIMEOUT_MS", 100, 600_000],
   ["DATABASE_LOCK_TIMEOUT_MS", 100, 120_000],
+  ["JOB_OUTBOX_POLL_MS", 100, 60_000],
+  ["JOB_OUTBOX_BATCH_SIZE", 1, 500],
+  ["JOB_OUTBOX_MAX_ATTEMPTS", 1, 100],
+  ["JOB_OUTBOX_RETRY_DELAY_MS", 100, 600_000],
+  ["JOB_OUTBOX_RETRY_DELAY_MAX_MS", 100, 3_600_000],
+  ["JOB_OUTBOX_LOCK_TIMEOUT_MS", 1_000, 3_600_000],
+  ["JOB_RETRY_LIMIT", 0, 100],
+  ["JOB_RETRY_DELAY_SECONDS", 0, 3_600],
+  ["JOB_RETRY_DELAY_MAX_SECONDS", 0, 86_400],
+  ["JOB_EXPIRE_SECONDS", 1, 86_400],
+  ["JOB_DELETE_AFTER_SECONDS", 0, 31_536_000],
+  ["JOB_LOCAL_CONCURRENCY", 1, 100],
+  ["JOB_POLL_INTERVAL_SECONDS", 1, 300],
+  ["JOB_SHUTDOWN_TIMEOUT_MS", 1_000, 300_000],
+  ["JOB_RETENTION_DAYS", 1, 3_650],
+  ["JOB_PAYMENT_HOLD_MINUTES", 1, 43_200],
+  ["JOB_RECONCILE_STALE_MINUTES", 1, 43_200],
 ];
 
 const LOG_LEVELS = ["fatal", "error", "warn", "info", "debug", "trace", "silent"];
@@ -42,6 +59,11 @@ export const validateEnv = (config: Record<string, unknown>) => {
       "Refusing to start with NODE_ENV=production and a live Stripe key: payments and bookings " +
         "are not production-ready until milestone M2. Use a Stripe test key (sk_test_...).",
     );
+  }
+
+  const runWorker = config.RUN_WORKER;
+  if (runWorker !== undefined && runWorker !== "true" && runWorker !== "false") {
+    throw new Error(`Invalid RUN_WORKER "${String(runWorker)}". Use "true" or "false"`);
   }
 
   const apiDocs = config.ENABLE_API_DOCS;

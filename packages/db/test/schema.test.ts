@@ -12,11 +12,13 @@ import {
   hotelImages,
   hotels,
   hotelTypes,
+  inboxEvents,
   ledgerEntries,
   memberships,
   oauthAccounts,
   organisationRoles,
   organisations,
+  outboxEvents,
   payments,
   reviews,
   rolePermissions,
@@ -63,6 +65,8 @@ describe("schema types", () => {
       ledgerEntries,
       bookingEvents,
       reviews,
-    ]).toHaveLength(21);
+      outboxEvents,
+      inboxEvents,
+    ]).toHaveLength(23);
   });
 });
