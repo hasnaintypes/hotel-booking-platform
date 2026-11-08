@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
+import { Idempotent } from "../../common/idempotency/idempotent.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
@@ -35,6 +36,7 @@ export class AdminBookingsController {
 
   @Post(":id/cancellations")
   @HttpCode(HttpStatus.OK)
+  @Idempotent("bookings.cancel.admin")
   cancel(
     @Param("id", UuidPipe) id: string,
     @Body() dto: CancelBookingDto,

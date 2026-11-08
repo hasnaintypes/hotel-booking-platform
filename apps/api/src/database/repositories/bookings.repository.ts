@@ -4,7 +4,6 @@ import {
   bookingEvents,
   bookings,
   payments,
-  withTransaction,
   type Booking,
   type Database,
   type Payment,
@@ -12,6 +11,7 @@ import {
   type Transaction,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
+import { withRequestTransaction } from "../request-transaction";
 import { isUuid } from "../../common/utils/uuid";
 import {
   assertBookingTransition,
@@ -137,7 +137,7 @@ export class BookingsRepository {
 
   async create(input: NewBookingInput): Promise<BookingWithPayments> {
     try {
-      return await withTransaction(this.db, async (tx) => {
+      return await withRequestTransaction(this.db, async (tx) => {
         const currencyCode = input.currencyCode ?? "GBP";
         const [booking] = await tx
           .insert(bookings)
@@ -200,7 +200,7 @@ export class BookingsRepository {
       throw new BookingTransitionConflictError(input.bookingId, input.from, input.to);
     }
     assertBookingTransition(input.from, input.to);
-    return withTransaction(this.db, (tx) => this.transitionInTransaction(tx, input));
+    return withRequestTransaction(this.db, (tx) => this.transitionInTransaction(tx, input));
   }
 
   private async transitionInTransaction(
@@ -246,7 +246,7 @@ export class BookingsRepository {
     if (!isUuid(input.id)) return undefined;
 
     try {
-      return await withTransaction(this.db, async (tx) => {
+      return await withRequestTransaction(this.db, async (tx) => {
         const [existing] = await tx
           .select()
           .from(bookings)

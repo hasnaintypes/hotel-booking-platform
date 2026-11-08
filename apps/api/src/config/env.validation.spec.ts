@@ -106,6 +106,28 @@ describe("validateEnv", () => {
     });
   });
 
+  describe("idempotency settings", () => {
+    it.each(["24", "48", "72"])("accepts IDEMPOTENCY_TTL_HOURS=%s", (value) => {
+      expect(() => validateEnv({ ...base, IDEMPOTENCY_TTL_HOURS: value })).not.toThrow();
+    });
+
+    it.each(["23", "73", "0", "48h"])("rejects IDEMPOTENCY_TTL_HOURS=%s", (value) => {
+      expect(() => validateEnv({ ...base, IDEMPOTENCY_TTL_HOURS: value })).toThrow(
+        /IDEMPOTENCY_TTL_HOURS/,
+      );
+    });
+
+    it.each(["1000", "30000", "300000"])("accepts IDEMPOTENCY_LOCK_TIMEOUT_MS=%s", (value) => {
+      expect(() => validateEnv({ ...base, IDEMPOTENCY_LOCK_TIMEOUT_MS: value })).not.toThrow();
+    });
+
+    it.each(["999", "300001", "30s"])("rejects IDEMPOTENCY_LOCK_TIMEOUT_MS=%s", (value) => {
+      expect(() => validateEnv({ ...base, IDEMPOTENCY_LOCK_TIMEOUT_MS: value })).toThrow(
+        /IDEMPOTENCY_LOCK_TIMEOUT_MS/,
+      );
+    });
+  });
+
   describe("background job settings", () => {
     it.each(["true", "false", undefined])("accepts RUN_WORKER=%s", (value) => {
       expect(() => validateEnv({ ...base, RUN_WORKER: value })).not.toThrow();

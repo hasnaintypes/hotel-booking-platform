@@ -9,6 +9,7 @@ import { facilities, hotelFacilities } from "./facilities.js";
 import { hotelImages } from "./hotel-images.js";
 import { hotelHotelTypes, hotelTypes } from "./hotel-types.js";
 import { hotels } from "./hotels.js";
+import { idempotencyKeys } from "./idempotency-keys.js";
 import { inboxEvents } from "./inbox-events.js";
 import { ledgerEntries } from "./ledger-entries.js";
 import { memberships } from "./memberships.js";
@@ -100,6 +101,9 @@ export type { NewOutboxEvent, OutboxEvent } from "./outbox-events.js";
 export { inboxEvents };
 export type { InboxEvent, NewInboxEvent } from "./inbox-events.js";
 
+export { idempotencyKeys };
+export type { IdempotencyKey, NewIdempotencyKey } from "./idempotency-keys.js";
+
 export {
   bookingStatus,
   hotelSource,
@@ -146,4 +150,5 @@ export const schema = {
   reviews,
   outboxEvents,
   inboxEvents,
+  idempotencyKeys,
 };

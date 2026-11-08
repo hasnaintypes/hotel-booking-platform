@@ -63,6 +63,12 @@ export const configuration = () => {
     booking: {
       maxNights: parseInt(process.env.BOOKING_MAX_NIGHTS || "30", 10),
     },
+    idempotency: {
+      // How long a stored response can be replayed before the key expires.
+      ttlHours: parseInt(process.env.IDEMPOTENCY_TTL_HOURS || "48", 10),
+      // Lease held by an in-flight request; a crash releases it after this long.
+      lockTimeoutMs: parseInt(process.env.IDEMPOTENCY_LOCK_TIMEOUT_MS || "30000", 10),
+    },
     jobs: {
       workerEnabled: process.env.RUN_WORKER === "true",
       schema: process.env.PGBOSS_SCHEMA || "pgboss",

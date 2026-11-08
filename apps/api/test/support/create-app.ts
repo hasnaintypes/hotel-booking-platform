@@ -65,6 +65,7 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     await tx.execute(sql`set local session_replication_role = replica`);
     await tx.execute(sql`truncate table "users" cascade`);
     await tx.execute(sql`truncate table "analytics_snapshots"`);
+    await tx.execute(sql`truncate table "idempotency_keys"`);
   });
 
   return {

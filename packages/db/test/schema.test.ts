@@ -12,6 +12,7 @@ import {
   hotelImages,
   hotels,
   hotelTypes,
+  idempotencyKeys,
   inboxEvents,
   ledgerEntries,
   memberships,
@@ -67,6 +68,7 @@ describe("schema types", () => {
       reviews,
       outboxEvents,
       inboxEvents,
-    ]).toHaveLength(23);
+      idempotencyKeys,
+    ]).toHaveLength(24);
   });
 });

@@ -1,4 +1,8 @@
-import axiosInstance from "@hotel-booking/api-client";
+import axiosInstance, {
+  clearIdempotencyKey,
+  getErrorStatus,
+  idempotencyHeaders,
+} from "@hotel-booking/api-client";
 import type {
   BookingType,
   HotelWithBookingsType,
@@ -18,7 +22,11 @@ export const createPaymentIntent = async (
 };
 
 export const createRoomBooking = async (formData: BookingFormData) => {
-  const response = await axiosInstance.post("/api/v1/bookings", formData);
+  const session = `booking:${formData.paymentIntentId}`;
+  const response = await axiosInstance.post("/api/v1/bookings", formData, {
+    headers: idempotencyHeaders(session),
+  });
+  clearIdempotencyKey(session);
   return response.data;
 };
 
@@ -36,9 +44,20 @@ export const cancelBooking = async (
   refundAmount: number;
   refundSkipped?: string;
 }> => {
-  const response = await axiosInstance.post(
-    `/api/v1/bookings/${bookingId}/cancellations`,
-    payload || {},
-  );
-  return response.data;
+  const session = `cancel:${bookingId}`;
+  try {
+    const response = await axiosInstance.post(
+      `/api/v1/bookings/${bookingId}/cancellations`,
+      payload || {},
+      { headers: idempotencyHeaders(session) },
+    );
+    clearIdempotencyKey(session);
+    return response.data;
+  } catch (error) {
+    const status = getErrorStatus(error);
+    if (status && status >= 400 && status < 500 && status !== 409 && status !== 429) {
+      clearIdempotencyKey(session);
+    }
+    throw error;
+  }
 };

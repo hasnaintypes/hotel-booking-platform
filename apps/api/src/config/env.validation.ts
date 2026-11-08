@@ -9,6 +9,8 @@ const REQUIRED_ENV_VARS = [
 /** Optional whole-number settings and the range each may take: [name, min, max]. */
 const INTEGER_SETTINGS: Array<[string, number, number]> = [
   ["BOOKING_MAX_NIGHTS", 1, 365],
+  ["IDEMPOTENCY_TTL_HOURS", 24, 72],
+  ["IDEMPOTENCY_LOCK_TIMEOUT_MS", 1_000, 300_000],
   ["BCRYPT_COST", 4, 15],
   ["AUTH_RATE_LIMIT", 1, 10_000],
   ["AUTH_MAX_FAILED_LOGINS", 1, 100],

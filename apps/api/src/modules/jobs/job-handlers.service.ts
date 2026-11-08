@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { BookingsRepository } from "../../database/repositories/bookings.repository";
+import { IdempotencyRepository } from "../../database/repositories/idempotency.repository";
 import { InboxRepository } from "../../database/repositories/inbox.repository";
 import { OutboxRepository } from "../../database/repositories/outbox.repository";
 import { BookingTransitionConflictError } from "../../domain/bookings/booking-state-machine";
@@ -22,6 +23,7 @@ export class JobHandlers {
     private readonly bookings: BookingsRepository,
     private readonly outbox: OutboxRepository,
     private readonly inbox: InboxRepository,
+    private readonly idempotency: IdempotencyRepository,
     private readonly config: ConfigService,
   ) {}
 
@@ -79,13 +81,15 @@ export class JobHandlers {
   private async cleanup(jobId: string): Promise<void> {
     const retentionDays = this.config.get<number>("jobs.retentionDays") ?? 30;
     const cutoff = new Date(Date.now() - retentionDays * DAY_MS);
-    const [outbox, inbox] = await Promise.all([
+    const [outbox, inbox, idempotency] = await Promise.all([
       this.outbox.deleteDispatchedBefore(cutoff),
       this.inbox.deleteProcessedBefore(cutoff),
+      this.idempotency.deleteExpiredBefore(new Date()),
     ]);
 
     this.logger.log(
-      `Cleanup ${jobId}: removed ${outbox} dispatched outbox row(s) and ${inbox} processed inbox row(s)`,
+      `Cleanup ${jobId}: removed ${outbox} dispatched outbox row(s), ${inbox} processed inbox ` +
+        `row(s) and ${idempotency} expired idempotency key(s)`,
     );
   }
 }
