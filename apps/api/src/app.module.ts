@@ -12,6 +12,7 @@ import { DatabaseRepositoriesModule } from "./database/repositories/repositories
 import { CloudinaryModule } from "./integrations/cloudinary/cloudinary.module";
 import { LlmModule } from "./integrations/llm/llm.module";
 import { StripeModule } from "./integrations/stripe/stripe.module";
+import { JobsModule } from "./modules/jobs/jobs.module";
 import { HealthModule } from "./modules/health/health.module";
 import { RoutesModule } from "./routes/routes.module";
 
@@ -39,6 +40,7 @@ import { RoutesModule } from "./routes/routes.module";
     StripeModule,
     CloudinaryModule,
     LlmModule,
+    JobsModule,
     RoutesModule,
     HealthModule,
   ],

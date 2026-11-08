@@ -33,6 +33,7 @@ const MATRIX: Case[] = [
   { name: "liveness", method: "get", path: routes.health, status: 200 },
   { name: "readiness", method: "get", path: routes.healthReady, status: 200 },
   { name: "detailed health", method: "get", path: routes.healthDetailed, status: 401 },
+  { name: "job metrics", method: "get", path: routes.jobs, status: 401 },
 
   { name: "register", method: "post", path: routes.auth.register, status: 400 },
   { name: "login", method: "post", path: routes.auth.login, status: 400 },
