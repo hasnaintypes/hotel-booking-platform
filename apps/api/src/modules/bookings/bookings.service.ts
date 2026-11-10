@@ -15,6 +15,7 @@ import { BookingsRepository } from "../../database/repositories/bookings.reposit
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
+import { PaymentsService } from "../payments/payments.service";
 import { toPublicHotelResponse } from "../hotels/hotel-response";
 import { toBookingResponse, type BookingResponse } from "./booking-response";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
@@ -45,6 +46,7 @@ export class BookingsService {
     private readonly hotels: HotelsRepository,
     private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
+    private readonly payments: PaymentsService,
     private readonly config: ConfigService,
   ) {}
 
@@ -326,56 +328,16 @@ export class BookingsService {
 
     const charge = record.payments.find((payment) => !payment.originalPaymentId);
     const wasPaid = charge?.status === "paid";
-    const stripePaymentIntentId =
-      charge?.provider === "stripe" ? charge.providerPaymentId : undefined;
+    const hasStripeCharge = charge?.provider === "stripe" && Boolean(charge.providerPaymentId);
+    const shouldRefund = Boolean(wasPaid && hasStripeCharge);
 
-    let refundAmount = 0;
-    let refundSkipped: string | undefined;
-    let refund: { providerPaymentId: string; amountMinor: number } | undefined;
-
-    if (wasPaid && stripePaymentIntentId) {
-      try {
-        const stripeRefund = await this.stripeService.client.refunds.create({
-          payment_intent: stripePaymentIntentId,
-        });
-        refundAmount =
-          typeof stripeRefund.amount === "number"
-            ? stripeRefund.amount / 100
-            : record.booking.totalAmountMinor / 100;
-        if (refundAmount > 0) {
-          refund = {
-            providerPaymentId: stripeRefund.id,
-            amountMinor: Math.round(refundAmount * 100),
-          };
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Stripe refund failed";
-        this.logger.error(
-          `Stripe refund failed for booking ${id}`,
-          error instanceof Error ? error.stack : undefined,
-        );
-        throw new BadGatewayException(message);
-      }
-    } else if (wasPaid && !stripePaymentIntentId) {
-      refundSkipped = "Cancelled without Stripe refund (no payment intent on file)";
-    }
-
+    // Save the cancellation before calling the provider. If the refund then fails, the booking is
+    // already terminal and is moved to needs_review instead of being left in an ambiguous state.
     const cancelled = await this.bookings.cancel({
       id,
       actorUserId: userId,
       cancellationReason,
       requestId,
-      ...(refund && charge
-        ? {
-            refund: {
-              provider: "stripe",
-              providerPaymentId: refund.providerPaymentId,
-              amountMinor: refund.amountMinor,
-              currencyCode: record.booking.currencyCode,
-              originalPaymentId: charge.id,
-            },
-          }
-        : {}),
     });
 
     if (!cancelled) {
@@ -384,6 +346,45 @@ export class BookingsService {
       );
     }
 
-    return { booking: toBookingResponse(cancelled), refundAmount, refundSkipped };
+    let refundAmount = 0;
+    let refundSkipped: string | undefined;
+
+    if (shouldRefund) {
+      try {
+        const refund = await this.payments.refundBooking(id);
+        refundAmount = refund.amountMinor / 100;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Stripe refund failed";
+        this.logger.error(
+          `Refund failed for cancelled booking ${id}`,
+          error instanceof Error ? error.stack : undefined,
+        );
+        try {
+          await this.bookings.transition({
+            bookingId: id,
+            from: "cancelled",
+            to: "needs_review",
+            actor: { type: "system", name: "payment-refund" },
+            reason: "Cancellation refund failed",
+            requestId,
+          });
+        } catch (transitionError) {
+          this.logger.error(
+            `Could not move booking ${id} to needs_review after refund failure`,
+            transitionError instanceof Error ? transitionError.stack : undefined,
+          );
+        }
+        throw new BadGatewayException(message);
+      }
+    } else if (wasPaid && !hasStripeCharge) {
+      refundSkipped = "Cancelled without Stripe refund (no payment intent on file)";
+    }
+
+    const refreshed = await this.bookings.findById(id);
+    return {
+      booking: toBookingResponse(refreshed ?? cancelled),
+      refundAmount,
+      refundSkipped,
+    };
   }
 }

@@ -2,6 +2,7 @@ import { Global, Module } from "@nestjs/common";
 import { AnalyticsRepository } from "./analytics.repository";
 import { BookingsRepository } from "./bookings.repository";
 import { MigrationsRepository } from "./migrations.repository";
+import { PaymentsRepository } from "./payments.repository";
 import { ReviewsRepository } from "./reviews.repository";
 import { HotelsRepository } from "./hotels.repository";
 import { IdempotencyRepository } from "./idempotency.repository";
@@ -18,6 +19,7 @@ import { UsersRepository } from "./users.repository";
     BookingsRepository,
     ReviewsRepository,
     MigrationsRepository,
+    PaymentsRepository,
     OutboxRepository,
     InboxRepository,
     IdempotencyRepository,
@@ -29,6 +31,7 @@ import { UsersRepository } from "./users.repository";
     BookingsRepository,
     ReviewsRepository,
     MigrationsRepository,
+    PaymentsRepository,
     OutboxRepository,
     InboxRepository,
     IdempotencyRepository,

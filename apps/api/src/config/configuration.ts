@@ -63,6 +63,10 @@ export const configuration = () => {
     booking: {
       maxNights: parseInt(process.env.BOOKING_MAX_NIGHTS || "30", 10),
     },
+    payment: {
+      // Lease held while a capture/refund/creation provider call is in flight.
+      claimTimeoutMs: parseInt(process.env.PAYMENT_CLAIM_TIMEOUT_MS || "30000", 10),
+    },
     idempotency: {
       // How long a stored response can be replayed before the key expires.
       ttlHours: parseInt(process.env.IDEMPOTENCY_TTL_HOURS || "48", 10),
