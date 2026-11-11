@@ -78,6 +78,13 @@
       "when": 1794122891040,
       "tag": "0010_purple_otto_octavius",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794204314819,
+      "tag": "0011_payment_claims_and_ledger_sources",
+      "breakpoints": true
     }
   ]
 }

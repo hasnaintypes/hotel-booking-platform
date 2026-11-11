@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   bookingEvents,
   bookings,
+  ledgerEntries,
   payments,
   type Booking,
   type Database,
@@ -178,10 +179,23 @@ export class BookingsRepository {
             provider: input.payment.provider,
             providerPaymentId: input.payment.providerPaymentId,
             amountMinor: input.payment.amountMinor,
+            capturedAmountMinor: input.payment.status === "paid" ? input.payment.amountMinor : null,
             currencyCode: input.payment.currencyCode,
             status: input.payment.status,
           })
           .returning();
+
+        if (payment.status === "paid") {
+          await tx.insert(ledgerEntries).values({
+            bookingId: booking.id,
+            paymentId: payment.id,
+            entryType: "charge",
+            sourceKey: `payment:${payment.id}:charge`,
+            amountMinor: payment.amountMinor,
+            currencyCode: payment.currencyCode,
+            description: `Charge for payment ${payment.id}`,
+          });
+        }
 
         return { booking, payments: [payment] };
       });
@@ -279,14 +293,27 @@ export class BookingsRepository {
         }
 
         if (input.refund) {
-          await tx.insert(payments).values({
+          const [refundPayment] = await tx
+            .insert(payments)
+            .values({
+              bookingId: booking.id,
+              provider: input.refund.provider,
+              providerPaymentId: input.refund.providerPaymentId,
+              amountMinor: input.refund.amountMinor,
+              currencyCode: input.refund.currencyCode,
+              status: "refunded",
+              originalPaymentId: input.refund.originalPaymentId,
+            })
+            .returning();
+
+          await tx.insert(ledgerEntries).values({
             bookingId: booking.id,
-            provider: input.refund.provider,
-            providerPaymentId: input.refund.providerPaymentId,
-            amountMinor: input.refund.amountMinor,
-            currencyCode: input.refund.currencyCode,
-            status: "refunded",
-            originalPaymentId: input.refund.originalPaymentId,
+            paymentId: refundPayment.id,
+            entryType: "refund",
+            sourceKey: `payment:${refundPayment.id}:refund`,
+            amountMinor: refundPayment.amountMinor,
+            currencyCode: refundPayment.currencyCode,
+            description: `Refund for payment ${input.refund.originalPaymentId}`,
           });
         }
 

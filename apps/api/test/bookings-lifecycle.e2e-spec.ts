@@ -138,9 +138,13 @@ describe("bookings", () => {
         refundAmount: 150,
       });
       expect(res.body.refundAmount).toBe(150);
-      expect(t.stripe.client.refunds.create).toHaveBeenCalledWith({
-        payment_intent: "pi_test_cancel_ok",
-      });
+      expect(t.stripe.client.refunds.create).toHaveBeenCalledWith(
+        {
+          payment_intent: "pi_test_cancel_ok",
+          amount: 15_000,
+        },
+        { idempotencyKey: expect.stringMatching(/^refund_/) },
+      );
     });
 
     it("skips the refund when a paid booking has no payment intent", async () => {
