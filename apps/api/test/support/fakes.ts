@@ -1,7 +1,9 @@
 import { vi } from "vitest";
+import Stripe from "stripe";
 
-/** Stripe stand-in: no network, programmable per test. */
+/** Stripe stand-in: no network, programmable per test. Signature verification uses the real SDK. */
 export function createFakeStripe() {
+  const verifier = new Stripe("sk_test_webhook_verifier");
   const client = {
     paymentIntents: {
       create: vi.fn(
@@ -42,6 +44,7 @@ export function createFakeStripe() {
         }),
       ),
     },
+    webhooks: verifier.webhooks,
   };
   return { client };
 }

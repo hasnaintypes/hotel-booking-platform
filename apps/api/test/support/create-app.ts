@@ -54,7 +54,7 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .useValue(logs)
     .compile();
 
-  const app = moduleRef.createNestApplication<NestExpressApplication>();
+  const app = moduleRef.createNestApplication<NestExpressApplication>({ rawBody: true });
   configureApp(app);
   if (options.docs) setupSwagger(app, app.get(ConfigService));
   await app.init();

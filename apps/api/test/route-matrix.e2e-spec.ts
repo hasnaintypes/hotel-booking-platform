@@ -32,6 +32,7 @@ type Case = {
 const MATRIX: Case[] = [
   { name: "liveness", method: "get", path: routes.health, status: 200 },
   { name: "readiness", method: "get", path: routes.healthReady, status: 200 },
+  { name: "stripe webhook", method: "post", path: routes.webhooks.stripe, status: 400 },
   { name: "detailed health", method: "get", path: routes.healthDetailed, status: 401 },
   { name: "job metrics", method: "get", path: routes.jobs, status: 401 },
 

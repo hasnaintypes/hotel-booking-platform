@@ -9,9 +9,11 @@ export type RouteEntry = {
 
 /** Global prefix and version applied once in `configureApp`. */
 const API_BASE = ["api", "v1"];
-const HEALTH_ROUTES: RouteEntry[] = [
+/** Routes mounted outside the `/api/v1` prefix (health and provider webhooks). */
+const NON_API_ROUTES: RouteEntry[] = [
   { method: "GET", segments: ["health", "live"] },
   { method: "GET", segments: ["health", "ready"] },
+  { method: "POST", segments: ["webhooks", "stripe"] },
 ];
 
 const segmentsOf = (path: string) => path.split("/").filter(Boolean);
@@ -36,7 +38,7 @@ function collectRoutes(): RouteEntry[] {
       }
     }
   }
-  return [...routes, ...HEALTH_ROUTES];
+  return [...routes, ...NON_API_ROUTES];
 }
 
 export const ROUTE_TABLE = collectRoutes();

@@ -15,6 +15,7 @@ import { LlmModule } from "./integrations/llm/llm.module";
 import { StripeModule } from "./integrations/stripe/stripe.module";
 import { JobsModule } from "./modules/jobs/jobs.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
+import { WebhooksModule } from "./modules/webhooks/webhooks.module";
 import { HealthModule } from "./modules/health/health.module";
 import { RoutesModule } from "./routes/routes.module";
 
@@ -44,6 +45,7 @@ import { RoutesModule } from "./routes/routes.module";
     CloudinaryModule,
     LlmModule,
     PaymentsModule,
+    WebhooksModule,
     JobsModule,
     RoutesModule,
     HealthModule,

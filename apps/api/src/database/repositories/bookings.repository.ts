@@ -217,6 +217,19 @@ export class BookingsRepository {
     return withRequestTransaction(this.db, (tx) => this.transitionInTransaction(tx, input));
   }
 
+  /**
+   * Applies a transition on a transaction owned by another repository, so a webhook can update the
+   * booking and its inbox row atomically. Callers still get the typed conflict when the booking
+   * moved underneath them.
+   */
+  async transitionOn(tx: Transaction, input: BookingTransitionInput): Promise<Booking> {
+    if (!isUuid(input.bookingId)) {
+      throw new BookingTransitionConflictError(input.bookingId, input.from, input.to);
+    }
+    assertBookingTransition(input.from, input.to);
+    return this.transitionInTransaction(tx, input);
+  }
+
   private async transitionInTransaction(
     tx: Transaction,
     input: BookingTransitionInput,

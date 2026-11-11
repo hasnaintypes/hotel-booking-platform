@@ -7,6 +7,7 @@ const base = {
   CLOUDINARY_API_KEY: "key",
   CLOUDINARY_API_SECRET: "secret",
   STRIPE_API_KEY: "sk_test_abc",
+  STRIPE_WEBHOOK_SECRET: "whsec_test_abc",
 };
 
 describe("validateEnv", () => {
@@ -15,8 +16,15 @@ describe("validateEnv", () => {
   });
 
   it("lists every missing required variable", () => {
-    const { JWT_SECRET_KEY: _jwt, STRIPE_API_KEY: _stripe, ...rest } = base;
-    expect(() => validateEnv(rest)).toThrow(/JWT_SECRET_KEY[\s\S]*STRIPE_API_KEY/);
+    const {
+      JWT_SECRET_KEY: _jwt,
+      STRIPE_API_KEY: _stripe,
+      STRIPE_WEBHOOK_SECRET: _hook,
+      ...rest
+    } = base;
+    expect(() => validateEnv(rest)).toThrow(
+      /JWT_SECRET_KEY[\s\S]*STRIPE_API_KEY[\s\S]*STRIPE_WEBHOOK_SECRET/,
+    );
   });
 
   describe("live Stripe keys in production (until milestone M2)", () => {

@@ -4,12 +4,15 @@ const REQUIRED_ENV_VARS = [
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
   "STRIPE_API_KEY",
+  "STRIPE_WEBHOOK_SECRET",
 ] as const;
 
 /** Optional whole-number settings and the range each may take: [name, min, max]. */
 const INTEGER_SETTINGS: Array<[string, number, number]> = [
   ["BOOKING_MAX_NIGHTS", 1, 365],
   ["PAYMENT_CLAIM_TIMEOUT_MS", 1_000, 300_000],
+  ["STRIPE_WEBHOOK_TOLERANCE_SECONDS", 0, 3_600],
+  ["STRIPE_WEBHOOK_FAILURE_ALERT_THRESHOLD", 1, 100],
   ["IDEMPOTENCY_TTL_HOURS", 24, 72],
   ["IDEMPOTENCY_LOCK_TIMEOUT_MS", 1_000, 300_000],
   ["BCRYPT_COST", 4, 15],

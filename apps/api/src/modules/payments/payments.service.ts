@@ -302,7 +302,9 @@ export class PaymentsService {
         bookingId: charge.bookingId,
         paymentId: settled.id,
         entryType: "refund",
-        sourceKey: `payment:${settled.id}:refund`,
+        // Provider-stable key: the `charge.refunded` webhook uses the same key, so whichever path
+        // records the refund first wins and the other insert is a no-op.
+        sourceKey: `stripe_refund:${refund.id}`,
         amountMinor: requested,
         currencyCode: charge.currencyCode,
         description: `Refund for payment ${charge.id}`,

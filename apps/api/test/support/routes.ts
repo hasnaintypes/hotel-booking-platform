@@ -5,6 +5,9 @@
 export const routes = {
   health: "/health/live",
   healthReady: "/health/ready",
+  webhooks: {
+    stripe: "/webhooks/stripe",
+  },
   healthDetailed: "/api/v1/admin/system/health",
   jobs: "/api/v1/admin/system/jobs",
   auth: {
