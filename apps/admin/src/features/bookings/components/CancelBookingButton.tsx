@@ -50,8 +50,8 @@ const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
   return (
     <div className="mt-3 min-w-64 space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
       <p className="text-sm text-red-800">
-        Cancel this upcoming stay? Paid bookings receive a full Stripe refund when a payment intent
-        is on file.
+        Cancel this upcoming stay? Any refund is calculated from the cancellation policy saved with
+        the booking at the time it was made.
       </p>
       <label className="block text-sm font-medium text-gray-700">
         Reason (optional)
