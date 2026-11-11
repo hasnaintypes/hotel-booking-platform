@@ -87,13 +87,7 @@ describe("HTTP idempotency", () => {
     const guest = await registerUser(t);
     const owner = await registerUser(t);
     const hotel = await insertHotel(t, owner.user._id);
-    const paymentIntentId = `pi_test_${Date.now()}`;
-    t.stripe.client.paymentIntents.retrieve.mockReset();
-    t.stripe.client.paymentIntents.retrieve.mockResolvedValue({
-      id: paymentIntentId,
-      status: "succeeded",
-      metadata: { hotelId: hotel.id, userId: guest.user._id },
-    });
+    t.stripe.client.paymentIntents.create.mockClear();
     const body = {
       hotelId: hotel.id,
       firstName: "Gus",
@@ -103,8 +97,6 @@ describe("HTTP idempotency", () => {
       childCount: 0,
       checkIn: new Date(Date.now() + 10 * 86_400_000).toISOString(),
       checkOut: new Date(Date.now() + 12 * 86_400_000).toISOString(),
-      totalCost: 200,
-      paymentIntentId,
     };
 
     const before = await bookingsRepository(t).count();
@@ -113,6 +105,7 @@ describe("HTTP idempotency", () => {
       .set("Idempotency-Key", "real-booking-key")
       .send(body);
     expect(first.status).toBe(201);
+    expect(first.body.publicReference).toBeDefined();
 
     const replay = await guest.agent
       .post(routes.bookings.create)
@@ -122,7 +115,7 @@ describe("HTTP idempotency", () => {
     expect(replay.body).toEqual(first.body);
     expect(replay.headers.location).toBe(first.headers.location);
     expect(await bookingsRepository(t).count()).toBe(before + 1);
-    expect(t.stripe.client.paymentIntents.retrieve).toHaveBeenCalledTimes(1);
+    expect(t.stripe.client.paymentIntents.create).toHaveBeenCalledTimes(1);
   });
 
   it("treats a different payload with the same key as 422", async () => {

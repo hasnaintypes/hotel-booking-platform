@@ -37,11 +37,19 @@ describe("malformed ids", () => {
   });
 
   it("rejects bad ids on booking, review and user routes", async () => {
-    expectInvalid(await user.agent.get(routes.bookings.byId("abc")), "id");
     expectInvalid(await user.agent.get(routes.bookings.forHotel("abc")), "hotelId");
     expectInvalid(await anonymous(t).get(routes.reviews.byHotel("abc")), "hotelId");
     expectInvalid(await anonymous(t).get(routes.reviews.summary("abc")), "hotelId");
     expectInvalid(await admin.agent.patch(routes.users.role("abc")).send({ role: "user" }), "id");
+  });
+
+  it("rejects a booking reference that is neither a UUID nor a public reference", async () => {
+    const res = await user.agent.get(routes.bookings.byReference("abc"));
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("VALIDATION_FAILED");
+    expect(res.body.errors).toEqual([
+      { field: "id", message: "must be a booking id or public reference" },
+    ]);
   });
 
   it("rejects bad ids in a review body", async () => {

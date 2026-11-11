@@ -10,14 +10,24 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type { FieldError } from "../../common/errors/problem";
+import { UniqueViolationError } from "../../common/errors/postgres-errors";
 import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
-import { BookingsRepository } from "../../database/repositories/bookings.repository";
+import { isUuid } from "../../common/utils/uuid";
+import {
+  BookingsRepository,
+  type BookingWithPayments,
+} from "../../database/repositories/bookings.repository";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { PaymentsService } from "../payments/payments.service";
 import { toPublicHotelResponse } from "../hotels/hotel-response";
-import { toBookingResponse, type BookingResponse } from "./booking-response";
+import { BookingQuoteService } from "./booking-quote.service";
+import {
+  toBookingResponse,
+  type BookingCreationResponse,
+  type BookingResponse,
+} from "./booking-response";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
 import { PaymentIntentDto } from "./dto/payment-intent.dto";
@@ -47,6 +57,7 @@ export class BookingsService {
     private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
     private readonly payments: PaymentsService,
+    private readonly quote: BookingQuoteService,
     private readonly config: ConfigService,
   ) {}
 
@@ -184,11 +195,25 @@ export class BookingsService {
     };
   }
 
+  /**
+   * Creates a booking from a server-computed quote. The client supplies only the stay; money comes
+   * from `BookingQuoteService` and the PaymentIntent amount is derived from the frozen snapshot by
+   * `PaymentsService`.
+   *
+   * Two independent replay guards: the HTTP idempotency interceptor returns the stored response
+   * for a repeated key, and the booking row's partial unique index catches the case where the
+   * stored response has expired or been cleared.
+   */
   async create(
     dto: CreateBookingDto,
     userId: string,
     requestId?: string,
-  ): Promise<BookingResponse> {
+    idempotencyKey?: string,
+  ): Promise<BookingCreationResponse> {
+    if (!idempotencyKey) {
+      throw new BadRequestException("Idempotency-Key header is required for this request");
+    }
+
     const hotel = await this.hotels.findById(dto.hotelId);
     if (!hotel) {
       throw new NotFoundException("Hotel not found");
@@ -198,62 +223,60 @@ export class BookingsService {
     }
     this.validateStay(dto, hotel);
 
-    const paymentIntent = await this.stripeService.client.paymentIntents.retrieve(
-      dto.paymentIntentId,
-    );
+    const existing = await this.bookings.findByOwnerAndIdempotencyKey(userId, idempotencyKey);
+    if (existing) return this.finishCreation(existing);
 
-    if (!paymentIntent) {
-      throw new BadRequestException("payment intent not found");
-    }
-
-    if (
-      paymentIntent.metadata.hotelId !== dto.hotelId ||
-      paymentIntent.metadata.userId !== userId
-    ) {
-      throw new BadRequestException("payment intent mismatch");
-    }
-
-    if (paymentIntent.status !== "succeeded") {
-      throw new BadRequestException(
-        `payment intent not succeeded. Status: ${paymentIntent.status}`,
-      );
-    }
-
-    const checkIn = new Date(dto.checkIn);
-    const checkOut = new Date(dto.checkOut);
-
-    const created = await this.bookings.create({
-      ownerUserId: userId,
-      createdByUserId: userId,
-      hotelId: hotel.id,
-      firstName: dto.firstName,
-      lastName: dto.lastName,
-      email: dto.email,
-      phone: dto.phone,
-      adultCount: dto.adultCount,
-      childCount: dto.childCount,
-      checkIn,
-      checkOut,
-      totalCost: dto.totalCost,
-      currencyCode: "GBP",
-      specialRequests: dto.specialRequests,
-      priceSnapshot: {
-        totalCost: dto.totalCost,
-        currency: "GBP",
-        paymentIntentId: paymentIntent.id,
-        numberOfNights: Math.ceil((checkOut.getTime() - checkIn.getTime()) / DAY_MS),
-      },
-      requestId,
-      payment: {
-        provider: "stripe",
-        providerPaymentId: paymentIntent.id,
-        amountMinor: Math.round(dto.totalCost * 100),
-        currencyCode: "GBP",
-        status: "paid",
-      },
+    const snapshot = this.quote.quote({
+      hotel,
+      checkIn: new Date(dto.checkIn),
+      checkOut: new Date(dto.checkOut),
     });
 
-    return toBookingResponse(created);
+    let created: BookingWithPayments;
+    try {
+      const booking = await this.bookings.createPending({
+        ownerUserId: userId,
+        createdByUserId: userId,
+        hotelId: hotel.id,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        email: dto.email,
+        ...(dto.phone ? { phone: dto.phone } : {}),
+        adultCount: dto.adultCount,
+        childCount: dto.childCount,
+        checkIn: new Date(dto.checkIn),
+        checkOut: new Date(dto.checkOut),
+        totalAmountMinor: snapshot.totalMinor,
+        currencyCode: snapshot.currency,
+        // The snapshot is JSON-safe and immutable for the life of the booking.
+        priceSnapshot: snapshot as unknown as Record<string, unknown>,
+        idempotencyKey,
+        ...(dto.specialRequests ? { specialRequests: dto.specialRequests } : {}),
+        ...(requestId ? { requestId } : {}),
+      });
+      created = { booking, payments: [] };
+    } catch (error) {
+      if (
+        error instanceof UniqueViolationError &&
+        error.constraint === "bookings_owner_idempotency_unique"
+      ) {
+        const replay = await this.bookings.findByOwnerAndIdempotencyKey(userId, idempotencyKey);
+        if (replay) return this.finishCreation(replay);
+      }
+      throw error;
+    }
+
+    return this.finishCreation(created);
+  }
+
+  /** Creates the PaymentIntent outside the booking transaction, then returns the fresh aggregate. */
+  private async finishCreation(record: BookingWithPayments): Promise<BookingCreationResponse> {
+    const intent = await this.payments.createIntentForBooking(record.booking.id);
+    const fresh = (await this.bookings.findById(record.booking.id)) ?? record;
+    return {
+      ...toBookingResponse(fresh),
+      clientSecret: intent.clientSecret,
+    };
   }
 
   async findAllAdmin(): Promise<BookingResponse[]> {
@@ -275,8 +298,10 @@ export class BookingsService {
     return rows.map(toBookingResponse);
   }
 
-  async findOne(id: string, userId: string): Promise<BookingResponse> {
-    const booking = await this.bookings.findById(id);
+  async findOne(reference: string, userId: string): Promise<BookingResponse> {
+    const booking = isUuid(reference)
+      ? await this.bookings.findById(reference)
+      : await this.bookings.findByPublicReference(reference);
     if (!booking) {
       throw new NotFoundException("Booking not found");
     }

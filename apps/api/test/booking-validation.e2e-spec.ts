@@ -15,7 +15,6 @@ describe("booking input validation", () => {
   let t: TestApp;
   let guest: Awaited<ReturnType<typeof registerUser>>;
   let hotelId: string;
-  let paymentIntentId: string;
 
   const body = (overrides: Record<string, unknown> = {}) => ({
     hotelId,
@@ -27,20 +26,18 @@ describe("booking input validation", () => {
     childCount: 1,
     checkIn: inDays(10),
     checkOut: inDays(12),
-    totalCost: 200,
-    paymentIntentId,
     specialRequests: "Quiet room",
     ...overrides,
   });
 
-  const book = (overrides: Record<string, unknown> = {}) =>
-    guest.agent.post(routes.bookings.create).send(body(overrides));
+  const book = (overrides: Record<string, unknown> = {}, key = randomUUID()) =>
+    guest.agent.post(routes.bookings.create).set("Idempotency-Key", key).send(body(overrides));
 
   beforeAll(async () => {
     t = await createTestApp();
     guest = await registerUser(t);
     const owner = await registerUser(t);
-    // Capacity: 2 adults and 1 child.
+    // Capacity: 2 adults and 1 child; base rate GBP 100 a night.
     hotelId = (await insertHotel(t, owner.user._id, { adultCount: 2, childCount: 1 })).id;
   });
   afterAll(async () => {
@@ -48,27 +45,37 @@ describe("booking input validation", () => {
   });
 
   beforeEach(() => {
-    paymentIntentId = `pi_test_${randomUUID().replace(/-/g, "")}`;
-    t.stripe.client.paymentIntents.retrieve.mockReset();
-    t.stripe.client.paymentIntents.retrieve.mockResolvedValue({
-      id: paymentIntentId,
-      status: "succeeded",
-      metadata: { hotelId, userId: guest.user._id },
-    });
+    t.stripe.client.paymentIntents.create.mockClear();
   });
 
   it("accepts a valid booking and trims the text fields", async () => {
     const res = await book({ firstName: "  Gus  ", specialRequests: "  Quiet room  " });
     expect(res.status).toBe(201);
-    expect(res.headers.location).toBe(`/api/v1/bookings/${res.body._id}`);
+    expect(res.body.publicReference).toMatch(/^[a-z0-9]{16,64}$/);
+    expect(res.headers.location).toBe(`/api/v1/bookings/${res.body.publicReference}`);
     expect(res.body).toMatchObject({
       firstName: "Gus",
       specialRequests: "Quiet room",
       hotelId,
       userId: guest.user._id,
-      status: "confirmed",
-      paymentStatus: "paid",
+      status: "pending_payment",
+      paymentStatus: "pending",
+      totalCost: 200,
     });
+    expect(res.body._id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(res.body.clientSecret).toBe("pi_secret_test");
+  });
+
+  it("prices the stay from the server quote, not from the client", async () => {
+    t.stripe.client.paymentIntents.create.mockClear();
+    const res = await book({ totalCost: 1, paymentIntentId: "pi_client_supplied" });
+
+    expect(res.status).toBe(201);
+    expect(res.body.totalCost).toBe(200);
+    expect(t.stripe.client.paymentIntents.create).toHaveBeenCalledWith(
+      expect.objectContaining({ amount: 20_000, currency: "gbp" }),
+      expect.objectContaining({ idempotencyKey: expect.stringMatching(/^pi_/) }),
+    );
   });
 
   it("accepts a booking with no phone or special requests", async () => {
@@ -79,6 +86,13 @@ describe("booking input validation", () => {
   it("accepts a check-in of today and the maximum stay", async () => {
     const res = await book({ checkIn: inDays(0), checkOut: inDays(30) });
     expect(res.status).toBe(201);
+  });
+
+  it("requires an Idempotency-Key", async () => {
+    const res = await guest.agent.post(routes.bookings.create).send(body());
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe("BAD_REQUEST");
+    expect(res.body.message).toMatch(/idempotency-key/i);
   });
 
   it.each<[string, Record<string, unknown>, string]>([
@@ -103,13 +117,7 @@ describe("booking input validation", () => {
     ["more children than the hotel allows", { childCount: 2 }, "childCount"],
     ["a fractional guest count", { adultCount: 1.5 }, "adultCount"],
     ["a guest count sent as text", { adultCount: "2" }, "adultCount"],
-    ["a negative total", { totalCost: -1 }, "totalCost"],
-    ["a total sent as text", { totalCost: "200" }, "totalCost"],
-    [
-      "a payment intent id that is not Stripe's",
-      { paymentIntentId: "not_a_pi" },
-      "paymentIntentId",
-    ],
+    ["a hotel id that is not a UUID", { hotelId: "not-a-hotel" }, "hotelId"],
   ])("rejects %s with a field-level 400", async (_name, overrides, field) => {
     const res = await book(overrides);
     expect(res.status).toBe(400);
@@ -128,26 +136,16 @@ describe("booking input validation", () => {
     const before = await bookingsRepository(t).count();
     await book({ email: "nope" });
     await book({ checkOut: inDays(5) });
-    expect(t.stripe.client.paymentIntents.retrieve).not.toHaveBeenCalled();
+    expect(t.stripe.client.paymentIntents.create).not.toHaveBeenCalled();
     expect(await bookingsRepository(t).count()).toBe(before);
   });
 
-  it("rejects a replayed payment intent with 409 and creates one booking", async () => {
-    const before = await bookingsRepository(t).count();
-    expect((await book()).status).toBe(201);
-
-    const replay = await book();
-    expect(replay.status).toBe(409);
-    expect(replay.body.code).toBe("CONFLICT");
-    expect(await bookingsRepository(t).count()).toBe(before + 1);
-  });
-
   it("ignores fields a guest should not control", async () => {
-    const res = await book({ status: "completed", paymentStatus: "refunded", userId: "someone" });
+    const res = await book({ status: "confirmed", paymentStatus: "paid", userId: "someone" });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({
-      status: "confirmed",
-      paymentStatus: "paid",
+      status: "pending_payment",
+      paymentStatus: "pending",
       userId: guest.user._id,
     });
   });

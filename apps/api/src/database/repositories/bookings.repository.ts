@@ -5,10 +5,10 @@ import {
   bookings,
   ledgerEntries,
   payments,
+  withTransaction,
   type Booking,
   type Database,
   type Payment,
-  type PaymentStatus,
   type Transaction,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
@@ -26,7 +26,7 @@ export type BookingWithPayments = {
   payments: Payment[];
 };
 
-export type NewBookingInput = {
+export type NewPendingBookingInput = {
   ownerUserId: string;
   createdByUserId: string;
   hotelId: string;
@@ -38,19 +38,12 @@ export type NewBookingInput = {
   childCount: number;
   checkIn: Date;
   checkOut: Date;
-  totalCost: number;
-  currencyCode?: string;
+  totalAmountMinor: number;
+  currencyCode: string;
+  priceSnapshot: Record<string, unknown>;
+  idempotencyKey: string;
   specialRequests?: string;
-  priceSnapshot?: Record<string, unknown>;
   requestId?: string;
-  payment: {
-    provider: string;
-    providerPaymentId: string;
-    amountMinor: number;
-    currencyCode: string;
-    status: PaymentStatus;
-    paymentMethod?: string;
-  };
 };
 
 export type CancelBookingInput = {
@@ -136,10 +129,17 @@ export class BookingsRepository {
     return this.withPayments(rows);
   }
 
-  async create(input: NewBookingInput): Promise<BookingWithPayments> {
+  /**
+   * Inserts a `pending_payment` booking with its frozen quote and creation event.
+   *
+   * This deliberately opens its own transaction instead of joining the HTTP idempotency
+   * transaction: the row must be committed and visible before the provider PaymentIntent is
+   * created (claim-call-settle), and the partial unique index on `(owner_user_id,
+   * idempotency_key)` is the second line of defence when the stored idempotent response is gone.
+   */
+  async createPending(input: NewPendingBookingInput): Promise<Booking> {
     try {
-      return await withRequestTransaction(this.db, async (tx) => {
-        const currencyCode = input.currencyCode ?? "GBP";
+      return await withTransaction(this.db, async (tx) => {
         const [booking] = await tx
           .insert(bookings)
           .values({
@@ -155,10 +155,11 @@ export class BookingsRepository {
             childCount: input.childCount,
             checkIn: input.checkIn,
             checkOut: input.checkOut,
-            status: "confirmed",
-            totalAmountMinor: Math.round(input.totalCost * 100),
-            currencyCode,
-            priceSnapshot: input.priceSnapshot ?? {},
+            status: "pending_payment",
+            totalAmountMinor: input.totalAmountMinor,
+            currencyCode: input.currencyCode,
+            priceSnapshot: input.priceSnapshot,
+            idempotencyKey: input.idempotencyKey,
             specialRequests: input.specialRequests ?? null,
           })
           .returning();
@@ -166,42 +167,47 @@ export class BookingsRepository {
         await tx.insert(bookingEvents).values({
           bookingId: booking.id,
           fromStatus: null,
-          toStatus: "confirmed",
+          toStatus: "pending_payment",
           actorUserId: input.ownerUserId,
           reason: "booking created",
           requestId: input.requestId ?? null,
         });
 
-        const [payment] = await tx
-          .insert(payments)
-          .values({
-            bookingId: booking.id,
-            provider: input.payment.provider,
-            providerPaymentId: input.payment.providerPaymentId,
-            amountMinor: input.payment.amountMinor,
-            capturedAmountMinor: input.payment.status === "paid" ? input.payment.amountMinor : null,
-            currencyCode: input.payment.currencyCode,
-            status: input.payment.status,
-          })
-          .returning();
-
-        if (payment.status === "paid") {
-          await tx.insert(ledgerEntries).values({
-            bookingId: booking.id,
-            paymentId: payment.id,
-            entryType: "charge",
-            sourceKey: `payment:${payment.id}:charge`,
-            amountMinor: payment.amountMinor,
-            currencyCode: payment.currencyCode,
-            description: `Charge for payment ${payment.id}`,
-          });
-        }
-
-        return { booking, payments: [payment] };
+        return booking;
       });
     } catch (error) {
       return throwPostgresError(error);
     }
+  }
+
+  /** Replay lookup backed by the partial unique index on the owner's idempotency key. */
+  async findByOwnerAndIdempotencyKey(
+    ownerUserId: string,
+    idempotencyKey: string,
+  ): Promise<BookingWithPayments | undefined> {
+    if (!isUuid(ownerUserId) || idempotencyKey.length === 0) return undefined;
+    const [row] = await this.db
+      .select()
+      .from(bookings)
+      .where(
+        and(eq(bookings.ownerUserId, ownerUserId), eq(bookings.idempotencyKey, idempotencyKey)),
+      )
+      .limit(1);
+    if (!row) return undefined;
+    const [record] = await this.withPayments([row]);
+    return record;
+  }
+
+  /** Guest-facing lookup by the high-entropy public reference. */
+  async findByPublicReference(publicReference: string): Promise<BookingWithPayments | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.publicReference, publicReference))
+      .limit(1);
+    if (!row) return undefined;
+    const [record] = await this.withPayments([row]);
+    return record;
   }
 
   /**

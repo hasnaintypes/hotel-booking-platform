@@ -33,6 +33,8 @@ export const routes = {
     create: "/api/v1/bookings",
     paymentIntent: "/api/v1/bookings/payment-intents",
     byId: (id: string) => `/api/v1/bookings/${id}`,
+    /** GET accepts a UUID or the public reference on the same parameter. */
+    byReference: (reference: string) => `/api/v1/bookings/${reference}`,
     adminById: (id: string) => `/api/v1/admin/bookings/${id}`,
     cancel: (id: string) => `/api/v1/bookings/${id}/cancellations`,
     adminCancel: (id: string) => `/api/v1/admin/bookings/${id}/cancellations`,

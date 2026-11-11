@@ -132,6 +132,8 @@ export type BookingStatus =
 
 export type BookingType = {
   _id: string;
+  /** Unguessable reference guests can use for status polling in place of the UUID. */
+  publicReference: string;
   userId: string;
   hotelId: string;
   firstName: string;
@@ -158,6 +160,14 @@ export type BookingType = {
 
 export type HotelWithBookingsType = HotelType & {
   bookings: BookingType[];
+};
+
+/**
+ * `POST /api/v1/bookings` returns the booking plus the PaymentIntent secret for the client SDK.
+ * Later reads of the same booking omit `clientSecret`.
+ */
+export type BookingCreationType = BookingType & {
+  clientSecret: string | null;
 };
 
 export type HotelSearchResponse = {
