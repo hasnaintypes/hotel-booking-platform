@@ -317,6 +317,14 @@ const priceSnapshot = (nights: number, nightlyMinor: number) => ({
   currency: "GBP",
 });
 
+/** Mirrors the normalised `CancellationPolicy` v1 shape frozen by the API at booking time. */
+const cancellationPolicy = (freeCancelHoursBeforeArrival: number) => ({
+  version: 1,
+  source: "managed",
+  freeCancelHoursBeforeArrival,
+  penalty: { type: "nights", nights: 1 },
+});
+
 export const SEED_BOOKINGS: NewBooking[] = [
   {
     id: SEED_UUIDS.upcomingPaidBooking,
@@ -336,7 +344,7 @@ export const SEED_BOOKINGS: NewBooking[] = [
     totalAmountMinor: 36_000,
     currencyCode: "GBP",
     priceSnapshot: priceSnapshot(2, 18_000),
-    cancellationPolicySnapshot: { freeCancellationHours: 48 },
+    cancellationPolicySnapshot: cancellationPolicy(48),
     specialRequests: "High floor with river view if available",
     idempotencyKey: "seed-booking-1",
     createdAt: SEED_TIMESTAMP,
@@ -360,7 +368,7 @@ export const SEED_BOOKINGS: NewBooking[] = [
     totalAmountMinor: 19_000,
     currencyCode: "GBP",
     priceSnapshot: priceSnapshot(2, 9_500),
-    cancellationPolicySnapshot: { freeCancellationHours: 24 },
+    cancellationPolicySnapshot: cancellationPolicy(24),
     idempotencyKey: "seed-booking-2",
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -383,7 +391,7 @@ export const SEED_BOOKINGS: NewBooking[] = [
     totalAmountMinor: 19_000,
     currencyCode: "GBP",
     priceSnapshot: priceSnapshot(2, 9_500),
-    cancellationPolicySnapshot: { freeCancellationHours: 24 },
+    cancellationPolicySnapshot: cancellationPolicy(24),
     cancellationReason: "Change of plans",
     idempotencyKey: "seed-booking-3",
     createdAt: SEED_TIMESTAMP,
@@ -407,7 +415,7 @@ export const SEED_BOOKINGS: NewBooking[] = [
     totalAmountMinor: 18_000,
     currencyCode: "GBP",
     priceSnapshot: priceSnapshot(1, 18_000),
-    cancellationPolicySnapshot: { freeCancellationHours: 48 },
+    cancellationPolicySnapshot: cancellationPolicy(48),
     idempotencyKey: "seed-booking-4",
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -430,7 +438,7 @@ export const SEED_BOOKINGS: NewBooking[] = [
     totalAmountMinor: 24_000,
     currencyCode: "GBP",
     priceSnapshot: priceSnapshot(2, 12_000),
-    cancellationPolicySnapshot: { freeCancellationHours: 168 },
+    cancellationPolicySnapshot: cancellationPolicy(168),
     cancellationReason: "Full refund issued",
     idempotencyKey: "seed-booking-5",
     createdAt: SEED_TIMESTAMP,
@@ -454,7 +462,7 @@ export const SEED_BOOKINGS: NewBooking[] = [
     totalAmountMinor: 36_000,
     currencyCode: "GBP",
     priceSnapshot: priceSnapshot(2, 18_000),
-    cancellationPolicySnapshot: { freeCancellationHours: 48 },
+    cancellationPolicySnapshot: cancellationPolicy(48),
     idempotencyKey: "seed-booking-6",
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
