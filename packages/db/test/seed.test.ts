@@ -4,14 +4,14 @@ import { createDb, type Database, type DatabaseHandle } from "../src/client.js";
 import { bookings } from "../src/schema/bookings.js";
 import { credentials } from "../src/schema/credentials.js";
 import { facilities, hotelFacilities } from "../src/schema/facilities.js";
-import { hotelHotelTypes } from "../src/schema/hotel-types.js";
+import { hotelHotelTypes, hotelTypes } from "../src/schema/hotel-types.js";
 import { hotelImages } from "../src/schema/hotel-images.js";
 import { hotels } from "../src/schema/hotels.js";
 import { memberships } from "../src/schema/memberships.js";
 import { organisations } from "../src/schema/organisations.js";
 import { reviews } from "../src/schema/reviews.js";
 import { users } from "../src/schema/users.js";
-import { SEED_FIXTURE_IDS } from "../src/seed/fixtures.js";
+import { SEED_FACILITIES, SEED_FIXTURE_IDS, SEED_HOTEL_TYPES } from "../src/seed/fixtures.js";
 import { deleteSeedFixtures, seedDatabase } from "../src/seed/seed.js";
 
 const url = process.env.TEST_DATABASE_URL;
@@ -90,6 +90,22 @@ describe.skipIf(!url)("PostgreSQL seed fixtures", () => {
   beforeAll(async () => {
     handle = createDb({ connectionString: url! });
     await deleteSeedFixtures(handle.db);
+    // The shared test database also hosts the API suite, which creates hotels and therefore
+    // facility and hotel-type vocabulary rows with random ids. Those rows collide with the
+    // fixture codes, and the seed's `on conflict do nothing` would then skip the fixture row,
+    // so clear the vocabulary the fixtures own before asserting on their fixed ids.
+    await handle.db.delete(facilities).where(
+      inArray(
+        facilities.code,
+        SEED_FACILITIES.map((row) => row.code),
+      ),
+    );
+    await handle.db.delete(hotelTypes).where(
+      inArray(
+        hotelTypes.code,
+        SEED_HOTEL_TYPES.map((row) => row.code),
+      ),
+    );
   });
 
   afterAll(async () => {
