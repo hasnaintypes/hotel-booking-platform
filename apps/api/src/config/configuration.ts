@@ -55,6 +55,17 @@ export const configuration = () => {
     },
     stripe: {
       apiKey: process.env.STRIPE_API_KEY,
+      // Signing secret for the `/webhooks/stripe` endpoint (whsec_...). Required so the endpoint
+      // can never run without signature verification.
+      webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+      // Reject signatures whose timestamp is older than this; Stripe retries with a fresh
+      // signature, so a tight window is safe and blocks replayed payloads.
+      webhookToleranceSeconds: parseInt(process.env.STRIPE_WEBHOOK_TOLERANCE_SECONDS || "300", 10),
+      // Consecutive processing failures for one event before an alert-level log line.
+      webhookFailureAlertThreshold: parseInt(
+        process.env.STRIPE_WEBHOOK_FAILURE_ALERT_THRESHOLD || "5",
+        10,
+      ),
     },
     auth: {
       // Failed sign-ins per account before it is locked for 15 minutes.

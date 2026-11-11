@@ -4,6 +4,7 @@ import { BookingsRepository } from "./bookings.repository";
 import { MigrationsRepository } from "./migrations.repository";
 import { PaymentsRepository } from "./payments.repository";
 import { ReviewsRepository } from "./reviews.repository";
+import { StripeWebhookRepository } from "./stripe-webhook.repository";
 import { HotelsRepository } from "./hotels.repository";
 import { IdempotencyRepository } from "./idempotency.repository";
 import { InboxRepository } from "./inbox.repository";
@@ -23,6 +24,7 @@ import { UsersRepository } from "./users.repository";
     OutboxRepository,
     InboxRepository,
     IdempotencyRepository,
+    StripeWebhookRepository,
   ],
   exports: [
     AnalyticsRepository,
@@ -35,6 +37,7 @@ import { UsersRepository } from "./users.repository";
     OutboxRepository,
     InboxRepository,
     IdempotencyRepository,
+    StripeWebhookRepository,
   ],
 })
 export class DatabaseRepositoriesModule {}
