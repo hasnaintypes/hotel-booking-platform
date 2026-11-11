@@ -73,18 +73,19 @@ describe("operator payloads are rejected before they reach a query", () => {
 
   it("booking creation: operators are not valid hotel or date values", async () => {
     expectRejected(
-      await user.agent.post(routes.bookings.create).send({
-        hotelId: { $ne: null },
-        firstName: "Gus",
-        lastName: "Guest",
-        email: "guest@example.test",
-        adultCount: 1,
-        childCount: 0,
-        checkIn: "2030-01-01T00:00:00.000Z",
-        checkOut: "2030-01-03T00:00:00.000Z",
-        totalCost: 200,
-        paymentIntentId: "pi_test_operator",
-      }),
+      await user.agent
+        .post(routes.bookings.create)
+        .set("Idempotency-Key", `operators-${randomUUID()}`)
+        .send({
+          hotelId: { $ne: null },
+          firstName: "Gus",
+          lastName: "Guest",
+          email: "guest@example.test",
+          adultCount: 1,
+          childCount: 0,
+          checkIn: "2030-01-01T00:00:00.000Z",
+          checkOut: "2030-01-03T00:00:00.000Z",
+        }),
       "hotelId",
     );
     expectRejected(

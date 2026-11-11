@@ -24,8 +24,8 @@ type Case = {
  * Remaining deviations, fixed when their routes are rebuilt:
  * - `POST /api/v1/bookings/:id/cancellations` returns 200 until M2 gives cancellations a
  *   created-resource response.
- * - The temporary two-step checkout paths (`POST /api/v1/bookings/payment-intents` then
- *   `POST /api/v1/bookings`) are replaced by the single `POST /api/v1/bookings` flow in M2.
+ * - The temporary `POST /api/v1/bookings/payment-intents` checkout step stays until the web
+ *   checkout moves to `POST /api/v1/bookings` in #55.
  * - `POST /api/v1/bookings/:id/reviews` and rollup creation have no `Location` because neither
  *   resource has a GET-by-id route yet.
  */
@@ -85,6 +85,12 @@ const MATRIX: Case[] = [
     status: 401,
   },
   { name: "booking detail", method: "get", path: routes.bookings.byId(id), status: 401 },
+  {
+    name: "booking detail by public reference",
+    method: "get",
+    path: routes.bookings.byReference("a".repeat(32)),
+    status: 401,
+  },
   { name: "cancel booking", method: "post", path: routes.bookings.cancel(id), status: 401 },
   {
     name: "admin cancel booking",

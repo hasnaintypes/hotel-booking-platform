@@ -19,7 +19,7 @@ import {
 import { DATABASE } from "../../database/postgres.database";
 import { runInRequestTransaction } from "../../database/request-transaction";
 import type { Database, IdempotencyKey } from "@hotel-booking/db";
-import { IDEMPOTENT_METADATA_KEY } from "./idempotent.decorator";
+import { IDEMPOTENT_METADATA_KEY, type IdempotentMetadata } from "./idempotent.decorator";
 import {
   hashIdempotentRequest,
   IDEMPOTENCY_KEY_HEADER,
@@ -80,15 +80,24 @@ export class IdempotencyInterceptor implements NestInterceptor {
 
   async intercept(context: ExecutionContext, next: CallHandler): Promise<Observable<unknown>> {
     const handler = context.getHandler();
-    const operation = Reflect.getMetadata(IDEMPOTENT_METADATA_KEY, handler) as string | undefined;
-    if (operation === undefined) return next.handle();
+    const metadata = Reflect.getMetadata(IDEMPOTENT_METADATA_KEY, handler) as
+      IdempotentMetadata | string | undefined;
+    if (metadata === undefined) return next.handle();
+    // Older decorator calls stored only the operation string.
+    const operation = typeof metadata === "string" ? metadata : metadata.operation;
+    const required = typeof metadata === "string" ? false : metadata.required;
 
     const request = context.switchToHttp().getRequest<Request & { user?: { userId?: string } }>();
     const response = context.switchToHttp().getResponse<Response>();
     const rawKey = request.headers[IDEMPOTENCY_KEY_HEADER];
     const key = Array.isArray(rawKey) ? rawKey[0] : rawKey;
-    // The header is optional for backwards compatibility; clients should send it on every retry.
-    if (key === undefined) return next.handle();
+    if (key === undefined) {
+      if (required) {
+        throw new BadRequestException("Idempotency-Key header is required for this request");
+      }
+      // Otherwise the header is optional; clients should still send it on every retry.
+      return next.handle();
+    }
     if (!isValidIdempotencyKey(key)) {
       throw new BadRequestException("Idempotency-Key must be 1-255 printable characters");
     }

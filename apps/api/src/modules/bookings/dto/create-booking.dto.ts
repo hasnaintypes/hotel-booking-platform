@@ -3,7 +3,6 @@ import {
   IsEmail,
   IsInt,
   IsISO8601,
-  IsNumber,
   IsOptional,
   IsString,
   Matches,
@@ -17,8 +16,12 @@ import {
 const trim = ({ value }: TransformFnParams) => (typeof value === "string" ? value.trim() : value);
 
 /**
- * Field-level checks only. Rules that depend on the hotel or on today's date (check-out after
- * check-in, not in the past, maximum stay, guest capacity) are enforced in HotelsService.
+ * A booking request describes the stay only: the server prices it from the hotel's own rate and
+ * creates the PaymentIntent from that quote. Money fields are deliberately absent, so the global
+ * validation pipe's whitelist strips `totalCost` or `paymentIntentId` if a client still sends them.
+ *
+ * Field formats are checked here. Rules that depend on the hotel or on today's date (check-out
+ * after check-in, not in the past, maximum stay, guest capacity) are enforced in BookingsService.
  */
 export class CreateBookingDto {
   @IsUUID()
@@ -61,16 +64,6 @@ export class CreateBookingDto {
 
   @IsISO8601({ strict: true, strictSeparator: true })
   checkOut: string;
-
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(0)
-  @Max(1_000_000)
-  totalCost: number;
-
-  @IsString()
-  @Matches(/^pi_[A-Za-z0-9_]+$/, { message: "paymentIntentId must be a Stripe payment intent id" })
-  @MaxLength(255)
-  paymentIntentId: string;
 
   @IsOptional()
   @Transform(trim)

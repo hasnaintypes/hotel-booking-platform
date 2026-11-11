@@ -6,8 +6,9 @@ import { routes } from "./support/routes";
 
 const UNKNOWN_ID = randomUUID();
 
-function bookingBody(paymentIntentId = "pi_test_visibility") {
+function bookingBody(hotelId: string) {
   return {
+    hotelId,
     firstName: "Gus",
     lastName: "Guest",
     email: "guest@example.test",
@@ -15,8 +16,6 @@ function bookingBody(paymentIntentId = "pi_test_visibility") {
     childCount: 0,
     checkIn: "2030-01-01T00:00:00.000Z",
     checkOut: "2030-01-03T00:00:00.000Z",
-    totalCost: 200,
-    paymentIntentId,
   };
 }
 
@@ -120,16 +119,18 @@ describe("inactive hotels", () => {
   it("refuses bookings for an inactive hotel without contacting Stripe", async () => {
     const res = await other.agent
       .post(routes.bookings.create)
-      .send({ ...bookingBody(), hotelId: hidden.id });
+      .set("Idempotency-Key", `inactive-${randomUUID()}`)
+      .send(bookingBody(hidden.id));
     expect(res.status).toBe(409);
     expect(res.body.message).toMatch(/not available/i);
-    expect(t.stripe.client.paymentIntents.retrieve).not.toHaveBeenCalled();
+    expect(t.stripe.client.paymentIntents.create).not.toHaveBeenCalled();
   });
 
   it("answers 404 for a booking against an unknown hotel", async () => {
     const res = await other.agent
       .post(routes.bookings.create)
-      .send({ ...bookingBody(), hotelId: UNKNOWN_ID });
+      .set("Idempotency-Key", `unknown-${randomUUID()}`)
+      .send(bookingBody(UNKNOWN_ID));
     expect(res.status).toBe(404);
   });
 });

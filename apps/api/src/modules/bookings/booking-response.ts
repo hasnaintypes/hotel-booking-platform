@@ -10,6 +10,7 @@ export type BookingPaymentStatus = "pending" | "paid" | "failed" | "refunded";
 
 export type BookingResponse = {
   _id: string;
+  publicReference: string;
   userId: string;
   hotelId: string;
   firstName: string;
@@ -66,6 +67,7 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
 
   return {
     _id: booking.id,
+    publicReference: booking.publicReference,
     userId: booking.ownerUserId,
     hotelId: booking.hotelId,
     firstName: booking.guestFirstName ?? "",
@@ -89,3 +91,8 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
     updatedAt: booking.updatedAt,
   };
 }
+
+/** The creation response adds the PaymentIntent secret; subsequent reads omit it. */
+export type BookingCreationResponse = BookingResponse & {
+  clientSecret: string | null;
+};
