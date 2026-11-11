@@ -101,6 +101,7 @@ jobs:
             -e JWT_SECRET_KEY=ci-only-secret-used-nowhere-else \
             -e CLOUDINARY_CLOUD_NAME=ci -e CLOUDINARY_API_KEY=ci -e CLOUDINARY_API_SECRET=ci \
             -e STRIPE_API_KEY=sk_test_ci \
+            -e STRIPE_WEBHOOK_SECRET=whsec_test_ci \
             hotel-booking-api:ci
           for _ in $(seq 1 30); do
             curl -fsS http://localhost:5001/health/live > /dev/null 2>&1 && break

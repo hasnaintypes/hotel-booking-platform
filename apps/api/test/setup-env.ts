@@ -5,6 +5,7 @@ process.env.CLOUDINARY_CLOUD_NAME = "test-cloud";
 process.env.CLOUDINARY_API_KEY = "test-key";
 process.env.CLOUDINARY_API_SECRET = "test-secret";
 process.env.STRIPE_API_KEY = "sk_test_dummy";
+process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_dummy";
 process.env.FRONTEND_URL = "http://localhost:5174";
 process.env.ADMIN_URL = "http://localhost:5175";
 process.env.BACKEND_URL = "http://localhost:5001";

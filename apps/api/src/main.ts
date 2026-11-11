@@ -24,6 +24,9 @@ function installProcessErrorHandlers(pino: PinoLogger["logger"]) {
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
+    // Keeps the exact bytes of every JSON request so the Stripe webhook can verify the
+    // signature over the payload Stripe signed, not a re-serialised object.
+    rawBody: true,
   });
 
   app.useLogger(app.get(AppLogger));
