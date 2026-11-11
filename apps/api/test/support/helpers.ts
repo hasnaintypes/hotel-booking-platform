@@ -148,8 +148,12 @@ export async function insertBooking(
       priceSnapshot: {
         totalCost,
         currency: "GBP",
+        ...(Array.isArray(overrides.nightlyRates) ? { nightlyRates: overrides.nightlyRates } : {}),
         ...(paymentMethod ? { paymentMethod } : {}),
       },
+      // Left null by default so the service exercises its documented managed fallback.
+      cancellationPolicySnapshot:
+        (overrides.cancellationPolicySnapshot as Record<string, unknown> | undefined) ?? null,
       specialRequests: overrides.specialRequests ? String(overrides.specialRequests) : null,
       cancellationReason: overrides.cancellationReason
         ? String(overrides.cancellationReason)
