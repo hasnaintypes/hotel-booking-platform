@@ -5,7 +5,6 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
-  InternalServerErrorException,
   Logger,
   NotFoundException,
 } from "@nestjs/common";
@@ -32,7 +31,6 @@ import {
   type BookingStatus,
 } from "../../domain/bookings/booking-state-machine";
 import { validateStay } from "../../domain/bookings/stay-validation";
-import { StripeService } from "../../integrations/stripe/stripe.service";
 import { PaymentsService } from "../payments/payments.service";
 import { toPublicHotelResponse } from "../hotels/hotel-response";
 import { OffersService } from "../inventory/offers.service";
@@ -43,7 +41,6 @@ import {
 } from "./booking-response";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
-import { PaymentIntentDto } from "./dto/payment-intent.dto";
 
 const CANCELLABLE_STATUSES = new Set([
   "pending_payment",
@@ -76,7 +73,6 @@ export class BookingsService {
     private readonly bookings: BookingsRepository,
     private readonly hotels: HotelsRepository,
     private readonly users: UsersRepository,
-    private readonly stripeService: StripeService,
     private readonly payments: PaymentsService,
     private readonly offers: OffersService,
     private readonly config: ConfigService,
@@ -155,45 +151,6 @@ export class BookingsService {
     if (result.status === 404) throw new NotFoundException(result.message);
     if (result.status === 403) throw new ForbiddenException(result.message);
     throw new BadRequestException(result.message);
-  }
-
-  async createPaymentIntent(dto: PaymentIntentDto, userId: string) {
-    const hotel = await this.hotels.findById(dto.hotelId);
-    if (!hotel) {
-      throw new BadRequestException("Hotel not found");
-    }
-
-    if (hotel.status !== "active") {
-      throw new ConflictException("This hotel is not available for booking");
-    }
-
-    const nights = Number(dto.numberOfNights);
-    if (nights > this.maxNights) {
-      throw new ValidationFailedException([
-        { field: "numberOfNights", message: `a stay cannot exceed ${this.maxNights} nights` },
-      ]);
-    }
-
-    const totalCost = (hotel.pricePerNightMinor / 100) * nights;
-
-    const paymentIntent = await this.stripeService.client.paymentIntents.create({
-      amount: Math.round(totalCost * 100),
-      currency: "gbp",
-      metadata: {
-        hotelId: hotel.id,
-        userId,
-      },
-    });
-
-    if (!paymentIntent.client_secret) {
-      throw new InternalServerErrorException("Error creating payment intent");
-    }
-
-    return {
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret.toString(),
-      totalCost,
-    };
   }
 
   /**

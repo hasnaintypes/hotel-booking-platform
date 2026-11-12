@@ -88,12 +88,6 @@ describe("operator payloads are rejected before they reach a query", () => {
         }),
       "hotelId",
     );
-    expectRejected(
-      await user.agent
-        .post(routes.bookings.paymentIntent)
-        .send({ hotelId, numberOfNights: { $ne: null } }),
-      "numberOfNights",
-    );
   });
 
   it("hotel activation: only a boolean is accepted, for admins and owners", async () => {

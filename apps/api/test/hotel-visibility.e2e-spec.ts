@@ -99,23 +99,6 @@ describe("inactive hotels", () => {
     expect(res.body.code).toBe("NOT_FOUND");
   });
 
-  it("refuses payment intents for an inactive hotel", async () => {
-    const res = await other.agent
-      .post(routes.bookings.paymentIntent)
-      .send({ hotelId: hidden.id, numberOfNights: "2" });
-    expect(res.status).toBe(409);
-    expect(res.body.message).toMatch(/not available/i);
-    expect(t.stripe.client.paymentIntents.create).not.toHaveBeenCalled();
-  });
-
-  it("still creates payment intents for an active hotel", async () => {
-    const res = await other.agent
-      .post(routes.bookings.paymentIntent)
-      .send({ hotelId: active.id, numberOfNights: "2" });
-    expect(res.status).toBe(201);
-    expect(res.body.totalCost).toBe(200);
-  });
-
   it("refuses bookings for an inactive hotel without contacting Stripe", async () => {
     const res = await other.agent
       .post(routes.bookings.create)

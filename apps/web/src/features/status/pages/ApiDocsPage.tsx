@@ -102,11 +102,6 @@ const ApiDocs = () => {
         },
         {
           method: "POST",
-          path: "/api/v1/bookings/payment-intents",
-          description: "Create payment intent",
-        },
-        {
-          method: "POST",
           path: "/api/v1/bookings/:bookingId/reviews",
           description: "Review a completed stay",
         },

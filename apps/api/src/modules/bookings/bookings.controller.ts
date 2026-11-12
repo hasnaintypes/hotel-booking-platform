@@ -10,7 +10,6 @@ import {
   Res,
   UseGuards,
 } from "@nestjs/common";
-import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { IDEMPOTENCY_KEY_HEADER } from "../../common/idempotency/idempotency.utils";
@@ -22,7 +21,6 @@ import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { BookingsService } from "./bookings.service";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
-import { PaymentIntentDto } from "./dto/payment-intent.dto";
 
 const idempotencyKeyOf = (request: Request): string | undefined => {
   const raw = request.headers[IDEMPOTENCY_KEY_HEADER];
@@ -38,18 +36,6 @@ export class BookingsController {
   @Get()
   findAll(@CurrentUser() user: AuthenticatedUser) {
     return this.bookingsService.myBookings(user.userId);
-  }
-
-  /**
-   * Temporary checkout step kept for the web SPA until #55 migrates it to `POST /bookings`.
-   * @deprecated Use `POST /api/v1/bookings`, which prices the stay server-side and creates the
-   * PaymentIntent itself.
-   */
-  @Post("payment-intents")
-  @HttpCode(HttpStatus.CREATED)
-  @Throttle({ default: { limit: 50, ttl: 900000 } })
-  createPaymentIntent(@Body() dto: PaymentIntentDto, @CurrentUser() user: AuthenticatedUser) {
-    return this.bookingsService.createPaymentIntent(dto, user.userId);
   }
 
   @Post()
