@@ -17,6 +17,7 @@ import { oauthAccounts } from "./oauth-accounts.js";
 import { organisationRoles, organisations, rolePermissions } from "./organisations.js";
 import { outboxEvents } from "./outbox-events.js";
 import { payments } from "./payments.js";
+import { reconciliationDiscrepancies } from "./reconciliation-discrepancies.js";
 import { reviews } from "./reviews.js";
 import { users } from "./users.js";
 
@@ -104,6 +105,12 @@ export type { InboxEvent, NewInboxEvent } from "./inbox-events.js";
 export { idempotencyKeys };
 export type { IdempotencyKey, NewIdempotencyKey } from "./idempotency-keys.js";
 
+export { reconciliationDiscrepancies };
+export type {
+  NewReconciliationDiscrepancy,
+  ReconciliationDiscrepancy,
+} from "./reconciliation-discrepancies.js";
+
 export {
   bookingStatus,
   hotelSource,
@@ -151,4 +158,5 @@ export const schema = {
   outboxEvents,
   inboxEvents,
   idempotencyKeys,
+  reconciliationDiscrepancies,
 };

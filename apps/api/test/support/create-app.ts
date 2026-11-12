@@ -10,6 +10,7 @@ import { configureApp } from "../../src/app.setup";
 import { setupSwagger } from "../../src/config/swagger.config";
 import { CloudinaryService } from "../../src/integrations/cloudinary/cloudinary.service";
 import { StripeService } from "../../src/integrations/stripe/stripe.service";
+import { CLOCK, SystemClock, type Clock } from "../../src/common/clock";
 import { LOG_DESTINATION } from "../../src/common/logging/logging.module";
 import { createFakeCloudinary, createFakeStripe } from "./fakes";
 import { FaultController } from "./fault.controller";
@@ -29,6 +30,8 @@ export type CreateTestAppOptions = {
   controllers?: Type<unknown>[];
   /** Mounts the API documentation the way main.ts does. */
   docs?: boolean;
+  /** Freezes the background-job clock so TTLs and staleness thresholds run without sleeping. */
+  clock?: Clock;
 };
 
 /**
@@ -46,6 +49,8 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
   ];
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule], controllers })
+    .overrideProvider(CLOCK)
+    .useValue(options.clock ?? new SystemClock())
     .overrideProvider(StripeService)
     .useValue(stripe)
     .overrideProvider(CloudinaryService)

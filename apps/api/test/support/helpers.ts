@@ -128,6 +128,7 @@ export async function insertBooking(
     typeof overrides.paymentMethod === "string" ? overrides.paymentMethod : undefined;
 
   const db = t.app.get<Database>(DATABASE);
+  const createdAt = overrides.createdAt ? new Date(overrides.createdAt as string) : new Date();
   const [booking] = await db
     .insert(bookings)
     .values({
@@ -158,6 +159,9 @@ export async function insertBooking(
       cancellationReason: overrides.cancellationReason
         ? String(overrides.cancellationReason)
         : null,
+      expiresAt: overrides.expiresAt ? new Date(overrides.expiresAt as string) : null,
+      createdAt,
+      updatedAt: overrides.updatedAt ? new Date(overrides.updatedAt as string) : createdAt,
     })
     .returning();
 

@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
 import {
   bookingEvents,
   bookings,
@@ -16,6 +16,7 @@ import { isUuid } from "../../common/utils/uuid";
 import {
   assertBookingTransition,
   BookingTransitionConflictError,
+  type BookingStatus,
   type BookingTransitionInput,
 } from "../../domain/bookings/booking-state-machine";
 import { DATABASE } from "../postgres.database";
@@ -41,6 +42,8 @@ export type NewPendingBookingInput = {
   currencyCode: string;
   priceSnapshot: Record<string, unknown>;
   cancellationPolicySnapshot: Record<string, unknown>;
+  /** When the payment hold stops being valid; the expiry job closes the booking after this. */
+  expiresAt: Date;
   idempotencyKey: string;
   specialRequests?: string;
   requestId?: string;
@@ -146,6 +149,7 @@ export class BookingsRepository {
             currencyCode: input.currencyCode,
             priceSnapshot: input.priceSnapshot,
             cancellationPolicySnapshot: input.cancellationPolicySnapshot,
+            expiresAt: input.expiresAt,
             idempotencyKey: input.idempotencyKey,
             specialRequests: input.specialRequests ?? null,
           })
@@ -381,49 +385,40 @@ export class BookingsRepository {
     return Number(row?.count ?? 0);
   }
 
-  /** Pending bookings old enough for the expiry job to release. */
-  async listPendingPaymentBefore(cutoff: Date, limit = 100): Promise<Booking[]> {
+  /**
+   * Pending bookings whose payment hold has elapsed. New rows carry `expires_at`; rows written
+   * before the column existed fall back to `created_at + legacyCutoff`, which is the same hold
+   * window the expiry job uses.
+   */
+  async listExpiredPendingPayment(now: Date, legacyCutoff: Date, limit = 100): Promise<Booking[]> {
     return this.db
       .select()
       .from(bookings)
-      .where(and(eq(bookings.status, "pending_payment"), lt(bookings.createdAt, cutoff)))
+      .where(
+        and(
+          eq(bookings.status, "pending_payment"),
+          or(
+            and(isNotNull(bookings.expiresAt), lte(bookings.expiresAt, now)),
+            and(isNull(bookings.expiresAt), lt(bookings.createdAt, legacyCutoff)),
+          ),
+        ),
+      )
       .orderBy(asc(bookings.createdAt), asc(bookings.id))
       .limit(Math.min(Math.max(limit, 1), 500));
   }
 
-  /** Counts the reconciliation job needs to spot work that has not moved. */
-  async reconciliationCounts(cutoff: Date): Promise<{
-    pendingPayments: number;
-    authorizedPayments: number;
-    pendingBookings: number;
-    confirmingBookings: number;
-    needsReviewBookings: number;
-  }> {
-    const [paymentRows, bookingRows] = await Promise.all([
-      this.db
-        .select({
-          pending: sql<number>`count(*) filter (where ${payments.status} = 'pending')::int`,
-          authorized: sql<number>`count(*) filter (where ${payments.status} = 'authorized')::int`,
-        })
-        .from(payments)
-        .where(lt(payments.createdAt, cutoff)),
-      this.db
-        .select({
-          pending: sql<number>`count(*) filter (where ${bookings.status} = 'pending_payment')::int`,
-          confirming: sql<number>`count(*) filter (where ${bookings.status} = 'confirming')::int`,
-          needsReview: sql<number>`count(*) filter (where ${bookings.status} = 'needs_review')::int`,
-        })
-        .from(bookings)
-        .where(lt(bookings.updatedAt, cutoff)),
-    ]);
-
-    return {
-      pendingPayments: Number(paymentRows[0]?.pending ?? 0),
-      authorizedPayments: Number(paymentRows[0]?.authorized ?? 0),
-      pendingBookings: Number(bookingRows[0]?.pending ?? 0),
-      confirmingBookings: Number(bookingRows[0]?.confirming ?? 0),
-      needsReviewBookings: Number(bookingRows[0]?.needsReview ?? 0),
-    };
+  /** Bookings in a non-terminal state that have not changed for the sweeper threshold. */
+  async listStaleByStatus(
+    status: BookingStatus,
+    updatedBefore: Date,
+    limit = 100,
+  ): Promise<Booking[]> {
+    return this.db
+      .select()
+      .from(bookings)
+      .where(and(eq(bookings.status, status), lt(bookings.updatedAt, updatedBefore)))
+      .orderBy(asc(bookings.updatedAt), asc(bookings.id))
+      .limit(Math.min(Math.max(limit, 1), 500));
   }
 
   private async withPayments(rows: Booking[]): Promise<BookingWithPayments[]> {

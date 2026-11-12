@@ -32,7 +32,9 @@ export class JobWorkerService implements OnApplicationBootstrap, OnApplicationSh
     await this.handlers.register(this.queue);
     await registerSchedules(this.queue, {
       expiryCron: this.config.get<string>("jobs.schedules.expiry")!,
+      sweepCron: this.config.get<string>("jobs.schedules.sweep")!,
       reconcileCron: this.config.get<string>("jobs.schedules.reconcile")!,
+      ledgerCron: this.config.get<string>("jobs.schedules.ledger")!,
       cleanupCron: this.config.get<string>("jobs.schedules.cleanup")!,
     });
     await this.queue.startWorker();

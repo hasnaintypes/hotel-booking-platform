@@ -104,10 +104,27 @@ export const configuration = () => {
       shutdownTimeoutMs: parseInt(process.env.JOB_SHUTDOWN_TIMEOUT_MS || "30000", 10),
       retentionDays: parseInt(process.env.JOB_RETENTION_DAYS || "30", 10),
       paymentHoldMinutes: parseInt(process.env.JOB_PAYMENT_HOLD_MINUTES || "30", 10),
-      reconcileStaleMinutes: parseInt(process.env.JOB_RECONCILE_STALE_MINUTES || "60", 10),
+      // A stuck booking is retried once it has been in its state for this long. Authorized and
+      // confirming book work that should take seconds; cancelling waits longer for a refund.
+      authorizedStaleMinutes: parseInt(process.env.JOB_AUTHORIZED_STALE_MINUTES || "15", 10),
+      confirmingStaleMinutes: parseInt(process.env.JOB_CONFIRMING_STALE_MINUTES || "15", 10),
+      cancellingStaleMinutes: parseInt(process.env.JOB_CANCELLING_STALE_MINUTES || "60", 10),
+      sweepBatchSize: parseInt(process.env.JOB_SWEEP_BATCH_SIZE || "100", 10),
+      // Stripe comparison window and how long a local attempt may exist without a provider id.
+      reconcileLookbackHours: parseInt(process.env.JOB_RECONCILE_LOOKBACK_HOURS || "48", 10),
+      reconcileBatchSize: parseInt(process.env.JOB_RECONCILE_BATCH_SIZE || "200", 10),
+      missingProviderGraceMinutes: parseInt(
+        process.env.JOB_MISSING_PROVIDER_GRACE_MINUTES || "60",
+        10,
+      ),
+      // Nightly ledger audit over recent bookings.
+      ledgerLookbackDays: parseInt(process.env.JOB_LEDGER_LOOKBACK_DAYS || "30", 10),
+      ledgerBatchSize: parseInt(process.env.JOB_LEDGER_BATCH_SIZE || "1000", 10),
       schedules: {
         expiry: process.env.JOB_EXPIRY_CRON || "*/5 * * * *",
         reconcile: process.env.JOB_RECONCILE_CRON || "*/15 * * * *",
+        sweep: process.env.JOB_SWEEP_CRON || "*/10 * * * *",
+        ledger: process.env.JOB_LEDGER_CRON || "0 3 * * *",
         cleanup: process.env.JOB_CLEANUP_CRON || "0 * * * *",
       },
     },

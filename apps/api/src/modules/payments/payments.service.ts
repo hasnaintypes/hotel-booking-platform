@@ -8,11 +8,13 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
+import type Stripe from "stripe";
 import {
   PaymentsRepository,
   type BookingRecord,
   type PaymentRecord,
 } from "../../database/repositories/payments.repository";
+import { localStatusFromIntentStatus } from "../../domain/payments/provider-status";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 
 const DEFAULT_CLAIM_TIMEOUT_MS = 30_000;
@@ -26,6 +28,12 @@ export type RefundResult = {
   payment: PaymentRecord;
   amountMinor: number;
 };
+
+/** Stripe answers a deleted or unknown object with `resource_missing`. */
+export const isMissingProviderResource = (error: unknown): boolean =>
+  Boolean(
+    error && typeof error === "object" && (error as { code?: unknown }).code === "resource_missing",
+  );
 
 const stripeFailure = (error: unknown) => {
   if (error && typeof error === "object") {
@@ -327,6 +335,128 @@ export class PaymentsService {
         message: failure.message,
       });
       throw new BadGatewayException(failure.message);
+    }
+  }
+
+  /**
+   * Releases the provider side of an expired booking hold.
+   *
+   * Returns `paid` when Stripe says money already moved: expiring such a booking would hide a
+   * charged guest, so the caller parks it for review instead. Otherwise the PaymentIntent is
+   * cancelled with a stable idempotency key and the local attempt is marked failed, which makes
+   * the operation safe to retry after a crash.
+   */
+  async releaseExpiredPayment(bookingId: string): Promise<"released" | "paid"> {
+    const charge = await this.payments.findCharge(bookingId);
+    if (!charge) return "released";
+    if (charge.status === "paid") return "paid";
+
+    if (!charge.providerPaymentId) {
+      await this.payments.markFailed(charge.id, {
+        status: "failed",
+        code: "payment_expired",
+        message: "Payment hold expired before a provider intent was created",
+      });
+      return "released";
+    }
+
+    const intent = await this.retrieveIntent(charge.providerPaymentId);
+    if (!intent) {
+      await this.payments.markFailed(charge.id, {
+        status: "failed",
+        code: "payment_expired",
+        message: "PaymentIntent no longer exists at the provider",
+      });
+      return "released";
+    }
+    if (intent.status === "succeeded") return "paid";
+
+    if (intent.status !== "canceled") {
+      try {
+        await this.stripe.client.paymentIntents.cancel(
+          charge.providerPaymentId,
+          {},
+          { idempotencyKey: `cancel_${charge.id}` },
+        );
+      } catch (error) {
+        // A concurrent confirmation can win the race with our cancel.
+        const refreshed = await this.retrieveIntent(charge.providerPaymentId);
+        if (refreshed?.status === "succeeded") return "paid";
+        if (refreshed?.status !== "canceled") throw error;
+      }
+    }
+
+    await this.payments.markFailed(charge.id, {
+      status: "failed",
+      code: "payment_expired",
+      message: "Payment hold expired",
+    });
+    return "released";
+  }
+
+  /**
+   * Repairs local payment state from Stripe when the original webhook never arrived (for example
+   * a crash between authorization and confirmation). The webhook remains the primary path; this
+   * is the recovery path the stuck-state sweeper uses.
+   */
+  async refreshFromProvider(paymentId: string): Promise<PaymentRecord | undefined> {
+    const payment = await this.payments.findById(paymentId);
+    if (!payment?.providerPaymentId) return payment;
+
+    const intent = await this.retrieveIntent(payment.providerPaymentId);
+    if (!intent) return payment;
+
+    const status = localStatusFromIntentStatus(intent.status);
+    if (!status || status === payment.status) return payment;
+
+    if (status === "paid") {
+      const capturedAmountMinor =
+        typeof intent.amount_received === "number" && intent.amount_received > 0
+          ? Math.min(intent.amount_received, payment.amountMinor)
+          : payment.amountMinor;
+      const settled = await this.payments.applyProviderState(payment.id, {
+        status: "paid",
+        fromStatuses: ["pending", "authorized", "failed"],
+        capturedAmountMinor,
+        failureCode: null,
+        failureMessage: null,
+      });
+      if (settled) await this.recordCharge(settled);
+      return settled ?? payment;
+    }
+
+    if (status === "authorized") {
+      return (
+        (await this.payments.applyProviderState(payment.id, {
+          status: "authorized",
+          fromStatuses: ["pending", "failed"],
+          capturedAmountMinor: null,
+          failureCode: null,
+          failureMessage: null,
+        })) ?? payment
+      );
+    }
+
+    if (status === "failed") {
+      return (
+        (await this.payments.applyProviderState(payment.id, {
+          status: "failed",
+          fromStatuses: ["pending", "authorized"],
+          failureCode: "payment_intent.canceled",
+          failureMessage: "PaymentIntent was canceled at the provider",
+        })) ?? payment
+      );
+    }
+
+    return payment;
+  }
+
+  private async retrieveIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent | null> {
+    try {
+      return await this.stripe.client.paymentIntents.retrieve(paymentIntentId);
+    } catch (error) {
+      if (isMissingProviderResource(error)) return null;
+      throw error;
     }
   }
 

@@ -21,6 +21,7 @@ import {
   organisations,
   outboxEvents,
   payments,
+  reconciliationDiscrepancies,
   reviews,
   rolePermissions,
   users,
@@ -69,6 +70,7 @@ describe("schema types", () => {
       outboxEvents,
       inboxEvents,
       idempotencyKeys,
-    ]).toHaveLength(24);
+      reconciliationDiscrepancies,
+    ]).toHaveLength(25);
   });
 });

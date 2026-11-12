@@ -3,6 +3,7 @@ import { AnalyticsRepository } from "./analytics.repository";
 import { BookingsRepository } from "./bookings.repository";
 import { MigrationsRepository } from "./migrations.repository";
 import { PaymentsRepository } from "./payments.repository";
+import { ReconciliationRepository } from "./reconciliation.repository";
 import { ReviewsRepository } from "./reviews.repository";
 import { StripeWebhookRepository } from "./stripe-webhook.repository";
 import { HotelsRepository } from "./hotels.repository";
@@ -21,6 +22,7 @@ import { UsersRepository } from "./users.repository";
     ReviewsRepository,
     MigrationsRepository,
     PaymentsRepository,
+    ReconciliationRepository,
     OutboxRepository,
     InboxRepository,
     IdempotencyRepository,
@@ -34,6 +36,7 @@ import { UsersRepository } from "./users.repository";
     ReviewsRepository,
     MigrationsRepository,
     PaymentsRepository,
+    ReconciliationRepository,
     OutboxRepository,
     InboxRepository,
     IdempotencyRepository,
