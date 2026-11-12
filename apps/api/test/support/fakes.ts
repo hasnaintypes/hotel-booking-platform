@@ -24,7 +24,25 @@ export function createFakeStripe() {
           status: "requires_payment_method",
         }),
       ),
-      retrieve: vi.fn(),
+      retrieve: vi.fn(async (id: string) => ({
+        id,
+        amount: 0,
+        amount_received: 0,
+        metadata: {} as Record<string, string>,
+        latest_charge: null as Record<string, unknown> | null,
+        status: "requires_payment_method",
+      })),
+      list: vi.fn(async () => ({
+        data: [] as Record<string, unknown>[],
+        has_more: false,
+      })),
+      cancel: vi.fn(async (id: string) => ({
+        id,
+        amount: 0,
+        amount_received: 0,
+        metadata: {},
+        status: "canceled",
+      })),
       capture: vi.fn(async (id: string, params?: { amount_to_capture?: number }) => ({
         id,
         amount_received: params?.amount_to_capture ?? 0,
@@ -43,6 +61,12 @@ export function createFakeStripe() {
           status: "succeeded",
         }),
       ),
+      retrieve: vi.fn(async (id: string) => ({
+        id,
+        amount: 0,
+        payment_intent: "pi_test",
+        status: "succeeded",
+      })),
     },
     webhooks: verifier.webhooks,
   };
