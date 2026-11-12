@@ -4,6 +4,7 @@ import { IdempotencyRepository } from "../../database/repositories/idempotency.r
 import { InboxRepository } from "../../database/repositories/inbox.repository";
 import { OutboxRepository } from "../../database/repositories/outbox.repository";
 import type { JobQueue } from "../../domain/jobs/job-queue";
+import { OffersService } from "../inventory/offers.service";
 import { BookingRecoveryService } from "../reconciliation/booking-recovery.service";
 import { ReconciliationService } from "../reconciliation/reconciliation.service";
 import { JOB_NAMES } from "./job-names";
@@ -24,6 +25,7 @@ export class JobHandlers {
     private readonly outbox: OutboxRepository,
     private readonly inbox: InboxRepository,
     private readonly idempotency: IdempotencyRepository,
+    private readonly offers: OffersService,
     private readonly config: ConfigService,
   ) {}
 
@@ -46,15 +48,16 @@ export class JobHandlers {
   private async cleanup(jobId: string): Promise<void> {
     const retentionDays = this.config.get<number>("jobs.retentionDays") ?? 30;
     const cutoff = new Date(Date.now() - retentionDays * DAY_MS);
-    const [outbox, inbox, idempotency] = await Promise.all([
+    const [outbox, inbox, idempotency, offers] = await Promise.all([
       this.outbox.deleteDispatchedBefore(cutoff),
       this.inbox.deleteProcessedBefore(cutoff),
       this.idempotency.deleteExpiredBefore(new Date()),
+      this.offers.cleanupExpired(),
     ]);
 
     this.logger.log(
       `Cleanup ${jobId}: removed ${outbox} dispatched outbox row(s), ${inbox} processed inbox ` +
-        `row(s) and ${idempotency} expired idempotency key(s)`,
+        `row(s), ${idempotency} expired idempotency key(s) and ${offers} expired offer(s)`,
     );
   }
 }

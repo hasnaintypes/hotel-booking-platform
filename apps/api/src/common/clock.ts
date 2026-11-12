@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Global, Injectable, Module } from "@nestjs/common";
 
 /**
  * Injectable time source for background work. Production uses the system clock; tests can freeze
@@ -16,3 +16,11 @@ export class SystemClock implements Clock {
     return new Date();
   }
 }
+
+/** One process-wide clock so tests can override time for jobs, offers and bookings together. */
+@Global()
+@Module({
+  providers: [{ provide: CLOCK, useClass: SystemClock }],
+  exports: [CLOCK],
+})
+export class ClockModule {}
