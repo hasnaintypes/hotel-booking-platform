@@ -30,6 +30,11 @@ export type NewPendingBookingInput = {
   ownerUserId: string;
   createdByUserId: string;
   hotelId: string;
+  /** The frozen offer this booking was created from; every new booking supplies one. */
+  offerId?: string;
+  inventorySource?: "managed" | "supplier";
+  supplierId?: string;
+  supplierReference?: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -135,7 +140,10 @@ export class BookingsRepository {
             ownerUserId: input.ownerUserId,
             createdByUserId: input.createdByUserId,
             hotelId: input.hotelId,
-            inventorySource: "managed",
+            offerId: input.offerId ?? null,
+            inventorySource: input.inventorySource ?? "managed",
+            supplierId: input.supplierId ?? null,
+            supplierReference: input.supplierReference ?? null,
             guestFirstName: input.firstName,
             guestLastName: input.lastName,
             guestEmail: input.email,
@@ -183,6 +191,19 @@ export class BookingsRepository {
       .where(
         and(eq(bookings.ownerUserId, ownerUserId), eq(bookings.idempotencyKey, idempotencyKey)),
       )
+      .limit(1);
+    if (!row) return undefined;
+    const [record] = await this.withPayments([row]);
+    return record;
+  }
+
+  /** Returns the booking that consumed an offer, used to make offer retries idempotent. */
+  async findByOfferId(offerId: string): Promise<BookingWithPayments | undefined> {
+    if (!isUuid(offerId)) return undefined;
+    const [row] = await this.db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.offerId, offerId))
       .limit(1);
     if (!row) return undefined;
     const [record] = await this.withPayments([row]);
