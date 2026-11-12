@@ -30,6 +30,9 @@ export const routes = {
     adminById: (id: string) => `/api/v1/admin/hotels/${id}`,
     active: (id: string) => `/api/v1/admin/hotels/${id}`,
   },
+  offers: {
+    create: "/api/v1/offers",
+  },
   bookings: {
     list: "/api/v1/admin/bookings",
     myBookings: "/api/v1/bookings",

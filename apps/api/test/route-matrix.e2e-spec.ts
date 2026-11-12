@@ -67,6 +67,7 @@ const MATRIX: Case[] = [
     path: routes.hotels.adminById(hotelId),
     status: 401,
   },
+  { name: "create offer", method: "post", path: routes.offers.create, status: 401 },
   { name: "list bookings", method: "get", path: routes.bookings.list, status: 401 },
   { name: "my bookings", method: "get", path: routes.bookings.myBookings, status: 401 },
   {
