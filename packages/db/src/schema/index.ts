@@ -14,6 +14,7 @@ import { inboxEvents } from "./inbox-events.js";
 import { ledgerEntries } from "./ledger-entries.js";
 import { memberships } from "./memberships.js";
 import { oauthAccounts } from "./oauth-accounts.js";
+import { offers } from "./offers.js";
 import { organisationRoles, organisations, rolePermissions } from "./organisations.js";
 import { outboxEvents } from "./outbox-events.js";
 import { payments } from "./payments.js";
@@ -73,6 +74,9 @@ export type {
 
 export { bookings };
 export type { Booking, NewBooking } from "./bookings.js";
+
+export { offers };
+export type { NewOffer, Offer } from "./offers.js";
 
 export { payments };
 export type { NewPayment, Payment } from "./payments.js";
@@ -149,6 +153,7 @@ export const schema = {
   hotelFacilities,
   hotelTypes,
   hotelHotelTypes,
+  offers,
   bookings,
   payments,
   ledgerEntries,

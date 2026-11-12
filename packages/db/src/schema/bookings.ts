@@ -16,6 +16,7 @@ import {
 import { currencies } from "./currencies.js";
 import { bookingStatus, inventorySource } from "./enums.js";
 import { hotels } from "./hotels.js";
+import { offers } from "./offers.js";
 import { organisations } from "./organisations.js";
 import { users } from "./users.js";
 
@@ -48,6 +49,11 @@ export const bookings = pgTable(
     hotelId: uuid("hotel_id")
       .notNull()
       .references(() => hotels.id, { onDelete: "restrict" }),
+    /**
+     * The frozen offer the booking was created from. Null only on rows written before the unified
+     * offer model and on legacy imports; every booking created through `POST /bookings` has one.
+     */
+    offerId: uuid("offer_id").references(() => offers.id, { onDelete: "restrict" }),
     inventorySource: inventorySource("inventory_source").notNull().default("managed"),
     supplierId: text("supplier_id"),
     supplierReference: text("supplier_reference"),
@@ -115,6 +121,10 @@ export const bookings = pgTable(
         or jsonb_typeof(${table.cancellationPolicySnapshot}) = 'object'`,
     ),
     uniqueIndex("bookings_public_reference_unique").on(table.publicReference),
+    /** An offer can back at most one booking, even across different idempotency keys. */
+    uniqueIndex("bookings_offer_id_unique")
+      .on(table.offerId)
+      .where(sql`${table.offerId} is not null`),
     uniqueIndex("bookings_owner_idempotency_unique")
       .on(table.ownerUserId, table.idempotencyKey)
       .where(sql`${table.idempotencyKey} is not null and ${table.organisationId} is null`),
