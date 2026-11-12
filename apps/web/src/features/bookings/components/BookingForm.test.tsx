@@ -1,33 +1,26 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
-import type { PaymentIntentResponse, UserType } from "@hotel-booking/types";
+import type { ReactNode } from "react";
+import type { BookingCreationType, UserType } from "@hotel-booking/types";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ToastProvider } from "@/shared/context/ToastContext";
 import BookingForm from "./BookingForm";
 
 const mocks = vi.hoisted(() => ({
-  confirmCardPayment: vi.fn(),
-  createRoomBooking: vi.fn(),
+  confirmPayment: vi.fn(),
+  createBooking: vi.fn(),
 }));
 
 vi.mock("@stripe/react-stripe-js", () => ({
-  useStripe: () => ({ confirmCardPayment: mocks.confirmCardPayment }),
+  useStripe: () => ({ confirmPayment: mocks.confirmPayment }),
   useElements: () => ({ getElement: () => ({}) }),
-  CardElement: () => <div data-testid="card-element" />,
+  PaymentElement: () => <div data-testid="payment-element" />,
+  Elements: ({ children }: { children: ReactNode }) => <div>{children}</div>,
 }));
+
+vi.mock("@/shared/lib/stripe", () => ({ stripePromise: Promise.resolve({}) }));
 
 vi.mock("@/features/bookings/api", () => ({
-  createRoomBooking: mocks.createRoomBooking,
-}));
-
-vi.mock("@/features/hotels/hooks/useSearchContext", () => ({
-  default: () => ({
-    adultCount: 2,
-    childCount: 0,
-    checkIn: new Date("2030-01-01T00:00:00Z"),
-    checkOut: new Date("2030-01-03T00:00:00Z"),
-  }),
+  createBooking: mocks.createBooking,
 }));
 
 const user = {
@@ -37,11 +30,24 @@ const user = {
   lastName: "Guest",
 } as UserType;
 
-const paymentIntent: PaymentIntentResponse = {
-  paymentIntentId: "pi_original",
+const booking = {
+  _id: "b1",
+  publicReference: "ref_1",
+  userId: "u1",
+  hotelId: "h1",
+  firstName: "Gus",
+  lastName: "Guest",
+  email: "guest@example.com",
+  adultCount: 2,
+  childCount: 0,
+  checkIn: new Date("2030-01-01T00:00:00Z"),
+  checkOut: new Date("2030-01-03T00:00:00Z"),
+  totalCost: 250,
+  status: "pending_payment",
   clientSecret: "secret_123",
-  totalCost: 200,
-};
+} as BookingCreationType;
+
+const onPaymentSubmitted = vi.fn();
 
 function renderForm() {
   const queryClient = new QueryClient({
@@ -49,131 +55,142 @@ function renderForm() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <MemoryRouter initialEntries={["/hotel/h1/booking"]}>
-          <Routes>
-            <Route
-              path="/hotel/:hotelId/booking"
-              element={<BookingForm currentUser={user} paymentIntent={paymentIntent} />}
-            />
-            <Route path="/my-bookings" element={<div>My bookings page</div>} />
-          </Routes>
-        </MemoryRouter>
-      </ToastProvider>
+      <BookingForm
+        currentUser={user}
+        hotelId="h1"
+        stay={{
+          checkIn: new Date("2030-01-01T00:00:00Z"),
+          checkOut: new Date("2030-01-03T00:00:00Z"),
+          adultCount: 2,
+          childCount: 0,
+        }}
+        onPaymentSubmitted={onPaymentSubmitted}
+      />
     </QueryClientProvider>,
   );
 }
 
-const submitButton = () => screen.getByRole("button", { name: /confirm booking|processing/i });
+const continueButton = () =>
+  screen.getByRole("button", { name: /continue to payment|preparing payment/i });
+const payButton = () => screen.getByRole("button", { name: /pay & confirm booking/i });
 const succeeded = { paymentIntent: { id: "pi_123", status: "succeeded" } };
 
 beforeEach(() => {
-  mocks.confirmCardPayment.mockReset();
-  mocks.createRoomBooking.mockReset();
+  mocks.confirmPayment.mockReset();
+  mocks.createBooking.mockReset();
+  onPaymentSubmitted.mockReset();
 });
 
-describe("BookingForm checkout", () => {
-  it("shows a declined card and lets the guest retry without reloading", async () => {
-    mocks.confirmCardPayment
+describe("BookingForm checkout (#55)", () => {
+  it("creates the booking once with server-computed money before showing payment", async () => {
+    mocks.createBooking.mockResolvedValue(booking);
+    renderForm();
+
+    fireEvent.click(continueButton());
+
+    await waitFor(() => expect(mocks.createBooking).toHaveBeenCalledTimes(1));
+    const payload = mocks.createBooking.mock.calls[0][0];
+    expect(payload).toMatchObject({ hotelId: "h1", firstName: "Gus", lastName: "Guest" });
+    expect(payload).not.toHaveProperty("totalCost");
+    expect(payload).not.toHaveProperty("paymentIntentId");
+    expect(await screen.findByTestId("payment-element")).toBeInTheDocument();
+    expect(screen.getByText("£250.00")).toBeInTheDocument();
+  });
+
+  it("lets a declined card retry without creating a second booking", async () => {
+    mocks.createBooking.mockResolvedValue(booking);
+    mocks.confirmPayment
       .mockResolvedValueOnce({
         error: { type: "card_error", code: "card_declined", message: "Your card was declined." },
       })
       .mockResolvedValueOnce(succeeded);
-    mocks.createRoomBooking.mockResolvedValue({});
     renderForm();
 
-    fireEvent.click(submitButton());
+    fireEvent.click(continueButton());
+    fireEvent.click(await screen.findByRole("button", { name: /pay & confirm booking/i }));
+
     expect(await screen.findByRole("alert")).toHaveTextContent("Your card was declined.");
-    expect(mocks.createRoomBooking).not.toHaveBeenCalled();
-    await waitFor(() => expect(submitButton()).toBeEnabled());
+    expect(onPaymentSubmitted).not.toHaveBeenCalled();
 
-    fireEvent.click(submitButton());
-    await waitFor(() => expect(mocks.createRoomBooking).toHaveBeenCalledTimes(1));
-    // TanStack Query passes a context object as a second argument; only the payload matters here.
-    expect(mocks.createRoomBooking.mock.calls[0][0]).toMatchObject({
-      paymentIntentId: "pi_123",
-      hotelId: "h1",
-    });
-    await waitFor(() => expect(screen.queryByRole("alert")).not.toBeInTheDocument());
+    fireEvent.click(payButton());
+    await waitFor(() => expect(mocks.confirmPayment).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(onPaymentSubmitted).toHaveBeenCalledWith("ref_1"));
+    expect(mocks.createBooking).toHaveBeenCalledTimes(1);
   });
 
-  it("explains a payment that was not completed (requires_action)", async () => {
-    mocks.confirmCardPayment.mockResolvedValue({
-      paymentIntent: { id: "pi_123", status: "requires_action" },
-    });
+  it("treats a network failure while confirming as unknown and never invites a retry", async () => {
+    mocks.createBooking.mockResolvedValue(booking);
+    mocks.confirmPayment.mockRejectedValue(new Error("offline"));
     renderForm();
 
-    fireEvent.click(submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent(/wasn't completed/);
-    expect(mocks.createRoomBooking).not.toHaveBeenCalled();
-    await waitFor(() => expect(submitButton()).toBeEnabled());
+    fireEvent.click(continueButton());
+    fireEvent.click(await screen.findByRole("button", { name: /pay & confirm booking/i }));
+
+    await waitFor(() => expect(onPaymentSubmitted).toHaveBeenCalledWith("ref_1"));
+    expect(await screen.findByText(/please don't pay again/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /pay & confirm booking/i })).toBeDisabled();
+    expect(mocks.confirmPayment).toHaveBeenCalledTimes(1);
   });
 
-  it("explains a network failure while confirming the card", async () => {
-    mocks.confirmCardPayment.mockRejectedValue(new Error("offline"));
-    renderForm();
-
-    fireEvent.click(submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      /couldn't reach the payment service/,
-    );
-    expect(mocks.createRoomBooking).not.toHaveBeenCalled();
-    await waitFor(() => expect(submitButton()).toBeEnabled());
-  });
-
-  it("locks the form while a payment is still processing", async () => {
-    mocks.confirmCardPayment.mockResolvedValue({
+  it("locks the form while a payment is processing", async () => {
+    mocks.createBooking.mockResolvedValue(booking);
+    mocks.confirmPayment.mockResolvedValue({
       paymentIntent: { id: "pi_123", status: "processing" },
     });
     renderForm();
 
-    fireEvent.click(submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent(/don't pay again/);
-    await waitFor(() => expect(submitButton()).toBeDisabled());
+    fireEvent.click(continueButton());
+    fireEvent.click(await screen.findByRole("button", { name: /pay & confirm booking/i }));
+
+    await waitFor(() => expect(onPaymentSubmitted).toHaveBeenCalledWith("ref_1"));
+    expect(screen.getByRole("button", { name: /pay & confirm booking/i })).toBeDisabled();
   });
 
-  it("books the room after a successful payment", async () => {
-    mocks.confirmCardPayment.mockResolvedValue(succeeded);
-    mocks.createRoomBooking.mockResolvedValue({});
-    renderForm();
-
-    fireEvent.click(submitButton());
-    await waitFor(() => expect(mocks.createRoomBooking).toHaveBeenCalledTimes(1));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-  });
-
-  it("keeps the payment reference when the booking fails after the card was charged", async () => {
-    mocks.confirmCardPayment.mockResolvedValue(succeeded);
-    mocks.createRoomBooking.mockRejectedValue(new Error("server error"));
-    renderForm();
-
-    fireEvent.click(submitButton());
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/payment went through/i);
-    expect(alert).toHaveTextContent("pi_123");
-    expect(screen.getByRole("link", { name: "My Bookings" })).toHaveAttribute(
-      "href",
-      "/my-bookings",
-    );
-
-    // The guest cannot be charged a second time.
-    await waitFor(() => expect(submitButton()).toBeDisabled());
-    fireEvent.click(submitButton());
-    expect(mocks.confirmCardPayment).toHaveBeenCalledTimes(1);
-  });
-
-  it("ignores a second click while the payment is in flight", async () => {
+  it("ignores a second payment click while the confirmation is in flight", async () => {
+    mocks.createBooking.mockResolvedValue(booking);
     let settle!: (value: unknown) => void;
-    mocks.confirmCardPayment.mockReturnValue(new Promise((resolve) => (settle = resolve)));
-    mocks.createRoomBooking.mockResolvedValue({});
+    mocks.confirmPayment.mockReturnValue(new Promise((resolve) => (settle = resolve)));
     renderForm();
 
-    fireEvent.click(submitButton());
-    await waitFor(() => expect(submitButton()).toBeDisabled());
-    fireEvent.click(submitButton());
-    expect(mocks.confirmCardPayment).toHaveBeenCalledTimes(1);
+    fireEvent.click(continueButton());
+    const button = await screen.findByRole("button", { name: /pay & confirm booking/i });
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeDisabled());
+    fireEvent.click(button);
+    expect(mocks.confirmPayment).toHaveBeenCalledTimes(1);
 
     settle(succeeded);
-    await waitFor(() => expect(mocks.createRoomBooking).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onPaymentSubmitted).toHaveBeenCalledTimes(1));
+  });
+
+  it("sends a 3-D Secure return URL that carries the booking reference", async () => {
+    mocks.createBooking.mockResolvedValue(booking);
+    mocks.confirmPayment.mockResolvedValue(succeeded);
+    renderForm();
+
+    fireEvent.click(continueButton());
+    fireEvent.click(await screen.findByRole("button", { name: /pay & confirm booking/i }));
+
+    await waitFor(() => expect(mocks.confirmPayment).toHaveBeenCalledTimes(1));
+    expect(mocks.confirmPayment.mock.calls[0][0]).toMatchObject({
+      redirect: "if_required",
+      confirmParams: {
+        return_url: "http://localhost:3000/hotel/h1/booking/return?reference=ref_1",
+      },
+    });
+  });
+
+  it("does not submit the details form twice while the booking is being created", async () => {
+    let settle!: (value: unknown) => void;
+    mocks.createBooking.mockReturnValue(new Promise((resolve) => (settle = resolve)));
+    renderForm();
+
+    fireEvent.click(continueButton());
+    await waitFor(() => expect(continueButton()).toBeDisabled());
+    fireEvent.click(continueButton());
+    expect(mocks.createBooking).toHaveBeenCalledTimes(1);
+
+    settle(booking);
+    await waitFor(() => expect(screen.getByTestId("payment-element")).toBeInTheDocument());
   });
 });

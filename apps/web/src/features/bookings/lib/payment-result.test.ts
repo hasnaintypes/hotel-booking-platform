@@ -1,6 +1,6 @@
 import type { PaymentIntentResult } from "@stripe/stripe-js";
 import { describe, expect, it } from "vitest";
-import { interpretPaymentResult, NETWORK_FAILURE } from "./payment-result";
+import { interpretPaymentResult, UNCERTAIN_MESSAGE } from "./payment-result";
 
 const asResult = (value: unknown) => value as PaymentIntentResult;
 
@@ -28,9 +28,9 @@ describe("interpretPaymentResult", () => {
     expect(outcome).toEqual({ kind: "failed", message: "Your card number is incomplete." });
   });
 
-  it("explains a connection error", () => {
+  it("treats a connection error as an unknown outcome, not a safe retry", () => {
     const outcome = interpretPaymentResult(asResult({ error: { type: "api_connection_error" } }));
-    expect(outcome).toEqual({ kind: "failed", message: NETWORK_FAILURE });
+    expect(outcome).toEqual({ kind: "uncertain", message: UNCERTAIN_MESSAGE });
   });
 
   it("hides the details of unexpected Stripe errors", () => {
@@ -41,14 +41,11 @@ describe("interpretPaymentResult", () => {
     expect(JSON.stringify(outcome)).not.toContain("req_123");
   });
 
-  it("treats a payment that needs more action as not completed", () => {
+  it("treats an interrupted authentication as an unknown outcome", () => {
     const outcome = interpretPaymentResult(
       asResult({ paymentIntent: { id: "pi_1", status: "requires_action" } }),
     );
-    expect(outcome).toMatchObject({
-      kind: "failed",
-      message: expect.stringMatching(/wasn't completed/),
-    });
+    expect(outcome).toEqual({ kind: "uncertain", message: UNCERTAIN_MESSAGE });
   });
 
   it("asks the guest not to pay again while a payment is processing", () => {
