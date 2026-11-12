@@ -73,6 +73,12 @@ export const bookings = pgTable(
     specialRequests: text("special_requests"),
     cancellationReason: text("cancellation_reason"),
     idempotencyKey: text("idempotency_key"),
+    /**
+     * When a `pending_payment` hold stops being valid. Set from the configured payment hold at
+     * creation; the expiry job closes the booking and cancels its provider intent. Null on rows
+     * written before the column existed, where the job falls back to `created_at` plus the hold.
+     */
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
@@ -100,6 +106,10 @@ export const bookings = pgTable(
     ),
     check("bookings_price_snapshot_check", sql`jsonb_typeof(${table.priceSnapshot}) = 'object'`),
     check(
+      "bookings_expires_at_check",
+      sql`${table.expiresAt} is null or ${table.expiresAt} > ${table.createdAt}`,
+    ),
+    check(
       "bookings_cancellation_policy_snapshot_check",
       sql`${table.cancellationPolicySnapshot} is null
         or jsonb_typeof(${table.cancellationPolicySnapshot}) = 'object'`,
@@ -115,6 +125,7 @@ export const bookings = pgTable(
     index("bookings_created_at_idx").on(table.createdAt),
     index("bookings_hotel_check_in_idx").on(table.hotelId, table.checkIn),
     index("bookings_status_created_at_idx").on(table.status, table.createdAt),
+    index("bookings_status_expires_at_idx").on(table.status, table.expiresAt),
     index("bookings_organisation_created_at_idx").on(table.organisationId, table.createdAt),
     index("bookings_created_by_idx").on(table.createdByUserId),
   ],
