@@ -74,6 +74,10 @@ export const configuration = () => {
     booking: {
       maxNights: parseInt(process.env.BOOKING_MAX_NIGHTS || "30", 10),
     },
+    inventory: {
+      // How long a frozen quote can be booked before the guest must request a new one.
+      offerTtlMinutes: parseInt(process.env.OFFER_TTL_MINUTES || "15", 10),
+    },
     payment: {
       // Lease held while a capture/refund/creation provider call is in flight.
       claimTimeoutMs: parseInt(process.env.PAYMENT_CLAIM_TIMEOUT_MS || "30000", 10),

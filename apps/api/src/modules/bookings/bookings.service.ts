@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -16,7 +17,7 @@ import {
   type CancellationQuote,
   type PriceSnapshotNight,
 } from "@hotel-booking/pricing";
-import type { FieldError } from "../../common/errors/problem";
+import { CLOCK, type Clock } from "../../common/clock";
 import { UniqueViolationError } from "../../common/errors/postgres-errors";
 import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
 import { isUuid } from "../../common/utils/uuid";
@@ -30,10 +31,11 @@ import {
   BookingTransitionConflictError,
   type BookingStatus,
 } from "../../domain/bookings/booking-state-machine";
+import { validateStay } from "../../domain/bookings/stay-validation";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { PaymentsService } from "../payments/payments.service";
 import { toPublicHotelResponse } from "../hotels/hotel-response";
-import { BookingQuoteService } from "./booking-quote.service";
+import { OffersService } from "../inventory/offers.service";
 import {
   toBookingResponse,
   type BookingCreationResponse,
@@ -42,8 +44,6 @@ import {
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
 import { PaymentIntentDto } from "./dto/payment-intent.dto";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 const CANCELLABLE_STATUSES = new Set([
   "pending_payment",
@@ -78,8 +78,9 @@ export class BookingsService {
     private readonly users: UsersRepository,
     private readonly stripeService: StripeService,
     private readonly payments: PaymentsService,
-    private readonly quote: BookingQuoteService,
+    private readonly offers: OffersService,
     private readonly config: ConfigService,
+    @Inject(CLOCK) private readonly clock: Clock,
   ) {}
 
   private get maxNights(): number {
@@ -100,37 +101,11 @@ export class BookingsService {
     dto: CreateBookingDto,
     hotel: Pick<HotelRecord, "adultCount" | "childCount">,
   ) {
-    const errors: FieldError[] = [];
-    const checkIn = new Date(dto.checkIn).getTime();
-    const checkOut = new Date(dto.checkOut).getTime();
-
-    const startOfTodayUtc = new Date().setUTCHours(0, 0, 0, 0);
-    if (checkIn < startOfTodayUtc - DAY_MS) {
-      errors.push({ field: "checkIn", message: "check-in cannot be in the past" });
-    }
-
-    if (checkOut <= checkIn) {
-      errors.push({ field: "checkOut", message: "check-out must be after check-in" });
-    } else if (Math.ceil((checkOut - checkIn) / DAY_MS) > this.maxNights) {
-      errors.push({
-        field: "checkOut",
-        message: `a stay cannot exceed ${this.maxNights} nights`,
-      });
-    }
-
-    if (dto.adultCount > hotel.adultCount) {
-      errors.push({
-        field: "adultCount",
-        message: `this hotel allows at most ${hotel.adultCount} adults`,
-      });
-    }
-    if (dto.childCount > hotel.childCount) {
-      errors.push({
-        field: "childCount",
-        message: `this hotel allows at most ${hotel.childCount} children`,
-      });
-    }
-
+    const errors = validateStay(
+      dto,
+      { adultCount: hotel.adultCount, childCount: hotel.childCount, maxNights: this.maxNights },
+      this.clock.now(),
+    );
     if (errors.length > 0) {
       throw new ValidationFailedException(errors);
     }
@@ -222,13 +197,14 @@ export class BookingsService {
   }
 
   /**
-   * Creates a booking from a server-computed quote. The client supplies only the stay; money comes
-   * from `BookingQuoteService` and the PaymentIntent amount is derived from the frozen snapshot by
-   * `PaymentsService`.
+   * Creates a booking from a frozen offer. The client supplies the stay (and optionally an
+   * `offerId`); money and cancellation terms always come from the offer selected through
+   * `OffersService`, never from the client. Without an `offerId` the managed provider produces a
+   * fresh offer first, so every booking follows the same path.
    *
-   * Two independent replay guards: the HTTP idempotency interceptor returns the stored response
-   * for a repeated key, and the booking row's partial unique index catches the case where the
-   * stored response has expired or been cleared.
+   * Replay guards: the HTTP idempotency interceptor returns the stored response for a repeated
+   * key, the booking row's partial unique index catches a cleared response, and the unique
+   * `offer_id` index catches the same offer being booked twice.
    */
   async create(
     dto: CreateBookingDto,
@@ -252,12 +228,30 @@ export class BookingsService {
     const existing = await this.bookings.findByOwnerAndIdempotencyKey(userId, idempotencyKey);
     if (existing) return this.finishCreation(existing);
 
-    const quote = this.quote.quote({
-      hotel,
-      checkIn: new Date(dto.checkIn),
-      checkOut: new Date(dto.checkOut),
-    });
-    const snapshot = quote.price;
+    const offer = dto.offerId
+      ? await this.offers.findBookable(dto.offerId, userId, {
+          hotelId: dto.hotelId,
+          checkIn: dto.checkIn,
+          checkOut: dto.checkOut,
+          adultCount: dto.adultCount,
+          childCount: dto.childCount,
+        })
+      : await this.offers.createOffer(
+          {
+            hotelId: dto.hotelId,
+            checkIn: dto.checkIn,
+            checkOut: dto.checkOut,
+            adultCount: dto.adultCount,
+            childCount: dto.childCount,
+          },
+          userId,
+        );
+
+    const now = this.clock.now();
+    // Pay before either term expires: the offer's own TTL may be shorter than the payment hold.
+    const expiresAt = new Date(
+      Math.min(offer.expiresAt.getTime(), now.getTime() + this.paymentHoldMinutes * 60_000),
+    );
 
     let created: BookingWithPayments;
     try {
@@ -265,20 +259,24 @@ export class BookingsService {
         ownerUserId: userId,
         createdByUserId: userId,
         hotelId: hotel.id,
+        offerId: offer.id,
+        inventorySource: offer.source,
+        ...(offer.supplierId ? { supplierId: offer.supplierId } : {}),
+        ...(offer.supplierOfferId ? { supplierReference: offer.supplierOfferId } : {}),
         firstName: dto.firstName,
         lastName: dto.lastName,
         email: dto.email,
         ...(dto.phone ? { phone: dto.phone } : {}),
-        adultCount: dto.adultCount,
-        childCount: dto.childCount,
-        checkIn: new Date(dto.checkIn),
-        checkOut: new Date(dto.checkOut),
-        totalAmountMinor: snapshot.totalMinor,
-        currencyCode: snapshot.currency,
+        adultCount: offer.adultCount,
+        childCount: offer.childCount,
+        checkIn: parseStayDate(offer.checkIn),
+        checkOut: parseStayDate(offer.checkOut),
+        totalAmountMinor: offer.price.totalMinor,
+        currencyCode: offer.price.currency,
         // Both snapshots are JSON-safe and immutable for the life of the booking.
-        priceSnapshot: snapshot as unknown as Record<string, unknown>,
-        cancellationPolicySnapshot: quote.cancellationPolicy as unknown as Record<string, unknown>,
-        expiresAt: new Date(Date.now() + this.paymentHoldMinutes * 60_000),
+        priceSnapshot: offer.price as unknown as Record<string, unknown>,
+        cancellationPolicySnapshot: offer.cancellationPolicy as unknown as Record<string, unknown>,
+        expiresAt,
         idempotencyKey,
         ...(dto.specialRequests ? { specialRequests: dto.specialRequests } : {}),
         ...(requestId ? { requestId } : {}),
@@ -291,6 +289,17 @@ export class BookingsService {
       ) {
         const replay = await this.bookings.findByOwnerAndIdempotencyKey(userId, idempotencyKey);
         if (replay) return this.finishCreation(replay);
+      }
+      if (
+        error instanceof UniqueViolationError &&
+        error.constraint === "bookings_offer_id_unique"
+      ) {
+        // A retry with a new idempotency key still gets the original booking, not a second charge.
+        const replay = await this.bookings.findByOfferId(offer.id);
+        if (replay && replay.booking.ownerUserId === userId) {
+          return this.finishCreation(replay);
+        }
+        throw new ConflictException("This offer has already been booked");
       }
       throw error;
     }
@@ -513,6 +522,23 @@ export class BookingsService {
       }
     }
 
+    // Only the provider abstraction is used here; managed inventory is a no-op and a supplier
+    // adapter releases the reservation. A failure must not mark the booking cancelled.
+    const current = await this.bookings.findById(id);
+    const inventoryError = current ? await this.cancelInventory(current.booking) : null;
+    if (inventoryError) {
+      await this.transitionBooking(
+        id,
+        "cancelling",
+        "needs_review",
+        userId,
+        "Cancellation provider failed",
+        requestId,
+        { type: "system", name: "inventory" },
+      );
+      return { refundError: inventoryError };
+    }
+
     await this.transitionBooking(
       id,
       "cancelling",
@@ -539,6 +565,10 @@ export class BookingsService {
     const cancellationReason = booking.cancellationReason ?? "";
 
     if (refundedMinor > 0) {
+      const inventoryError = await this.cancelInventory(booking);
+      if (inventoryError) {
+        throw new BadGatewayException(inventoryError);
+      }
       await this.transitionBooking(
         booking.id,
         booking.status,
@@ -577,6 +607,28 @@ export class BookingsService {
     return this.settleCancellation(booking.id, userId, cancellationReason, requestId, plan);
   }
 
+  /** Returns an error message instead of throwing so callers can park the booking first. */
+  private async cancelInventory(booking: BookingRow): Promise<string | null> {
+    try {
+      await this.offers.cancelBooking({
+        bookingId: booking.id,
+        offerId: booking.offerId,
+        source: booking.inventorySource,
+        supplierId: booking.supplierId,
+        supplierReference: booking.supplierReference,
+      });
+      return null;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "The inventory provider could not cancel";
+      this.logger.error(
+        `Inventory cancellation failed for booking ${booking.id}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      return message;
+    }
+  }
+
   private async transitionBooking(
     id: string,
     from: BookingStatus,
@@ -608,6 +660,9 @@ export class BookingsService {
     }
   }
 }
+
+/** Offer dates are calendar dates; store them at UTC midnight like the booking date columns. */
+const parseStayDate = (value: string): Date => new Date(`${value}T00:00:00.000Z`);
 
 /** Nightly rates from a stored price snapshot, ignoring malformed entries. */
 function nightlyRatesOf(snapshot: unknown): PriceSnapshotNight[] {

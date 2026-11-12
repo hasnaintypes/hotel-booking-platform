@@ -10,6 +10,7 @@ const REQUIRED_ENV_VARS = [
 /** Optional whole-number settings and the range each may take: [name, min, max]. */
 const INTEGER_SETTINGS: Array<[string, number, number]> = [
   ["BOOKING_MAX_NIGHTS", 1, 365],
+  ["OFFER_TTL_MINUTES", 1, 1_440],
   ["PAYMENT_CLAIM_TIMEOUT_MS", 1_000, 300_000],
   ["STRIPE_WEBHOOK_TOLERANCE_SECONDS", 0, 3_600],
   ["STRIPE_WEBHOOK_FAILURE_ALERT_THRESHOLD", 1, 100],

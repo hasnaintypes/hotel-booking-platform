@@ -24,6 +24,14 @@ const trim = ({ value }: TransformFnParams) => (typeof value === "string" ? valu
  * after check-in, not in the past, maximum stay, guest capacity) are enforced in BookingsService.
  */
 export class CreateBookingDto {
+  /**
+   * A frozen offer from `POST /offers`. When present the stay fields must match it and its price
+   * and cancellation terms are used verbatim; when absent the server quotes managed inventory.
+   */
+  @IsOptional()
+  @IsUUID()
+  offerId?: string;
+
   @IsUUID()
   hotelId: string;
 

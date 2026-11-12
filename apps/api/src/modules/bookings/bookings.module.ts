@@ -1,11 +1,11 @@
 import { Module } from "@nestjs/common";
+import { InventoryModule } from "../inventory/inventory.module";
 import { PaymentsModule } from "../payments/payments.module";
-import { BookingQuoteService } from "./booking-quote.service";
 import { BookingsService } from "./bookings.service";
 
 @Module({
-  imports: [PaymentsModule],
-  providers: [BookingsService, BookingQuoteService],
-  exports: [BookingsService, BookingQuoteService],
+  imports: [PaymentsModule, InventoryModule],
+  providers: [BookingsService],
+  exports: [BookingsService],
 })
 export class BookingsModule {}

@@ -17,6 +17,7 @@ import {
   ledgerEntries,
   memberships,
   oauthAccounts,
+  offers,
   organisationRoles,
   organisations,
   outboxEvents,
@@ -62,6 +63,7 @@ describe("schema types", () => {
       currencies,
       exchangeRates,
       fxRateSnapshots,
+      offers,
       bookings,
       payments,
       ledgerEntries,
@@ -71,6 +73,6 @@ describe("schema types", () => {
       inboxEvents,
       idempotencyKeys,
       reconciliationDiscrepancies,
-    ]).toHaveLength(25);
+    ]).toHaveLength(26);
   });
 });

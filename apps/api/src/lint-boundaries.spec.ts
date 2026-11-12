@@ -30,4 +30,15 @@ describe("module import boundaries", () => {
     );
     expect(messages.filter((message) => message.ruleId === "no-restricted-imports")).toEqual([]);
   });
+
+  it("rejects booking code importing an inventory provider implementation", async () => {
+    const eslint = new ESLint({ cwd: process.cwd() });
+    const [result] = await eslint.lintText(
+      'import { ManagedInventoryProvider } from "../inventory/providers/managed-inventory.provider";\nexport const provider = ManagedInventoryProvider;',
+      { filePath: "src/modules/bookings/leak.service.ts" },
+    );
+    expect(result.messages.some((message) => message.ruleId === "no-restricted-imports")).toBe(
+      true,
+    );
+  });
 });

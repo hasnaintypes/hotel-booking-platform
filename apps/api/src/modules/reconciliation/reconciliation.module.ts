@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { CLOCK, SystemClock } from "../../common/clock";
 import { PaymentsModule } from "../payments/payments.module";
 import { BookingRecoveryService } from "./booking-recovery.service";
 import { ReconciliationService } from "./reconciliation.service";
@@ -11,11 +10,7 @@ import { ReconciliationService } from "./reconciliation.service";
  */
 @Module({
   imports: [PaymentsModule],
-  providers: [
-    { provide: CLOCK, useClass: SystemClock },
-    BookingRecoveryService,
-    ReconciliationService,
-  ],
-  exports: [CLOCK, BookingRecoveryService, ReconciliationService],
+  providers: [BookingRecoveryService, ReconciliationService],
+  exports: [BookingRecoveryService, ReconciliationService],
 })
 export class ReconciliationModule {}

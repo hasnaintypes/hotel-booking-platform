@@ -75,6 +75,53 @@ export default [
     },
   },
   {
+    files: ["src/modules/bookings/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@hotel-booking/db",
+              message:
+                "Use a repository under src/database/repositories instead of importing the database package directly.",
+            },
+            {
+              name: "mongoose",
+              message: "MongoDB has been removed; use repositories backed by PostgreSQL.",
+            },
+            {
+              name: "@nestjs/mongoose",
+              message: "MongoDB has been removed; use repositories backed by PostgreSQL.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["../*/schemas/**", "../../*/schemas/**"],
+              message:
+                "Import another module's exported service or type instead of its internal schema.",
+            },
+            {
+              group: ["../*/repositories/**"],
+              message:
+                "Import another module's exported service or type instead of its repository.",
+            },
+            {
+              group: [
+                "../inventory/providers/**",
+                "../../modules/inventory/providers/**",
+                "@hotel-booking/supplier-kit",
+                "@hotel-booking/supplier-kit/**",
+              ],
+              message:
+                "Booking code must depend on the InventoryProvider abstraction (OffersService), never a managed or supplier implementation (ADR-016).",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ["src/database/seeds/**/*.ts", "test/**/*.ts", "src/**/*.spec.ts"],
     rules: { "no-console": "off" },
   },

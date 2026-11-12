@@ -9,6 +9,7 @@ import { AdminReportsController } from "../../modules/business-insights/admin-re
 import { AdminSystemController } from "../../modules/health/admin-system.controller";
 import { AdminHotelsController } from "../../modules/hotels/admin-hotels.controller";
 import { HotelsController } from "../../modules/hotels/hotels.controller";
+import { OffersController } from "../../modules/inventory/offers.controller";
 import { MyHotelsController } from "../../modules/my-hotels/my-hotels.controller";
 import { PartnerCapabilitiesController } from "../../modules/partner/partner-capabilities.controller";
 import { AdminReviewsController } from "../../modules/reviews/admin-reviews.controller";
@@ -39,6 +40,7 @@ export const AUDIENCE_GROUPS: readonly AudienceGroup[] = [
       HotelReviewsController,
       BookingReviewsController,
       BookingsController,
+      OffersController,
     ],
   },
   {

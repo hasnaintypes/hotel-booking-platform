@@ -13,6 +13,8 @@ export type BookingResponse = {
   publicReference: string;
   userId: string;
   hotelId: string;
+  offerId?: string;
+  inventorySource?: "managed" | "supplier";
   firstName: string;
   lastName: string;
   email: string;
@@ -70,6 +72,8 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
     publicReference: booking.publicReference,
     userId: booking.ownerUserId,
     hotelId: booking.hotelId,
+    ...(booking.offerId ? { offerId: booking.offerId } : {}),
+    inventorySource: booking.inventorySource,
     firstName: booking.guestFirstName ?? "",
     lastName: booking.guestLastName ?? "",
     email: booking.guestEmail ?? "",

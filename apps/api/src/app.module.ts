@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtModule } from "@nestjs/jwt";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ClockModule } from "./common/clock";
 import { CommonModule } from "./common/common.module";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module";
 import { AppLoggingModule } from "./common/logging/logging.module";
@@ -37,6 +38,7 @@ import { RoutesModule } from "./routes/routes.module";
       }),
     }),
     ThrottlerModule.forRoot([{ name: "default", ttl: 900000, limit: 200 }]),
+    ClockModule,
     CommonModule,
     IdempotencyModule,
     PostgresModule,
