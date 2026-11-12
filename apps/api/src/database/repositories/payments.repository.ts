@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, inArray, isNull, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import {
   bookings,
   ledgerEntries,
@@ -102,6 +102,52 @@ export class PaymentsRepository {
       .from(payments)
       .where(inArray(payments.bookingId, ids))
       .orderBy(asc(payments.createdAt), asc(payments.id));
+  }
+
+  async findByProviderPaymentId(
+    provider: string,
+    providerPaymentId: string,
+  ): Promise<Payment | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(payments)
+      .where(
+        and(eq(payments.provider, provider), eq(payments.providerPaymentId, providerPaymentId)),
+      )
+      .limit(1);
+    return row;
+  }
+
+  /** Original (non-refund) attempts created in the reconciliation window. */
+  async listOriginalSince(since: Date, limit = 200): Promise<Payment[]> {
+    return this.db
+      .select()
+      .from(payments)
+      .where(
+        and(
+          isNull(payments.originalPaymentId),
+          eq(payments.provider, "stripe"),
+          gte(payments.createdAt, since),
+        ),
+      )
+      .orderBy(asc(payments.createdAt), asc(payments.id))
+      .limit(Math.min(Math.max(limit, 1), 1_000));
+  }
+
+  /** Refund child rows created in the reconciliation window. */
+  async listRefundsSince(since: Date, limit = 200): Promise<Payment[]> {
+    return this.db
+      .select()
+      .from(payments)
+      .where(
+        and(
+          isNotNull(payments.originalPaymentId),
+          eq(payments.provider, "stripe"),
+          gte(payments.createdAt, since),
+        ),
+      )
+      .orderBy(asc(payments.createdAt), asc(payments.id))
+      .limit(Math.min(Math.max(limit, 1), 1_000));
   }
 
   async findBooking(bookingId: string): Promise<Booking | undefined> {
@@ -228,6 +274,40 @@ export class PaymentsRepository {
         updatedAt: new Date(),
       })
       .where(eq(payments.id, refundPaymentId))
+      .returning();
+    return row;
+  }
+
+  /**
+   * Applies a provider-read state without a claim. Used when a webhook was lost and the
+   * reconciler is repairing local state from Stripe. `fromStatuses` keeps a late read from
+   * moving a payment backwards.
+   */
+  async applyProviderState(
+    paymentId: string,
+    input: {
+      status: PaymentStatus;
+      fromStatuses: PaymentStatus[];
+      providerPaymentId?: string;
+      capturedAmountMinor?: number | null;
+      failureCode?: string | null;
+      failureMessage?: string | null;
+    },
+  ): Promise<Payment | undefined> {
+    if (!isUuid(paymentId) || input.fromStatuses.length === 0) return undefined;
+    const [row] = await this.db
+      .update(payments)
+      .set({
+        status: input.status,
+        ...(input.providerPaymentId ? { providerPaymentId: input.providerPaymentId } : {}),
+        ...(input.capturedAmountMinor !== undefined
+          ? { capturedAmountMinor: input.capturedAmountMinor }
+          : {}),
+        ...(input.failureCode !== undefined ? { failureCode: input.failureCode } : {}),
+        ...(input.failureMessage !== undefined ? { failureMessage: input.failureMessage } : {}),
+        updatedAt: new Date(),
+      })
+      .where(and(eq(payments.id, paymentId), inArray(payments.status, input.fromStatuses)))
       .returning();
     return row;
   }

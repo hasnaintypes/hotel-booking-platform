@@ -86,6 +86,11 @@ export class BookingsService {
     return this.config.get<number>("booking.maxNights") ?? 30;
   }
 
+  /** How long a guest has to pay before the expiry job releases the hold. */
+  private get paymentHoldMinutes(): number {
+    return this.config.get<number>("jobs.paymentHoldMinutes") ?? 30;
+  }
+
   /**
    * Rules that depend on the hotel or on today's date. Field formats are checked earlier by
    * CreateBookingDto. Check-in may be one day before today (UTC) so a guest in a time zone ahead
@@ -273,6 +278,7 @@ export class BookingsService {
         // Both snapshots are JSON-safe and immutable for the life of the booking.
         priceSnapshot: snapshot as unknown as Record<string, unknown>,
         cancellationPolicySnapshot: quote.cancellationPolicy as unknown as Record<string, unknown>,
+        expiresAt: new Date(Date.now() + this.paymentHoldMinutes * 60_000),
         idempotencyKey,
         ...(dto.specialRequests ? { specialRequests: dto.specialRequests } : {}),
         ...(requestId ? { requestId } : {}),

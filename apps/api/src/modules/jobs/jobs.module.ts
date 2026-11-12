@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DatabaseRepositoriesModule } from "../../database/repositories/repositories.module";
 import { OutboxRepository } from "../../database/repositories/outbox.repository";
+import { ReconciliationModule } from "../reconciliation/reconciliation.module";
 import { JobHandlers } from "./job-handlers.service";
 import { JOB_QUEUE, JOB_QUEUE_SETTINGS, type JobQueueSettings } from "./job-queue.settings";
 import { JobWorkerService } from "./job-worker.service";
@@ -10,7 +11,7 @@ import { PgBossJobQueue } from "./pg-boss-job-queue";
 const integer = (config: ConfigService, key: string): number => config.getOrThrow<number>(key);
 
 @Module({
-  imports: [DatabaseRepositoriesModule],
+  imports: [DatabaseRepositoriesModule, ReconciliationModule],
   providers: [
     {
       provide: JOB_QUEUE_SETTINGS,
