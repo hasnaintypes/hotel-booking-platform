@@ -21,7 +21,7 @@ export const cancelBooking = async (
   const session = `admin-cancel:${bookingId}`;
   try {
     const response = await apiClient.post(
-      `/api/v1/admin/bookings/${bookingId}/cancellations`,
+      `/api/v1/admin/bookings/${bookingId}/cancel`,
       { cancellationReason },
       { headers: idempotencyHeaders(session) },
     );

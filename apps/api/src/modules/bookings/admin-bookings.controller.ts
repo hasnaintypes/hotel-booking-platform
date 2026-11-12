@@ -6,8 +6,10 @@ import {
   HttpStatus,
   Param,
   Post,
+  Req,
   UseGuards,
 } from "@nestjs/common";
+import type { Request } from "express";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { Idempotent } from "../../common/idempotency/idempotent.decorator";
 import { Roles } from "../../common/decorators/roles.decorator";
@@ -34,14 +36,15 @@ export class AdminBookingsController {
     return this.bookingsService.findOneAdmin(id);
   }
 
-  @Post(":id/cancellations")
+  @Post(":id/cancel")
   @HttpCode(HttpStatus.OK)
-  @Idempotent("bookings.cancel.admin")
+  @Idempotent("bookings.cancel.admin", { required: true })
   cancel(
     @Param("id", UuidPipe) id: string,
     @Body() dto: CancelBookingDto,
     @CurrentUser() user: AuthenticatedUser,
+    @Req() request: Request & { id?: string },
   ) {
-    return this.bookingsService.cancel(id, dto, user.userId);
+    return this.bookingsService.cancel(id, dto, user.userId, request.id);
   }
 }

@@ -76,9 +76,13 @@ export class BookingsController {
     return this.bookingsService.findOne(id, user.userId);
   }
 
-  @Post(":id/cancellations")
+  /**
+   * Cancels a booking under its frozen policy and refunds the computed amount. The key is required
+   * so a retried request cannot refund twice even after the stored response expires.
+   */
+  @Post(":id/cancel")
   @HttpCode(HttpStatus.OK)
-  @Idempotent("bookings.cancel")
+  @Idempotent("bookings.cancel", { required: true })
   cancel(
     @Param("id", UuidPipe) id: string,
     @Body() dto: CancelBookingDto,

@@ -35,7 +35,7 @@ export const fetchMyBookings = async (): Promise<HotelWithBookingsType[]> => {
   return response.data;
 };
 
-/** Guest / owner / admin cancel — may trigger Stripe full refund when paid */
+/** Guest / owner / admin cancel — refunds whatever the booking's frozen policy allows */
 export const cancelBooking = async (
   bookingId: string,
   payload?: { cancellationReason?: string },
@@ -47,7 +47,7 @@ export const cancelBooking = async (
   const session = `cancel:${bookingId}`;
   try {
     const response = await axiosInstance.post(
-      `/api/v1/bookings/${bookingId}/cancellations`,
+      `/api/v1/bookings/${bookingId}/cancel`,
       payload || {},
       { headers: idempotencyHeaders(session) },
     );

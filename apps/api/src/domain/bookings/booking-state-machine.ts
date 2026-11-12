@@ -9,9 +9,25 @@ export type { BookingStatus };
  * resolve a payment or supplier inconsistency without bypassing the event log.
  */
 export const BOOKING_TRANSITIONS = {
-  pending_payment: ["authorized", "confirming", "failed", "expired", "cancelled", "needs_review"],
-  authorized: ["confirming", "confirmed", "failed", "expired", "cancelled", "needs_review"],
-  confirming: ["confirmed", "failed", "cancelled", "needs_review"],
+  pending_payment: [
+    "authorized",
+    "confirming",
+    "cancelling",
+    "failed",
+    "expired",
+    "cancelled",
+    "needs_review",
+  ],
+  authorized: [
+    "confirming",
+    "confirmed",
+    "cancelling",
+    "failed",
+    "expired",
+    "cancelled",
+    "needs_review",
+  ],
+  confirming: ["confirmed", "cancelling", "failed", "cancelled", "needs_review"],
   confirmed: ["cancelling", "cancelled", "needs_review"],
   cancelling: ["cancelled", "needs_review"],
   cancelled: ["needs_review"],

@@ -3,7 +3,6 @@ import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import {
   bookingEvents,
   bookings,
-  ledgerEntries,
   payments,
   withTransaction,
   type Booking,
@@ -12,7 +11,7 @@ import {
   type Transaction,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
-import { withRequestTransaction } from "../request-transaction";
+import { withRequestTransaction, runInRequestTransaction } from "../request-transaction";
 import { isUuid } from "../../common/utils/uuid";
 import {
   assertBookingTransition,
@@ -41,23 +40,10 @@ export type NewPendingBookingInput = {
   totalAmountMinor: number;
   currencyCode: string;
   priceSnapshot: Record<string, unknown>;
+  cancellationPolicySnapshot: Record<string, unknown>;
   idempotencyKey: string;
   specialRequests?: string;
   requestId?: string;
-};
-
-export type CancelBookingInput = {
-  id: string;
-  actorUserId: string;
-  cancellationReason?: string;
-  requestId?: string;
-  refund?: {
-    provider: string;
-    providerPaymentId: string;
-    amountMinor: number;
-    currencyCode: string;
-    originalPaymentId: string;
-  };
 };
 
 export type HotelBookingStats = {
@@ -159,6 +145,7 @@ export class BookingsRepository {
             totalAmountMinor: input.totalAmountMinor,
             currencyCode: input.currencyCode,
             priceSnapshot: input.priceSnapshot,
+            cancellationPolicySnapshot: input.cancellationPolicySnapshot,
             idempotencyKey: input.idempotencyKey,
             specialRequests: input.specialRequests ?? null,
           })
@@ -236,6 +223,37 @@ export class BookingsRepository {
     return this.transitionInTransaction(tx, input);
   }
 
+  /**
+   * Runs work in a transaction of its own, even when the idempotency interceptor has one open.
+   * Repositories called inside join it, so a cancellation can commit `needs_review` and then let
+   * the HTTP layer answer with an error.
+   */
+  async inDetachedTransaction<T>(run: () => Promise<T>): Promise<T> {
+    return withTransaction(this.db, (tx) => runInRequestTransaction(tx, run));
+  }
+
+  /**
+   * The refund plan frozen on the latest `cancelling` event. A retry refunds what the guest was
+   * quoted when they cancelled, not a fresh quote taken after the policy deadline passed.
+   */
+  async cancellationIntent(
+    bookingId: string,
+  ): Promise<{ amountMinor: number; skipped?: string } | undefined> {
+    if (!isUuid(bookingId)) return undefined;
+    const [row] = await this.db
+      .select({ metadata: bookingEvents.metadata })
+      .from(bookingEvents)
+      .where(and(eq(bookingEvents.bookingId, bookingId), eq(bookingEvents.toStatus, "cancelling")))
+      .orderBy(desc(bookingEvents.createdAt))
+      .limit(1);
+
+    const refund = (row?.metadata as Record<string, unknown> | undefined)?.refund;
+    if (typeof refund !== "object" || refund === null) return undefined;
+    const { amountMinor, skipped } = refund as { amountMinor?: unknown; skipped?: unknown };
+    if (typeof amountMinor !== "number" || !Number.isSafeInteger(amountMinor)) return undefined;
+    return { amountMinor, ...(typeof skipped === "string" ? { skipped } : {}) };
+  }
+
   private async transitionInTransaction(
     tx: Transaction,
     input: BookingTransitionInput,
@@ -248,7 +266,9 @@ export class BookingsRepository {
         status: input.to,
         version: sql`${bookings.version} + 1`,
         updatedAt: new Date(),
-        ...(input.to === "cancelled" && input.reason ? { cancellationReason: input.reason } : {}),
+        ...((input.to === "cancelled" || input.to === "cancelling") && input.reason
+          ? { cancellationReason: input.reason }
+          : {}),
       })
       .where(and(eq(bookings.id, input.bookingId), eq(bookings.status, input.from)))
       .returning();
@@ -268,85 +288,6 @@ export class BookingsRepository {
     });
 
     return booking;
-  }
-
-  /**
-   * Moves a cancellable booking to `cancelled` and, when a refund applies, records a separate
-   * refund payment row that points at the original charge. Returns undefined when the booking
-   * does not exist or is no longer cancellable.
-   */
-  async cancel(input: CancelBookingInput): Promise<BookingWithPayments | undefined> {
-    if (!isUuid(input.id)) return undefined;
-
-    try {
-      return await withRequestTransaction(this.db, async (tx) => {
-        const [existing] = await tx
-          .select()
-          .from(bookings)
-          .where(eq(bookings.id, input.id))
-          .for("update")
-          .limit(1);
-        if (!existing) return undefined;
-        if (
-          existing.status !== "pending_payment" &&
-          existing.status !== "authorized" &&
-          existing.status !== "confirming" &&
-          existing.status !== "confirmed"
-        ) {
-          return undefined;
-        }
-
-        let booking: Booking;
-        try {
-          booking = await this.transitionInTransaction(tx, {
-            bookingId: existing.id,
-            from: existing.status,
-            to: "cancelled",
-            actor: { type: "user", userId: input.actorUserId },
-            reason: input.cancellationReason || existing.cancellationReason || undefined,
-            requestId: input.requestId,
-          });
-        } catch (error) {
-          if (error instanceof BookingTransitionConflictError) return undefined;
-          throw error;
-        }
-
-        if (input.refund) {
-          const [refundPayment] = await tx
-            .insert(payments)
-            .values({
-              bookingId: booking.id,
-              provider: input.refund.provider,
-              providerPaymentId: input.refund.providerPaymentId,
-              amountMinor: input.refund.amountMinor,
-              currencyCode: input.refund.currencyCode,
-              status: "refunded",
-              originalPaymentId: input.refund.originalPaymentId,
-            })
-            .returning();
-
-          await tx.insert(ledgerEntries).values({
-            bookingId: booking.id,
-            paymentId: refundPayment.id,
-            entryType: "refund",
-            sourceKey: `payment:${refundPayment.id}:refund`,
-            amountMinor: refundPayment.amountMinor,
-            currencyCode: refundPayment.currencyCode,
-            description: `Refund for payment ${input.refund.originalPaymentId}`,
-          });
-        }
-
-        const paymentRows = await tx
-          .select()
-          .from(payments)
-          .where(eq(payments.bookingId, booking.id))
-          .orderBy(asc(payments.createdAt));
-
-        return { booking, payments: paymentRows };
-      });
-    } catch (error) {
-      return throwPostgresError(error);
-    }
   }
 
   /** Derived booking totals for a bounded set of hotels. */

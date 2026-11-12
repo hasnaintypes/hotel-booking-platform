@@ -42,3 +42,19 @@ export type {
 } from "./snapshot.js";
 export { quoteStay } from "./quote.js";
 export type { StayQuoteInput } from "./quote.js";
+export {
+  CANCELLATION_POLICY_VERSION,
+  CancellationPolicyError,
+  DEFAULT_MANAGED_CANCELLATION_POLICY,
+  buildCancellationPolicy,
+  quoteCancellation,
+  readCancellationPolicy,
+} from "./cancellation.js";
+export type {
+  CancellationPenalty,
+  CancellationPolicy,
+  CancellationPolicyInput,
+  CancellationPolicySource,
+  CancellationQuote,
+  CancellationQuoteInput,
+} from "./cancellation.js";

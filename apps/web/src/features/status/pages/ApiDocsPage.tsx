@@ -97,7 +97,7 @@ const ApiDocs = () => {
         },
         {
           method: "POST",
-          path: "/api/v1/bookings/:id/cancellations",
+          path: "/api/v1/bookings/:id/cancel",
           description: "Cancel booking",
         },
         {

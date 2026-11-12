@@ -39,8 +39,8 @@ export const routes = {
     /** GET accepts a UUID or the public reference on the same parameter. */
     byReference: (reference: string) => `/api/v1/bookings/${reference}`,
     adminById: (id: string) => `/api/v1/admin/bookings/${id}`,
-    cancel: (id: string) => `/api/v1/bookings/${id}/cancellations`,
-    adminCancel: (id: string) => `/api/v1/admin/bookings/${id}/cancellations`,
+    cancel: (id: string) => `/api/v1/bookings/${id}/cancel`,
+    adminCancel: (id: string) => `/api/v1/admin/bookings/${id}/cancel`,
     forHotel: (hotelId: string) => `/api/v1/manage/hotels/${hotelId}/bookings`,
   },
   reviews: {

@@ -120,14 +120,17 @@ describe("bookings", () => {
   });
 
   describe("POST /api/bookings/:id/cancel", () => {
+    const cancel = (agent: { post: (url: string) => any }, id: string) =>
+      agent.post(routes.bookings.cancel(id)).set("Idempotency-Key", randomUUID());
+
     it("cancels an upcoming paid booking and refunds it", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, {
         stripePaymentIntentId: "pi_test_cancel_ok",
         totalCost: 150,
       });
-      const res = await guest.agent
-        .post(routes.bookings.cancel(fresh.id))
-        .send({ cancellationReason: "  Plans changed  " });
+      const res = await cancel(guest.agent, fresh.id).send({
+        cancellationReason: "  Plans changed  ",
+      });
 
       expect(res.status).toBe(200);
       expect(res.body.booking).toMatchObject({
@@ -151,7 +154,7 @@ describe("bookings", () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, {
         stripePaymentIntentId: undefined,
       });
-      const res = await guest.agent.post(routes.bookings.cancel(fresh.id));
+      const res = await cancel(guest.agent, fresh.id);
 
       expect(res.status).toBe(200);
       expect(res.body.refundSkipped).toMatch(/no payment intent/i);
@@ -160,14 +163,23 @@ describe("bookings", () => {
 
     it("refuses a booking that can no longer be cancelled", async () => {
       const fresh = await insertBooking(t, guest.user._id, hotelId, { status: "cancelled" });
-      const res = await guest.agent.post(routes.bookings.cancel(fresh.id));
+      const res = await cancel(guest.agent, fresh.id);
       expect(res.status).toBe(400);
       expect(res.body.message).toMatch(/cannot be cancelled/i);
     });
 
+    it("requires an Idempotency-Key", async () => {
+      const fresh = await insertBooking(t, guest.user._id, hotelId, {
+        stripePaymentIntentId: "pi_test_cancel_key",
+      });
+      const res = await guest.agent.post(routes.bookings.cancel(fresh.id));
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/idempotency-key/i);
+    });
+
     it("forbids other users and answers 404 for an unknown booking", async () => {
-      expect((await other.agent.post(routes.bookings.cancel(bookingId))).status).toBe(403);
-      expect((await guest.agent.post(routes.bookings.cancel(UNKNOWN_BOOKING_ID))).status).toBe(404);
+      expect((await cancel(other.agent, bookingId)).status).toBe(403);
+      expect((await cancel(guest.agent, UNKNOWN_BOOKING_ID)).status).toBe(404);
       expect((await anonymous(t).post(routes.bookings.cancel(bookingId))).status).toBe(401);
     });
   });
