@@ -1,46 +1,65 @@
 import { useQuery } from "@tanstack/react-query";
-import * as bookingsApi from "@/features/bookings/api";
-import useAuth from "@/features/auth/hooks/useAuth";
 import * as hotelsApi from "@/features/hotels/api";
 import BookingForm from "@/features/bookings/components/BookingForm";
+import BookingStatusCard from "@/features/bookings/components/BookingStatusCard";
 import useSearchContext from "@/features/hotels/hooks/useSearchContext";
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import BookingDetailsSummary from "@/features/bookings/components/BookingDetailsSummary";
-import { Elements } from "@stripe/react-stripe-js";
-import { stripePromise } from "@/shared/lib/stripe";
-import { bookingKeys, hotelKeys } from "@/shared/lib/query-keys";
+import { hotelKeys } from "@/shared/lib/query-keys";
 import { Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { Loader2, CreditCard, Calendar, Users } from "lucide-react";
+import useAuth from "@/features/auth/hooks/useAuth";
+import { useBookingStatus } from "@/features/bookings/hooks/useBookingStatus";
+import { clearCheckoutDraft } from "@/features/bookings/lib/checkout";
+import { resetCheckoutSession } from "@/features/bookings/api";
 
 const Booking = () => {
   const { user: currentUser, isLoading: isLoadingUser } = useAuth();
   const search = useSearchContext();
   const { hotelId } = useParams();
 
-  const [numberOfNights, setNumberOfNights] = useState<number>(0);
+  // Set once the guest has submitted payment. The page then polls the booking instead of
+  // keeping the payment form mounted, so a settling payment cannot be submitted twice.
+  const [submittedReference, setSubmittedReference] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (search.checkIn && search.checkOut) {
-      const nights =
-        Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) / (1000 * 60 * 60 * 24);
-
-      setNumberOfNights(Math.ceil(nights));
-    }
-  }, [search.checkIn, search.checkOut]);
-
-  const { data: paymentIntentData, isLoading: isLoadingPayment } = useQuery({
-    queryKey: bookingKeys.paymentIntent(hotelId || "", numberOfNights.toString()),
-    queryFn: () => bookingsApi.createPaymentIntent(hotelId as string, numberOfNights.toString()),
-    enabled: !!hotelId && numberOfNights > 0,
-  });
+  const numberOfNights = useMemo(
+    () =>
+      Math.max(
+        0,
+        Math.ceil(
+          Math.abs(search.checkOut.getTime() - search.checkIn.getTime()) / (1000 * 60 * 60 * 24),
+        ),
+      ),
+    [search.checkIn, search.checkOut],
+  );
 
   const { data: hotel, isLoading: isLoadingHotel } = useQuery({
     queryKey: hotelKeys.detail(hotelId || ""),
     queryFn: () => hotelsApi.fetchHotelById(hotelId as string),
     enabled: !!hotelId,
+    // Checkout must not create a second booking because the window regained focus.
+    refetchOnWindowFocus: false,
   });
+
+  const { data: submittedBooking, isError: isStatusError } = useBookingStatus(
+    submittedReference ?? undefined,
+  );
+
+  const startNewCheckout = () => {
+    if (hotelId) {
+      resetCheckoutSession({
+        hotelId,
+        checkIn: search.checkIn.toISOString(),
+        checkOut: search.checkOut.toISOString(),
+        adultCount: search.adultCount,
+        childCount: search.childCount,
+      });
+    }
+    clearCheckoutDraft();
+    setSubmittedReference(null);
+  };
 
   if (isLoadingHotel || isLoadingUser) {
     return (
@@ -66,7 +85,6 @@ const Booking = () => {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="pb-6">
         <div className="flex items-center gap-3 mb-2">
           <CreditCard className="h-6 w-6 text-blue-600" />
@@ -77,9 +95,7 @@ const Booking = () => {
         </p>
       </div>
 
-      {/* Main Content */}
       <div className="grid lg:grid-cols-[1fr_2fr] gap-8">
-        {/* Booking Summary */}
         <div className="space-y-6">
           <Card className="shadow-xl border-0 bg-white">
             <CardHeader className="pb-4">
@@ -100,7 +116,6 @@ const Booking = () => {
             </CardContent>
           </Card>
 
-          {/* Hotel Info Card */}
           <Card className="shadow-xl border-0 bg-white">
             <CardHeader className="pb-4">
               <CardTitle className="flex items-center gap-2 text-lg font-medium">
@@ -136,29 +151,28 @@ const Booking = () => {
           </Card>
         </div>
 
-        {/* Booking Form */}
         <div className="space-y-6">
-          {isLoadingPayment ? (
-            <Card className="shadow-xl border-0 bg-white">
-              <CardContent className="flex items-center justify-center py-12">
-                <div className="flex items-center gap-3">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-                  <span className="text-gray-700">Preparing payment...</span>
-                </div>
-              </CardContent>
-            </Card>
-          ) : currentUser && paymentIntentData ? (
+          {submittedReference ? (
+            <BookingStatusCard
+              booking={submittedBooking}
+              reference={submittedReference}
+              isError={isStatusError}
+              onStartNew={startNewCheckout}
+            />
+          ) : currentUser ? (
             <Card className="shadow-xl border-0 bg-white">
               <CardContent className="p-0">
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    clientSecret: paymentIntentData.clientSecret,
+                <BookingForm
+                  currentUser={currentUser}
+                  hotelId={hotelId as string}
+                  stay={{
+                    checkIn: search.checkIn,
+                    checkOut: search.checkOut,
+                    adultCount: search.adultCount,
+                    childCount: search.childCount,
                   }}
-                  key={paymentIntentData.clientSecret}
-                >
-                  <BookingForm currentUser={currentUser} paymentIntent={paymentIntentData} />
-                </Elements>
+                  onPaymentSubmitted={setSubmittedReference}
+                />
               </CardContent>
             </Card>
           ) : (

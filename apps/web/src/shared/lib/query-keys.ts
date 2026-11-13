@@ -17,6 +17,5 @@ export const hotelKeys = {
 export const bookingKeys = {
   all: ["bookings"] as const,
   mine: () => [...bookingKeys.all, "mine"] as const,
-  paymentIntent: (hotelId: string, nights: string) =>
-    [...bookingKeys.all, "paymentIntent", hotelId, nights] as const,
+  detail: (reference: string) => [...bookingKeys.all, "detail", reference] as const,
 };

@@ -14,6 +14,7 @@ const EditHotel = lazy(() => import("@/features/hotel-management/pages/EditHotel
 const Search = lazy(() => import("@/features/hotels/pages/SearchPage"));
 const Detail = lazy(() => import("@/features/hotels/pages/HotelDetailPage"));
 const Booking = lazy(() => import("@/features/bookings/pages/BookingPage"));
+const BookingReturn = lazy(() => import("@/features/bookings/pages/BookingReturnPage"));
 const MyBookings = lazy(() => import("@/features/bookings/pages/MyBookingsPage"));
 const Home = lazy(() => import("@/features/hotels/pages/HomePage"));
 const ApiDocs = lazy(() => import("@/features/status/pages/ApiDocsPage"));
@@ -111,6 +112,16 @@ const App = () => {
             element={
               <Layout>
                 <MyBookings />
+              </Layout>
+            }
+          />
+          {/* Always registered: a 3-D Secure redirect must land here even if the session hint
+              has not been rehydrated yet. The API still enforces booking ownership. */}
+          <Route
+            path="/hotel/:hotelId/booking/return"
+            element={
+              <Layout>
+                <BookingReturn />
               </Layout>
             }
           />

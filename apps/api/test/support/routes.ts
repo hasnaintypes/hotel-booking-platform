@@ -37,7 +37,6 @@ export const routes = {
     list: "/api/v1/admin/bookings",
     myBookings: "/api/v1/bookings",
     create: "/api/v1/bookings",
-    paymentIntent: "/api/v1/bookings/payment-intents",
     byId: (id: string) => `/api/v1/bookings/${id}`,
     /** GET accepts a UUID or the public reference on the same parameter. */
     byReference: (reference: string) => `/api/v1/bookings/${reference}`,

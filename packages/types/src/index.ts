@@ -179,10 +179,4 @@ export type HotelSearchResponse = {
   };
 };
 
-export type PaymentIntentResponse = {
-  paymentIntentId: string;
-  clientSecret: string;
-  totalCost: number;
-};
-
 export { bookingStatusLabel, isBookingCancellable } from "./booking";

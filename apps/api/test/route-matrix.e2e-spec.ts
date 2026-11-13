@@ -22,8 +22,6 @@ type Case = {
  * validation or business logic, so this table is a cheap contract test for the whole surface.
  *
  * Remaining deviations, fixed when their routes are rebuilt:
- * - The temporary `POST /api/v1/bookings/payment-intents` checkout step stays until the web
- *   checkout moves to `POST /api/v1/bookings` in #55.
  * - `POST /api/v1/bookings/:id/reviews` and rollup creation have no `Location` because neither
  *   resource has a GET-by-id route yet.
  */
@@ -70,12 +68,6 @@ const MATRIX: Case[] = [
   { name: "create offer", method: "post", path: routes.offers.create, status: 401 },
   { name: "list bookings", method: "get", path: routes.bookings.list, status: 401 },
   { name: "my bookings", method: "get", path: routes.bookings.myBookings, status: 401 },
-  {
-    name: "payment intent",
-    method: "post",
-    path: routes.bookings.paymentIntent,
-    status: 401,
-  },
   { name: "create booking", method: "post", path: routes.bookings.create, status: 401 },
   {
     name: "bookings for hotel",
