@@ -55,6 +55,9 @@ export const configuration = () => {
     },
     stripe: {
       apiKey: process.env.STRIPE_API_KEY,
+      // Optional override for the Stripe API origin, used by the Playwright suite to point the
+      // SDK at the repo-local mock. Refused when NODE_ENV=production.
+      apiBase: process.env.STRIPE_API_BASE,
       // Signing secret for the `/webhooks/stripe` endpoint (whsec_...). Required so the endpoint
       // can never run without signature verification.
       webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,

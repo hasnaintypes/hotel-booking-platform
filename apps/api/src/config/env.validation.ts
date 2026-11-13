@@ -76,6 +76,40 @@ export const validateEnv = (config: Record<string, unknown>) => {
     );
   }
 
+  // The Playwright suite points the Stripe SDK at a repo-local mock. That is a local-testing
+  // convenience only: a deployed API must always call Stripe itself.
+  const stripeApiBase = config.STRIPE_API_BASE;
+  if (stripeApiBase !== undefined && stripeApiBase !== "") {
+    if (config.NODE_ENV === "production") {
+      throw new Error(
+        "Refusing to start with NODE_ENV=production and STRIPE_API_BASE set: the override is " +
+          "only for local end-to-end tests and must never reach a deployed API.",
+      );
+    }
+
+    let parsedBase: URL;
+    try {
+      parsedBase = new URL(String(stripeApiBase));
+    } catch {
+      throw new Error(
+        `Invalid STRIPE_API_BASE "${String(stripeApiBase)}". Use an http(s) origin such as ` +
+          "http://localhost:12111.",
+      );
+    }
+
+    if (parsedBase.protocol !== "http:" && parsedBase.protocol !== "https:") {
+      throw new Error(
+        `Invalid STRIPE_API_BASE "${String(stripeApiBase)}". Only http and https are supported.`,
+      );
+    }
+
+    if (parsedBase.pathname !== "/" || parsedBase.search || parsedBase.hash) {
+      throw new Error(
+        `Invalid STRIPE_API_BASE "${String(stripeApiBase)}". Use an origin only (no path or query).`,
+      );
+    }
+  }
+
   const runWorker = config.RUN_WORKER;
   if (runWorker !== undefined && runWorker !== "true" && runWorker !== "false") {
     throw new Error(`Invalid RUN_WORKER "${String(runWorker)}". Use "true" or "false"`);
