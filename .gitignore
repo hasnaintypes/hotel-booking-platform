@@ -26,6 +26,12 @@ dist-ssr
 
 .env
 .env.e2e
+
+# Playwright
+playwright-report/
+test-results/
+blob-report/
+
 node_modules
 
 # Documentation

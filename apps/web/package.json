@@ -9,8 +9,9 @@
     "build": "tsc && vite build",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
+    "test:e2e": "node e2e/support/prepare-db.mjs && playwright test",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.e2e.json",
     "clean": "rm -rf dist"
   },
   "dependencies": {
@@ -31,9 +32,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.65.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
+    "@types/node": "22.20.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@typescript-eslint/eslint-plugin": "^8.72.1",
