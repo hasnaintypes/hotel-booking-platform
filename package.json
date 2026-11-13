@@ -22,7 +22,7 @@
     "typecheck": "turbo run typecheck"
   },
   "devDependencies": {
-    "knip": "^6.44.1",
+    "knip": "^6.44.2",
     "prettier": "^3.9.10",
     "turbo": "^2.11.10"
   },
