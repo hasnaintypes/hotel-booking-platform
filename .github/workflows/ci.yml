@@ -59,6 +59,58 @@ jobs:
       - run: pnpm build
       - run: pnpm check:bundle
 
+  # Playwright end to end: the real API, the production web build and a local Stripe mock (no Stripe
+  # account or network access). The suite resets, migrates and seeds its own disposable
+  # `hotel_booking_e2e` database, so it never touches the `hotel_booking_test` database above.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hotel_booking_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hotel_booking_e2e"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      E2E_DATABASE_URL: postgres://postgres:postgres@localhost:5432/hotel_booking_e2e
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm --filter @hotel-booking/web exec playwright install --with-deps chromium
+
+      - name: Run the Playwright suite
+        run: pnpm --filter @hotel-booking/web test:e2e
+
+      - name: Upload the Playwright report
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+
   # Builds the production image and checks what the unit and integration tests cannot: that it
   # does not run as root, starts with a read-only filesystem, passes its health check and does
   # not serve the API documentation.

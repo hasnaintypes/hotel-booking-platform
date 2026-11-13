@@ -174,6 +174,36 @@ describe("validateEnv", () => {
     });
   });
 
+  describe("STRIPE_API_BASE", () => {
+    it.each(["http://localhost:12111", "https://stripe-mock.internal:443"])(
+      "accepts the origin %s outside production",
+      (value) => {
+        expect(() => validateEnv({ ...base, STRIPE_API_BASE: value })).not.toThrow();
+      },
+    );
+
+    it.each(["", undefined])("accepts %s (override disabled)", (value) => {
+      expect(() => validateEnv({ ...base, STRIPE_API_BASE: value })).not.toThrow();
+    });
+
+    it.each(["localhost:12111", "ftp://localhost:12111", "http://localhost:12111/v1"])(
+      "rejects %s",
+      (value) => {
+        expect(() => validateEnv({ ...base, STRIPE_API_BASE: value })).toThrow(/STRIPE_API_BASE/);
+      },
+    );
+
+    it("is refused in production even with a test key", () => {
+      expect(() =>
+        validateEnv({
+          ...base,
+          NODE_ENV: "production",
+          STRIPE_API_BASE: "http://localhost:12111",
+        }),
+      ).toThrow(/STRIPE_API_BASE/);
+    });
+  });
+
   it("still validates the log settings", () => {
     expect(() => validateEnv({ ...base, LOG_LEVEL: "loud" })).toThrow(/LOG_LEVEL/);
     expect(() => validateEnv({ ...base, LOG_FORMAT: "xml" })).toThrow(/LOG_FORMAT/);

@@ -9,6 +9,15 @@ export default [
   { ignores: ["dist", "node_modules"] },
   js.configs.recommended,
   {
+    // The Playwright harness runs in Node (database reset, Stripe mock), not in the browser.
+    files: ["e2e/**/*.mjs"],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
+      globals: { ...globals.node },
+    },
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2020,
