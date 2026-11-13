@@ -16,6 +16,7 @@
     "db:check": "drizzle-kit check && node scripts/check-drift.mjs",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:reset:e2e": "node scripts/reset-e2e-database.mjs",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
