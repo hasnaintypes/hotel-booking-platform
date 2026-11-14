@@ -1,4 +1,7 @@
-import type { BookingWithPayments } from "../../database/repositories/bookings.repository";
+import type {
+  BookingEventRecord,
+  BookingWithPayments,
+} from "../../database/repositories/bookings.repository";
 import {
   allowedNextStatuses,
   type BookingStatus,
@@ -100,3 +103,87 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
 export type BookingCreationResponse = BookingResponse & {
   clientSecret: string | null;
 };
+
+export type BookingEventResponse = {
+  id: string;
+  fromStatus: BookingStatus | null;
+  toStatus: BookingStatus;
+  actorUserId?: string;
+  reason?: string;
+  requestId?: string;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+};
+
+export type BookingPaymentResponse = {
+  id: string;
+  /** A refund is a separate payment row that points at the original charge. */
+  kind: "charge" | "refund";
+  provider: string;
+  providerReference?: string;
+  status: Payment["status"];
+  amountMinor: number;
+  capturedAmountMinor?: number;
+  currencyCode: string;
+  originalPaymentId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Everything an operator needs on the detail page, including how the booking got here. */
+export type BookingDetailResponse = BookingResponse & {
+  version: number;
+  expiresAt?: Date;
+  supplierId?: string;
+  supplierReference?: string;
+  events: BookingEventResponse[];
+  payments: BookingPaymentResponse[];
+};
+
+const metadataOf = (value: unknown): Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+
+const toEventResponse = (event: BookingEventRecord): BookingEventResponse => ({
+  id: event.id,
+  fromStatus: event.fromStatus,
+  toStatus: event.toStatus,
+  ...(event.actorUserId ? { actorUserId: event.actorUserId } : {}),
+  ...(event.reason ? { reason: event.reason } : {}),
+  ...(event.requestId ? { requestId: event.requestId } : {}),
+  metadata: metadataOf(event.metadata),
+  createdAt: event.createdAt,
+});
+
+const toPaymentResponse = (payment: Payment): BookingPaymentResponse => ({
+  id: payment.id,
+  kind: payment.originalPaymentId ? "refund" : "charge",
+  provider: payment.provider,
+  ...(payment.providerPaymentId ? { providerReference: payment.providerPaymentId } : {}),
+  status: payment.status,
+  amountMinor: payment.amountMinor,
+  ...(payment.capturedAmountMinor !== null
+    ? { capturedAmountMinor: payment.capturedAmountMinor }
+    : {}),
+  currencyCode: payment.currencyCode,
+  ...(payment.originalPaymentId ? { originalPaymentId: payment.originalPaymentId } : {}),
+  createdAt: payment.createdAt,
+  updatedAt: payment.updatedAt,
+});
+
+export function toBookingDetailResponse(
+  record: BookingWithPayments,
+  events: BookingEventRecord[],
+): BookingDetailResponse {
+  const { booking, payments } = record;
+  return {
+    ...toBookingResponse(record),
+    version: booking.version,
+    ...(booking.expiresAt ? { expiresAt: booking.expiresAt } : {}),
+    ...(booking.supplierId ? { supplierId: booking.supplierId } : {}),
+    ...(booking.supplierReference ? { supplierReference: booking.supplierReference } : {}),
+    events: events.map(toEventResponse),
+    payments: payments.map(toPaymentResponse),
+  };
+}

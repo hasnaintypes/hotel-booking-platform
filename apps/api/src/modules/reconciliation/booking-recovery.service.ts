@@ -164,6 +164,30 @@ export class BookingRecoveryService {
     return result;
   }
 
+  /**
+   * Manual recovery used by the admin `retry` action. It runs the same code path as the scheduled
+   * sweeper for the booking's current status and reports where the booking ended up.
+   */
+  async recoverBooking(
+    bookingId: string,
+  ): Promise<{ recovered: boolean; status: BookingStatus | null }> {
+    const record = await this.bookings.findById(bookingId);
+    if (!record) return { recovered: false, status: null };
+
+    const status = record.booking.status;
+    const recovered =
+      status === "authorized"
+        ? await this.recoverAuthorized(bookingId)
+        : status === "confirming"
+          ? await this.recoverConfirming(bookingId)
+          : status === "cancelling"
+            ? await this.recoverCancelling(bookingId)
+            : false;
+
+    const after = await this.bookings.findById(bookingId);
+    return { recovered, status: after?.booking.status ?? null };
+  }
+
   private async recoverAuthorized(bookingId: string, jobId?: string): Promise<boolean> {
     const record = await this.bookings.findById(bookingId);
     if (!record || record.booking.status !== "authorized") return true;

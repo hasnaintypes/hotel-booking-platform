@@ -22,6 +22,7 @@ import { ValidationFailedException } from "../../common/errors/validation-failed
 import { isUuid } from "../../common/utils/uuid";
 import {
   BookingsRepository,
+  type BookingListFilters,
   type BookingWithPayments,
 } from "../../database/repositories/bookings.repository";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
@@ -35,12 +36,15 @@ import { PaymentsService } from "../payments/payments.service";
 import { toPublicHotelResponse } from "../hotels/hotel-response";
 import { OffersService } from "../inventory/offers.service";
 import {
+  toBookingDetailResponse,
   toBookingResponse,
   type BookingCreationResponse,
+  type BookingDetailResponse,
   type BookingResponse,
 } from "./booking-response";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
+import { ManualBookingActionDto } from "./dto/manual-booking-action.dto";
 
 const CANCELLABLE_STATUSES = new Set([
   "pending_payment",
@@ -274,17 +278,57 @@ export class BookingsService {
     };
   }
 
-  async findAllAdmin(): Promise<BookingResponse[]> {
-    const rows = await this.bookings.listAll();
+  async findAllAdmin(filters: BookingListFilters = {}): Promise<BookingResponse[]> {
+    const rows = await this.bookings.searchAll(filters);
     return rows.map(toBookingResponse);
   }
 
-  async findOneAdmin(id: string): Promise<BookingResponse> {
+  async findOneAdmin(id: string): Promise<BookingDetailResponse> {
     const booking = await this.bookings.findById(id);
     if (!booking) {
       throw new NotFoundException("Booking not found");
     }
-    return toBookingResponse(booking);
+    const events = await this.bookings.listEvents(booking.booking.id);
+    return toBookingDetailResponse(booking, events);
+  }
+
+  /**
+   * Records that a human reviewed a booking parked in `needs_review`. The status deliberately
+   * stays put: the operator is acknowledging the finding, and only a state-machine action
+   * (retry or cancel) may move the booking on.
+   */
+  async markReviewed(
+    id: string,
+    dto: ManualBookingActionDto,
+    userId: string,
+    requestId?: string,
+  ): Promise<BookingDetailResponse> {
+    const record = await this.bookings.findById(id);
+    if (!record) {
+      throw new NotFoundException("Booking not found");
+    }
+    if (record.booking.status !== "needs_review") {
+      throw new ConflictException("Only a booking in needs_review can be marked reviewed");
+    }
+
+    const event = await this.bookings.recordNote({
+      bookingId: id,
+      expectedStatus: "needs_review",
+      actorUserId: userId,
+      reason: dto.reason,
+      ...(requestId ? { requestId } : {}),
+      metadata: { action: "mark_reviewed", permission: "booking.mark_reviewed" },
+    });
+    if (!event) {
+      throw new ConflictException("Booking changed while it was being reviewed; retry");
+    }
+
+    const refreshed = await this.bookings.findById(id);
+    if (!refreshed) {
+      throw new NotFoundException("Booking not found");
+    }
+    const events = await this.bookings.listEvents(id);
+    return toBookingDetailResponse(refreshed, events);
   }
 
   async findForHotel(hotelId: string, userId: string): Promise<BookingResponse[]> {
@@ -341,9 +385,15 @@ export class BookingsService {
    * transaction. A failed refund must leave the booking in `needs_review` even though the HTTP
    * request answers with an error and the interceptor rolls its own transaction back.
    */
-  async cancel(id: string, dto: CancelBookingDto, userId: string, requestId?: string) {
+  async cancel(
+    id: string,
+    dto: CancelBookingDto,
+    userId: string,
+    requestId?: string,
+    audit?: { permission?: string; source?: string },
+  ) {
     const outcome = await this.bookings.inDetachedTransaction(() =>
-      this.cancelWithinTransaction(id, dto, userId, requestId),
+      this.cancelWithinTransaction(id, dto, userId, requestId, audit),
     );
 
     if ("refundError" in outcome) {
@@ -369,6 +419,7 @@ export class BookingsService {
     dto: CancelBookingDto,
     userId: string,
     requestId?: string,
+    audit?: { permission?: string; source?: string },
   ): Promise<CancellationOutcome> {
     const record = await this.bookings.findById(id);
     if (!record) {
@@ -384,7 +435,7 @@ export class BookingsService {
       record.booking.status === "cancelling" ||
       (record.booking.status === "needs_review" && hasRefundAttempt)
     ) {
-      return this.resumeCancellation(record, userId, requestId);
+      return this.resumeCancellation(record, userId, requestId, audit);
     }
 
     if (!this.mayCancel(record.booking)) {
@@ -407,7 +458,10 @@ export class BookingsService {
       cancellationReason,
       requestId,
       undefined,
-      { refund: { ...plan, currency: quote.currency, penaltyMinor: quote.penaltyMinor } },
+      {
+        refund: { ...plan, currency: quote.currency, penaltyMinor: quote.penaltyMinor },
+        ...audit,
+      },
     );
 
     return this.settleCancellation(id, userId, cancellationReason, requestId, plan);
@@ -513,6 +567,7 @@ export class BookingsService {
     record: BookingWithPayments,
     userId: string,
     requestId?: string,
+    audit?: { permission?: string; source?: string },
   ): Promise<CancellationOutcome> {
     const { booking, payments } = record;
     const refunds = payments.filter((payment) => payment.originalPaymentId !== null);
@@ -557,7 +612,7 @@ export class BookingsService {
         cancellationReason,
         requestId,
         undefined,
-        { refund: plan },
+        { refund: plan, ...audit },
       );
     }
 
