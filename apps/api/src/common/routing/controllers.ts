@@ -12,6 +12,7 @@ import { HotelsController } from "../../modules/hotels/hotels.controller";
 import { OffersController } from "../../modules/inventory/offers.controller";
 import { MyHotelsController } from "../../modules/my-hotels/my-hotels.controller";
 import { PartnerCapabilitiesController } from "../../modules/partner/partner-capabilities.controller";
+import { AdminReconciliationController } from "../../modules/reconciliation/admin-reconciliation.controller";
 import { AdminReviewsController } from "../../modules/reviews/admin-reviews.controller";
 import { BookingReviewsController } from "../../modules/reviews/booking-reviews.controller";
 import { HotelReviewsController } from "../../modules/reviews/hotel-reviews.controller";
@@ -56,6 +57,7 @@ export const AUDIENCE_GROUPS: readonly AudienceGroup[] = [
       AdminHotelsController,
       AdminBookingsController,
       AdminReviewsController,
+      AdminReconciliationController,
       AdminReportsController,
       AdminRollupsController,
       AdminSystemController,

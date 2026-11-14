@@ -12,6 +12,8 @@ import { HotelsModule } from "../modules/hotels/hotels.module";
 import { AdminHotelsController } from "../modules/hotels/admin-hotels.controller";
 import { ReviewsModule } from "../modules/reviews/reviews.module";
 import { AdminReviewsController } from "../modules/reviews/admin-reviews.controller";
+import { ReconciliationModule } from "../modules/reconciliation/reconciliation.module";
+import { AdminReconciliationController } from "../modules/reconciliation/admin-reconciliation.controller";
 import { UsersModule } from "../modules/users/users.module";
 import { AdminUsersController } from "../modules/users/admin-users.controller";
 
@@ -26,12 +28,14 @@ import { AdminUsersController } from "../modules/users/admin-users.controller";
     AnalyticsModule,
     HealthServiceModule,
     JobsModule,
+    ReconciliationModule,
   ],
   controllers: [
     AdminUsersController,
     AdminHotelsController,
     AdminBookingsController,
     AdminReviewsController,
+    AdminReconciliationController,
     AdminReportsController,
     AdminRollupsController,
     AdminSystemController,
