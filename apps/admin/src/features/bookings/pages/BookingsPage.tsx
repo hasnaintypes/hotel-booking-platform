@@ -1,36 +1,52 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import { bookingStatusLabel, type BookingType } from "@hotel-booking/types";
+import { Link } from "react-router-dom";
+import {
+  bookingStatusLabel,
+  type BookingListFilters,
+  type BookingStatus,
+  type BookingType,
+} from "@hotel-booking/types";
 import { Badge, DataTable } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchBookings } from "../api";
 import CancelBookingButton from "../components/CancelBookingButton";
+import { bookingStatusClass } from "../lib/booking-status";
 
-const statusClass = (status?: string) => {
-  switch (status) {
-    case "confirmed":
-      return "bg-green-100 text-green-800";
-    case "pending_payment":
-      return "bg-yellow-100 text-yellow-800";
-    case "authorized":
-    case "confirming":
-    case "cancelling":
-      return "bg-blue-100 text-blue-800";
-    case "cancelled":
-    case "failed":
-      return "bg-red-100 text-red-800";
-    case "needs_review":
-      return "bg-purple-100 text-purple-800";
-    default:
-      return "bg-slate-100 text-slate-800";
-  }
-};
+const BOOKING_STATUSES: BookingStatus[] = [
+  "pending_payment",
+  "authorized",
+  "confirming",
+  "confirmed",
+  "cancelling",
+  "cancelled",
+  "failed",
+  "expired",
+  "needs_review",
+];
 
 const BookingsPage = () => {
+  const [status, setStatus] = useState<BookingStatus | "">("");
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const filters = useMemo<BookingListFilters>(
+    () => ({
+      ...(status ? { status } : {}),
+      ...(debouncedSearch ? { q: debouncedSearch } : {}),
+    }),
+    [status, debouncedSearch],
+  );
+
   const bookingsQuery = useQuery({
-    queryKey: adminKeys.bookings,
-    queryFn: fetchBookings,
+    queryKey: [...adminKeys.bookings, filters],
+    queryFn: () => fetchBookings(filters),
   });
 
   const columns = useMemo<LegacyColumnDef<BookingType, unknown>[]>(
@@ -40,16 +56,19 @@ const BookingsPage = () => {
         accessorFn: (booking) => `${booking.firstName} ${booking.lastName}`,
         header: "Guest",
         cell: ({ row }) => (
-          <span className="font-medium text-gray-700">
+          <Link
+            to={`/bookings/${row.original._id}`}
+            className="font-medium text-primary-700 hover:underline"
+          >
             {row.original.firstName} {row.original.lastName}
-          </span>
+          </Link>
         ),
       },
       {
         accessorKey: "status",
         header: "Status",
         cell: ({ row }) => (
-          <Badge className={statusClass(row.original.status)}>
+          <Badge className={bookingStatusClass(row.original.status)}>
             {bookingStatusLabel(row.original.status)}
           </Badge>
         ),
@@ -88,7 +107,17 @@ const BookingsPage = () => {
       {
         id: "actions",
         header: "Actions",
-        cell: ({ row }) => <CancelBookingButton booking={row.original} />,
+        cell: ({ row }) => (
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to={`/bookings/${row.original._id}`}
+              className="text-sm font-medium text-primary-700 hover:underline"
+            >
+              View
+            </Link>
+            <CancelBookingButton booking={row.original} />
+          </div>
+        ),
       },
     ],
     [],
@@ -99,8 +128,40 @@ const BookingsPage = () => {
       <div>
         <h1 className="text-lg font-medium text-gray-700 md:text-2xl">Bookings</h1>
         <p className="text-sm text-gray-500">
-          All reservations — cancel upcoming stays with Stripe refund when paid
+          All reservations — inspect payment history, retry parked bookings or cancel upcoming stays
         </p>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="text-sm text-gray-700">
+          Status
+          <select
+            className="mt-1 block rounded-xl border border-gray-300 bg-white p-2"
+            value={status}
+            onChange={(event) => setStatus(event.target.value as BookingStatus | "")}
+          >
+            <option value="">All statuses</option>
+            {BOOKING_STATUSES.map((value) => (
+              <option key={value} value={value}>
+                {bookingStatusLabel(value)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm text-gray-700">
+          Search
+          <input
+            className="mt-1 block rounded-xl border border-gray-300 p-2"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Guest, email or reference"
+          />
+        </label>
+        {status === "needs_review" && (
+          <p className="text-sm text-purple-700">
+            Bookings parked for review — open one to retry or acknowledge it.
+          </p>
+        )}
       </div>
 
       {bookingsQuery.isLoading ? (
@@ -115,7 +176,7 @@ const BookingsPage = () => {
         <DataTable
           columns={columns}
           data={bookingsQuery.data || []}
-          searchPlaceholder="Search bookings…"
+          searchPlaceholder="Search loaded bookings…"
         />
       )}
     </div>

@@ -14,7 +14,7 @@ type ActivityItem = {
 const ActivityPage = () => {
   const bookingsQuery = useQuery({
     queryKey: adminKeys.bookings,
-    queryFn: fetchBookings,
+    queryFn: () => fetchBookings(),
   });
   const reviewsQuery = useQuery({
     queryKey: adminKeys.reviews,

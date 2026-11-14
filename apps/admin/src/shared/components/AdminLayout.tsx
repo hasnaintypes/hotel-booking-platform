@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Scale,
   Star,
   Users,
   X,
@@ -25,6 +26,7 @@ const nav = [
   { to: "/users", label: "Users", icon: Users },
   { to: "/reviews", label: "Reviews", icon: Star },
   { to: "/bookings", label: "Bookings", icon: Calendar },
+  { to: "/reconciliation", label: "Reconciliation", icon: Scale },
   { to: "/activity", label: "Activity", icon: Activity },
 ];
 

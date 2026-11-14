@@ -7,13 +7,15 @@ import { toast } from "sonner";
 import { invalidateAdminBookings } from "@/shared/lib/query-invalidation";
 import { cancelBooking } from "../api";
 
+const MIN_REASON_LENGTH = 3;
+
 const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
 
   const mutation = useMutation({
-    mutationFn: () => cancelBooking(booking._id, reason.trim() || undefined),
+    mutationFn: () => cancelBooking(booking._id, reason.trim()),
     onSuccess: async (data) => {
       await invalidateAdminBookings(queryClient);
       const refundNote = data.refundAmount > 0 ? ` Refunded £${data.refundAmount.toFixed(2)}.` : "";
@@ -31,7 +33,17 @@ const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
     },
   });
 
-  if (!isBookingCancellable(booking)) return null;
+  // The server allows a future booking to cancel from any pre-terminal status, including a
+  // `needs_review` booking whose refund failed. `allowedTransitions` encodes that state machine;
+  // fall back to the shared helper when an older response omits it.
+  const canCancel = booking.allowedTransitions
+    ? new Date(booking.checkIn).getTime() > Date.now() &&
+      booking.allowedTransitions.includes("cancelling")
+    : isBookingCancellable(booking);
+
+  if (!canCancel) return null;
+
+  const reasonIsValid = reason.trim().length >= MIN_REASON_LENGTH;
 
   if (!open) {
     return (
@@ -54,12 +66,12 @@ const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
         the booking at the time it was made.
       </p>
       <label className="block text-sm font-medium text-gray-700">
-        Reason (optional)
+        Reason (required)
         <input
           className="mt-1 block w-full rounded-xl border border-gray-300 p-2"
           value={reason}
           onChange={(event) => setReason(event.target.value)}
-          placeholder="e.g. Change of plans"
+          placeholder="e.g. Guest called to cancel"
         />
       </label>
       <div className="flex gap-2">
@@ -67,7 +79,7 @@ const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
           type="button"
           variant="destructive"
           size="sm"
-          disabled={mutation.isPending}
+          disabled={!reasonIsValid || mutation.isPending}
           onClick={() => mutation.mutate()}
         >
           {mutation.isPending ? "Cancelling…" : "Confirm cancel"}
