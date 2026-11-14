@@ -90,6 +90,30 @@ const MATRIX: Case[] = [
     status: 401,
   },
   { name: "admin booking detail", method: "get", path: routes.bookings.adminById(id), status: 401 },
+  {
+    name: "admin retry booking",
+    method: "post",
+    path: routes.bookings.adminRetry(id),
+    status: 401,
+  },
+  {
+    name: "admin mark booking reviewed",
+    method: "post",
+    path: routes.bookings.adminReview(id),
+    status: 401,
+  },
+  {
+    name: "admin list discrepancies",
+    method: "get",
+    path: routes.reconciliation.discrepancies,
+    status: 401,
+  },
+  {
+    name: "admin update discrepancy",
+    method: "patch",
+    path: routes.reconciliation.discrepancy(id),
+    status: 401,
+  },
 
   { name: "list reviews", method: "get", path: routes.reviews.list, status: 401 },
   { name: "hotel reviews", method: "get", path: routes.reviews.byHotel(hotelId), status: 200 },

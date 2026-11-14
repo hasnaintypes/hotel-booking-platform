@@ -43,7 +43,13 @@ export const routes = {
     adminById: (id: string) => `/api/v1/admin/bookings/${id}`,
     cancel: (id: string) => `/api/v1/bookings/${id}/cancel`,
     adminCancel: (id: string) => `/api/v1/admin/bookings/${id}/cancel`,
+    adminRetry: (id: string) => `/api/v1/admin/bookings/${id}/retry`,
+    adminReview: (id: string) => `/api/v1/admin/bookings/${id}/review`,
     forHotel: (hotelId: string) => `/api/v1/manage/hotels/${hotelId}/bookings`,
+  },
+  reconciliation: {
+    discrepancies: "/api/v1/admin/reconciliation/discrepancies",
+    discrepancy: (id: string) => `/api/v1/admin/reconciliation/discrepancies/${id}`,
   },
   reviews: {
     create: (bookingId: string) => `/api/v1/bookings/${bookingId}/reviews`,

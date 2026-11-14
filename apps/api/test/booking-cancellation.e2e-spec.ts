@@ -361,7 +361,7 @@ describe("booking cancellation", () => {
     });
 
     const res = await cancelAsAdmin(booking.id).send({
-      cancellationReason: "Overbooked by the hotel",
+      reason: "Overbooked by the hotel",
     });
 
     expect(res.status).toBe(200);
