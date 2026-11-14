@@ -29,7 +29,13 @@ export const bookingEvents = pgTable(
   (table) => [
     check(
       "booking_events_transition_check",
-      sql`${table.fromStatus} is null or ${table.fromStatus} <> ${table.toStatus}`,
+      // A transition always changes status. A note records an audit annotation at the current
+      // status, so it stores `from_status = to_status` and carries `metadata.kind = 'note'`.
+      // `coalesce` is required: a CHECK that evaluates to NULL passes, and `metadata->>'kind'`
+      // is NULL for every ordinary event, so a bare equality would let same-status rows through.
+      sql`${table.fromStatus} is null
+        or ${table.fromStatus} <> ${table.toStatus}
+        or coalesce(${table.metadata}->>'kind', '') = 'note'`,
     ),
     check("booking_events_metadata_check", sql`jsonb_typeof(${table.metadata}) = 'object'`),
     index("booking_events_booking_created_at_idx").on(table.bookingId, table.createdAt),

@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { bookings } from "./bookings.js";
 import { payments } from "./payments.js";
+import { users } from "./users.js";
 
 /**
  * One detected difference between our records and a payment provider. Rows are append-only in
@@ -40,6 +41,18 @@ export const reconciliationDiscrepancies = pgTable(
       .defaultNow(),
     resolvedAt: timestamp("resolved_at", { withTimezone: true, mode: "date" }),
     resolution: text("resolution"),
+    /** Operator currently owning the follow-up while the finding stays open. */
+    assignedToUserId: uuid("assigned_to_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    assignedAt: timestamp("assigned_at", { withTimezone: true, mode: "date" }),
+    assignedByUserId: uuid("assigned_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    /** Who resolved or ignored the finding; kept for the audit trail after the row closes. */
+    resolvedByUserId: uuid("resolved_by_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true, mode: "date" }).notNull().defaultNow(),
   },
@@ -74,6 +87,7 @@ export const reconciliationDiscrepancies = pgTable(
       .on(table.dedupeKey)
       .where(sql`${table.status} = 'open'`),
     index("reconciliation_discrepancies_status_detected_at_idx").on(table.status, table.detectedAt),
+    index("reconciliation_discrepancies_assigned_idx").on(table.assignedToUserId, table.status),
     index("reconciliation_discrepancies_booking_idx").on(table.bookingId),
     index("reconciliation_discrepancies_payment_idx").on(table.paymentId),
   ],
