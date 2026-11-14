@@ -1,11 +1,25 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, inArray, isNotNull, isNull, lt, lte, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  isNotNull,
+  isNull,
+  lt,
+  lte,
+  or,
+  sql,
+} from "drizzle-orm";
 import {
   bookingEvents,
   bookings,
   payments,
   withTransaction,
   type Booking,
+  type BookingEvent,
   type Database,
   type Payment,
   type Transaction,
@@ -24,6 +38,29 @@ import { DATABASE } from "../postgres.database";
 export type BookingWithPayments = {
   booking: Booking;
   payments: Payment[];
+};
+
+/** Re-exported so response mappers do not import the database package directly. */
+export type BookingEventRecord = BookingEvent;
+
+/** Admin list filters; every field narrows the bounded query rather than paging the whole table. */
+export type BookingListFilters = {
+  status?: BookingStatus;
+  hotelId?: string;
+  /** Matches guest name, email or the public reference. */
+  query?: string;
+  limit?: number;
+  offset?: number;
+};
+
+export type BookingNoteInput = {
+  bookingId: string;
+  /** The note is only written while the booking is still in this status. */
+  expectedStatus: BookingStatus;
+  actorUserId: string;
+  reason: string;
+  requestId?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type NewPendingBookingInput = {
@@ -104,12 +141,90 @@ export class BookingsRepository {
   }
 
   async listAll(limit = BOOKING_LIST_LIMIT): Promise<BookingWithPayments[]> {
+    return this.searchAll({ limit });
+  }
+
+  /**
+   * Admin queue query. Filters are applied in SQL and the result is bounded, so a "needs review"
+   * view cannot turn into a full-table read.
+   */
+  async searchAll(filters: BookingListFilters = {}): Promise<BookingWithPayments[]> {
+    const conditions = [];
+    if (filters.status) {
+      conditions.push(eq(bookings.status, filters.status));
+    }
+    if (filters.hotelId && isUuid(filters.hotelId)) {
+      conditions.push(eq(bookings.hotelId, filters.hotelId));
+    }
+
+    const query = filters.query?.trim();
+    if (query) {
+      const pattern = `%${escapeLikePattern(query)}%`;
+      conditions.push(
+        or(
+          ilike(bookings.guestFirstName, pattern),
+          ilike(bookings.guestLastName, pattern),
+          ilike(bookings.guestEmail, pattern),
+          ilike(bookings.publicReference, pattern),
+        ),
+      );
+    }
+
+    const limit = Math.min(Math.max(filters.limit ?? BOOKING_LIST_LIMIT, 1), BOOKING_LIST_LIMIT);
+    const offset = Math.max(filters.offset ?? 0, 0);
+
     const rows = await this.db
       .select()
       .from(bookings)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(bookings.createdAt), desc(bookings.id))
-      .limit(Math.min(limit, BOOKING_LIST_LIMIT));
+      .limit(limit)
+      .offset(offset);
     return this.withPayments(rows);
+  }
+
+  /** Full booking history, oldest first, for the admin detail timeline. */
+  async listEvents(bookingId: string): Promise<BookingEvent[]> {
+    if (!isUuid(bookingId)) return [];
+    return this.db
+      .select()
+      .from(bookingEvents)
+      .where(eq(bookingEvents.bookingId, bookingId))
+      .orderBy(asc(bookingEvents.createdAt), asc(bookingEvents.id));
+  }
+
+  /**
+   * Appends an annotation event without changing the booking row: `mark reviewed` is an audited
+   * human acknowledgement, not a state transition. The row lock plus the `expected_status` guard
+   * stop a note being written against a status the operator never saw.
+   */
+  async recordNote(input: BookingNoteInput): Promise<BookingEvent | undefined> {
+    if (!isUuid(input.bookingId)) return undefined;
+    return withRequestTransaction(this.db, async (tx) => {
+      const [booking] = await tx
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, input.bookingId))
+        .for("update")
+        .limit(1);
+
+      if (!booking || booking.status !== input.expectedStatus) return undefined;
+
+      const [event] = await tx
+        .insert(bookingEvents)
+        .values({
+          bookingId: booking.id,
+          fromStatus: booking.status,
+          toStatus: booking.status,
+          actorUserId: input.actorUserId,
+          reason: input.reason,
+          requestId: input.requestId ?? null,
+          metadata: { kind: "note", ...input.metadata },
+        })
+        .returning();
+
+      return event;
+    });
   }
 
   async listByHotel(hotelId: string, limit = BOOKING_LIST_LIMIT): Promise<BookingWithPayments[]> {
@@ -461,3 +576,6 @@ export class BookingsRepository {
     return rows.map((booking) => ({ booking, payments: byBooking.get(booking.id) ?? [] }));
   }
 }
+
+/** Escapes LIKE wildcards so a guest's typed search is matched literally. */
+const escapeLikePattern = (value: string): string => value.replace(/[\\%_]/g, "\\$&");

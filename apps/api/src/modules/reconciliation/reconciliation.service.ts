@@ -1,20 +1,30 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import type Stripe from "stripe";
 import { CLOCK, type Clock } from "../../common/clock";
 import {
   type BookingLedgerTotals,
   type BookingPaymentTotals,
+  type DiscrepancyListFilters,
   type NewDiscrepancyInput,
   ReconciliationRepository,
 } from "../../database/repositories/reconciliation.repository";
 import { PaymentsRepository } from "../../database/repositories/payments.repository";
+import { UsersRepository } from "../../database/repositories/users.repository";
 import {
   localStatusFromIntentStatus,
   matchesIntentStatus,
 } from "../../domain/payments/provider-status";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { isMissingProviderResource } from "../payments/payments.service";
+import { UpdateDiscrepancyDto } from "./dto/update-discrepancy.dto";
 
 const HOUR_MS = 60 * 60 * 1_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -47,6 +57,7 @@ export class ReconciliationService {
     private readonly stripe: StripeService,
     private readonly payments: PaymentsRepository,
     private readonly discrepancies: ReconciliationRepository,
+    private readonly users: UsersRepository,
   ) {}
 
   private get lookbackHours(): number {
@@ -412,5 +423,65 @@ export class ReconciliationService {
   /** Bounded open-finding list for #56's admin view. */
   async listOpenDiscrepancies(limit = 200) {
     return this.discrepancies.listOpen(limit);
+  }
+
+  /** Filtered queue for the admin UI, including closed history. */
+  async listDiscrepancies(filters: DiscrepancyListFilters = {}) {
+    return this.discrepancies.listForAdmin(filters);
+  }
+
+  /**
+   * Assigns or closes one finding. Closing needs a written resolution and records the operator;
+   * a closed finding is immutable from the application, so history cannot be rewritten.
+   */
+  async updateDiscrepancy(id: string, dto: UpdateDiscrepancyDto, actorUserId: string) {
+    const changesAssignment = Object.prototype.hasOwnProperty.call(dto, "assignedToUserId");
+    if (!dto.status && !changesAssignment) {
+      throw new BadRequestException("Provide a status or an assignee");
+    }
+    if (dto.status && !dto.resolution) {
+      throw new BadRequestException("A resolution is required to close a finding");
+    }
+    if (!dto.status && dto.resolution) {
+      throw new BadRequestException("A resolution is only accepted when closing a finding");
+    }
+
+    const existing = await this.discrepancies.findById(id);
+    if (!existing) {
+      throw new NotFoundException("Discrepancy not found");
+    }
+    if (existing.status !== "open") {
+      throw new ConflictException("Discrepancy is already closed");
+    }
+
+    let updated = existing;
+
+    if (changesAssignment) {
+      const assignee = dto.assignedToUserId ?? null;
+      if (assignee) {
+        const user = await this.users.findById(assignee);
+        if (!user) {
+          throw new NotFoundException("Assignee not found");
+        }
+        if (user.role !== "admin") {
+          throw new BadRequestException("Findings can only be assigned to an admin");
+        }
+      }
+      updated = (await this.discrepancies.assign(id, assignee, actorUserId)) ?? updated;
+    }
+
+    if (dto.status) {
+      const closed = await this.discrepancies.close(id, {
+        status: dto.status,
+        resolution: dto.resolution!,
+        resolvedByUserId: actorUserId,
+      });
+      if (!closed) {
+        throw new ConflictException("Discrepancy changed while it was being closed; retry");
+      }
+      updated = closed;
+    }
+
+    return updated;
   }
 }

@@ -136,6 +136,8 @@ export type BookingType = {
   publicReference: string;
   userId: string;
   hotelId: string;
+  offerId?: string;
+  inventorySource?: "managed" | "supplier";
   firstName: string;
   lastName: string;
   email: string;
@@ -160,6 +162,96 @@ export type BookingType = {
 
 export type HotelWithBookingsType = HotelType & {
   bookings: BookingType[];
+};
+
+export type BookingPaymentStatus = "pending" | "authorized" | "paid" | "failed" | "refunded";
+
+/** One append-only row from `booking_events`; a null `fromStatus` means the booking was created. */
+export type BookingEventType = {
+  id: string;
+  fromStatus: BookingStatus | null;
+  toStatus: BookingStatus;
+  actorUserId?: string;
+  reason?: string;
+  requestId?: string;
+  metadata: Record<string, unknown>;
+  createdAt: Date;
+};
+
+/** One ledger row: a charge, or a refund that points at its original charge. */
+export type BookingPaymentType = {
+  id: string;
+  kind: "charge" | "refund";
+  provider: string;
+  providerReference?: string;
+  status: BookingPaymentStatus;
+  amountMinor: number;
+  capturedAmountMinor?: number;
+  currencyCode: string;
+  originalPaymentId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Admin detail: the booking response plus its history, ledger and supplier references. */
+export type BookingDetailType = BookingType & {
+  version: number;
+  expiresAt?: Date;
+  supplierId?: string;
+  supplierReference?: string;
+  events: BookingEventType[];
+  payments: BookingPaymentType[];
+};
+
+export type BookingAction = "cancel" | "retry" | "mark_reviewed";
+
+export type AdminPermission =
+  | "booking.read"
+  | "booking.cancel"
+  | "booking.retry"
+  | "booking.mark_reviewed"
+  | "reconciliation.read"
+  | "reconciliation.manage";
+
+export type DiscrepancyKind =
+  | "payment_status_mismatch"
+  | "payment_amount_mismatch"
+  | "refund_mismatch"
+  | "local_without_provider"
+  | "provider_missing"
+  | "provider_without_local"
+  | "ledger_mismatch";
+
+export type DiscrepancyStatus = "open" | "resolved" | "ignored";
+
+export type ReconciliationDiscrepancyType = {
+  id: string;
+  dedupeKey: string;
+  kind: DiscrepancyKind;
+  status: DiscrepancyStatus;
+  provider: string;
+  bookingId?: string | null;
+  paymentId?: string | null;
+  providerReference?: string | null;
+  details: Record<string, unknown>;
+  assignedToUserId?: string | null;
+  assignedAt?: Date | null;
+  assignedByUserId?: string | null;
+  resolvedByUserId?: string | null;
+  resolution?: string | null;
+  detectedAt: Date;
+  resolvedAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+/** Query parameters accepted by `GET /api/v1/admin/bookings`. */
+export type BookingListFilters = {
+  status?: BookingStatus;
+  hotelId?: string;
+  q?: string;
+  limit?: number;
+  offset?: number;
 };
 
 /**

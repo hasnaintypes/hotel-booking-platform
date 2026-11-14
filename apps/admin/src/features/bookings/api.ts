@@ -3,16 +3,46 @@ import apiClient, {
   getErrorStatus,
   idempotencyHeaders,
 } from "@hotel-booking/api-client";
-import type { BookingType } from "@hotel-booking/types";
+import type { BookingDetailType, BookingListFilters, BookingType } from "@hotel-booking/types";
 
-export const fetchBookings = async (): Promise<BookingType[]> => {
-  const response = await apiClient.get("/api/v1/admin/bookings");
+const queryParams = (filters: BookingListFilters) =>
+  Object.fromEntries(
+    Object.entries(filters).filter(
+      ([, value]) => value !== undefined && value !== null && value !== "",
+    ),
+  );
+
+export const fetchBookings = async (filters: BookingListFilters = {}): Promise<BookingType[]> => {
+  const response = await apiClient.get("/api/v1/admin/bookings", {
+    params: queryParams(filters),
+  });
+  return response.data;
+};
+
+export const fetchBookingDetail = async (bookingId: string): Promise<BookingDetailType> => {
+  const response = await apiClient.get(`/api/v1/admin/bookings/${bookingId}`);
+  return response.data;
+};
+
+export const retryBooking = async (
+  bookingId: string,
+  reason: string,
+): Promise<BookingDetailType> => {
+  const response = await apiClient.post(`/api/v1/admin/bookings/${bookingId}/retry`, { reason });
+  return response.data;
+};
+
+export const markBookingReviewed = async (
+  bookingId: string,
+  reason: string,
+): Promise<BookingDetailType> => {
+  const response = await apiClient.post(`/api/v1/admin/bookings/${bookingId}/review`, { reason });
   return response.data;
 };
 
 export const cancelBooking = async (
   bookingId: string,
-  cancellationReason?: string,
+  reason: string,
 ): Promise<{
   booking: BookingType;
   refundAmount: number;
@@ -22,7 +52,7 @@ export const cancelBooking = async (
   try {
     const response = await apiClient.post(
       `/api/v1/admin/bookings/${bookingId}/cancel`,
-      { cancellationReason },
+      { reason },
       { headers: idempotencyHeaders(session) },
     );
     clearIdempotencyKey(session);

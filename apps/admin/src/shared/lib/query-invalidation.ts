@@ -10,6 +10,9 @@ export const invalidateAdminCatalogs = (queryClient: QueryClient) =>
 export const invalidateAdminBookings = (queryClient: QueryClient) =>
   invalidateKeys(queryClient, [adminKeys.bookings, adminKeys.insights, adminKeys.rollups]);
 
+export const invalidateAdminReconciliation = (queryClient: QueryClient) =>
+  invalidateKeys(queryClient, [adminKeys.reconciliation]);
+
 export const invalidateAdminReviews = (queryClient: QueryClient) =>
   invalidateKeys(queryClient, [adminKeys.reviews, adminKeys.insights]);
 

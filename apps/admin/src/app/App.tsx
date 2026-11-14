@@ -10,6 +10,8 @@ const HotelsPage = lazy(() => import("@/features/hotels/pages/HotelsPage"));
 const UsersPage = lazy(() => import("@/features/users/pages/UsersPage"));
 const ReviewsPage = lazy(() => import("@/features/reviews/pages/ReviewsPage"));
 const BookingsPage = lazy(() => import("@/features/bookings/pages/BookingsPage"));
+const BookingDetailPage = lazy(() => import("@/features/bookings/pages/BookingDetailPage"));
+const ReconciliationPage = lazy(() => import("@/features/reconciliation/pages/ReconciliationPage"));
 const ActivityPage = lazy(() => import("@/features/activity/pages/ActivityPage"));
 
 const App = () => (
@@ -35,6 +37,8 @@ const App = () => (
           <Route path="/users" element={<UsersPage />} />
           <Route path="/reviews" element={<ReviewsPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="/bookings/:id" element={<BookingDetailPage />} />
+          <Route path="/reconciliation" element={<ReconciliationPage />} />
           <Route path="/activity" element={<ActivityPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -4,6 +4,7 @@ export const adminKeys = {
   hotels: ["admin", "hotels"] as const,
   reviews: ["admin", "reviews"] as const,
   bookings: ["admin", "bookings"] as const,
+  reconciliation: ["admin", "reconciliation"] as const,
   insights: ["admin", "insights"] as const,
   rollups: ["admin", "rollups"] as const,
 };

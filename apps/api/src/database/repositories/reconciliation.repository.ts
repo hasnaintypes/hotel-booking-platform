@@ -9,14 +9,29 @@ import {
 } from "@hotel-booking/db";
 import { DATABASE } from "../postgres.database";
 
-export type DiscrepancyKind =
-  | "payment_status_mismatch"
-  | "payment_amount_mismatch"
-  | "refund_mismatch"
-  | "local_without_provider"
-  | "provider_missing"
-  | "provider_without_local"
-  | "ledger_mismatch";
+export const DISCREPANCY_KINDS = [
+  "payment_status_mismatch",
+  "payment_amount_mismatch",
+  "refund_mismatch",
+  "local_without_provider",
+  "provider_missing",
+  "provider_without_local",
+  "ledger_mismatch",
+] as const;
+
+export type DiscrepancyKind = (typeof DISCREPANCY_KINDS)[number];
+
+export const DISCREPANCY_STATUSES = ["open", "resolved", "ignored"] as const;
+
+export type DiscrepancyStatus = (typeof DISCREPANCY_STATUSES)[number];
+
+export type DiscrepancyListFilters = {
+  status?: DiscrepancyStatus;
+  kind?: DiscrepancyKind;
+  assignedToUserId?: string;
+  limit?: number;
+  offset?: number;
+};
 
 export type NewDiscrepancyInput = {
   dedupeKey: string;
@@ -91,11 +106,89 @@ export class ReconciliationRepository {
   }
 
   async resolve(id: string, resolution: string): Promise<ReconciliationDiscrepancy | undefined> {
+    return this.close(id, { status: "resolved", resolution });
+  }
+
+  /**
+   * Lists findings for the admin queue. Open findings sort oldest first so the longest-waiting
+   * discrepancy is triaged first; closed history sorts newest first.
+   */
+  async listForAdmin(filters: DiscrepancyListFilters = {}): Promise<ReconciliationDiscrepancy[]> {
+    const conditions = [];
+    if (filters.status) {
+      conditions.push(eq(reconciliationDiscrepancies.status, filters.status));
+    }
+    if (filters.kind) {
+      conditions.push(eq(reconciliationDiscrepancies.kind, filters.kind));
+    }
+    if (filters.assignedToUserId) {
+      conditions.push(eq(reconciliationDiscrepancies.assignedToUserId, filters.assignedToUserId));
+    }
+
+    const limit = Math.min(Math.max(filters.limit ?? 200, 1), 500);
+    const offset = Math.max(filters.offset ?? 0, 0);
+    const oldestFirst = !filters.status || filters.status === "open";
+
+    return this.db
+      .select()
+      .from(reconciliationDiscrepancies)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(
+        oldestFirst
+          ? asc(reconciliationDiscrepancies.detectedAt)
+          : desc(reconciliationDiscrepancies.detectedAt),
+        oldestFirst ? asc(reconciliationDiscrepancies.id) : desc(reconciliationDiscrepancies.id),
+      )
+      .limit(limit)
+      .offset(offset);
+  }
+
+  /** Loads one finding; the admin API uses it to reject updates to an already-closed row. */
+  async findById(id: string): Promise<ReconciliationDiscrepancy | undefined> {
+    const [row] = await this.db
+      .select()
+      .from(reconciliationDiscrepancies)
+      .where(eq(reconciliationDiscrepancies.id, id))
+      .limit(1);
+    return row;
+  }
+
+  /** Assigns an open finding to an operator, or clears the assignment when given `null`. */
+  async assign(
+    id: string,
+    assignedToUserId: string | null,
+    assignedByUserId: string,
+  ): Promise<ReconciliationDiscrepancy | undefined> {
     const [row] = await this.db
       .update(reconciliationDiscrepancies)
       .set({
-        status: "resolved",
-        resolution,
+        assignedToUserId,
+        assignedAt: assignedToUserId ? new Date() : null,
+        assignedByUserId: assignedToUserId ? assignedByUserId : null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(eq(reconciliationDiscrepancies.id, id), eq(reconciliationDiscrepancies.status, "open")),
+      )
+      .returning();
+    return row;
+  }
+
+  /** Closes an open finding as resolved or ignored, recording who did it and why. */
+  async close(
+    id: string,
+    input: {
+      status: "resolved" | "ignored";
+      resolution: string;
+      resolvedByUserId?: string;
+    },
+  ): Promise<ReconciliationDiscrepancy | undefined> {
+    const [row] = await this.db
+      .update(reconciliationDiscrepancies)
+      .set({
+        status: input.status,
+        resolution: input.resolution,
+        resolvedByUserId: input.resolvedByUserId ?? null,
         resolvedAt: new Date(),
         updatedAt: new Date(),
       })
