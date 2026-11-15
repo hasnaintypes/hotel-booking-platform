@@ -9,6 +9,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { randomUUID } from "node:crypto";
 import type Stripe from "stripe";
+import { UniqueViolationError } from "../../common/errors/postgres-errors";
 import {
   PaymentsRepository,
   type BookingRecord,
@@ -94,20 +95,30 @@ export class PaymentsService {
     }
 
     let payment = await this.payments.findCharge(bookingId);
-    if (payment?.providerPaymentId) {
-      return { payment, clientSecret: null };
-    }
-
     const idempotencyKey = `pi_${booking.id}`;
     if (!payment) {
-      payment = await this.payments.insertAttempt({
-        bookingId: booking.id,
-        provider: "stripe",
-        idempotencyKey,
-        amountMinor,
-        currencyCode: currency,
-        captureMethod: booking.inventorySource === "managed" ? "automatic" : "manual",
-      });
+      try {
+        payment = await this.payments.insertAttempt({
+          bookingId: booking.id,
+          provider: "stripe",
+          idempotencyKey,
+          amountMinor,
+          currencyCode: currency,
+          captureMethod: booking.inventorySource === "managed" ? "automatic" : "manual",
+        });
+      } catch (error) {
+        // Two requests for the same booking can insert the attempt at the same moment; the unique
+        // idempotency key (and one active payment per booking) keeps a single row. The loser reuses
+        // that row instead of failing a request that is asking for the same PaymentIntent.
+        if (!(error instanceof UniqueViolationError)) throw error;
+        const existing = await this.payments.findByIdempotencyKey(idempotencyKey);
+        if (!existing) throw error;
+        payment = existing;
+      }
+    }
+
+    if (payment.providerPaymentId) {
+      return { payment, clientSecret: null };
     }
 
     const token = randomUUID();
