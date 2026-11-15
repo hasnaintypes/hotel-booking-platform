@@ -12,7 +12,8 @@ import { CloudinaryService } from "../../src/integrations/cloudinary/cloudinary.
 import { StripeService } from "../../src/integrations/stripe/stripe.service";
 import { CLOCK, SystemClock, type Clock } from "../../src/common/clock";
 import { LOG_DESTINATION } from "../../src/common/logging/logging.module";
-import { createFakeCloudinary, createFakeStripe } from "./fakes";
+import { createFakeCloudinary } from "./fakes";
+import { createFakeStripe, type FakeStripeProvider } from "./fake-stripe";
 import { FaultController } from "./fault.controller";
 import { LogSink } from "./log-sink";
 
@@ -32,6 +33,16 @@ export type CreateTestAppOptions = {
   docs?: boolean;
   /** Freezes the background-job clock so TTLs and staleness thresholds run without sleeping. */
   clock?: Clock;
+  /**
+   * Reuses a provider account, so a second application sees the effects of the first one's calls.
+   * Required by tests that restart the process.
+   */
+  stripeProvider?: FakeStripeProvider;
+  /**
+   * Truncates the fixture tables on boot. Defaults to true for a test file's first application;
+   * a restart passes false so the crashed process's rows are still there.
+   */
+  resetDatabase?: boolean;
 };
 
 /**
@@ -39,7 +50,7 @@ export type CreateTestAppOptions = {
  * (`configureApp`) and external services replaced by fakes.
  */
 export async function createTestApp(options: CreateTestAppOptions = {}): Promise<TestApp> {
-  const stripe = createFakeStripe();
+  const stripe = createFakeStripe(options.stripeProvider);
   const cloudinary = createFakeCloudinary();
 
   const logs = new LogSink();
@@ -64,14 +75,16 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
   if (options.docs) setupSwagger(app, app.get(ConfigService));
   await app.init();
 
-  // Each test file starts from a clean PostgreSQL identity state. Files run in sequence.
-  // Truncating users cascades into booking tables, whose append-only trigger is not wanted here.
-  await app.get<Database>(DATABASE).transaction(async (tx) => {
-    await tx.execute(sql`set local session_replication_role = replica`);
-    await tx.execute(sql`truncate table "users" cascade`);
-    await tx.execute(sql`truncate table "analytics_snapshots"`);
-    await tx.execute(sql`truncate table "idempotency_keys"`);
-  });
+  if (options.resetDatabase !== false) {
+    // Each test file starts from a clean PostgreSQL identity state. Files run in sequence.
+    // Truncating users cascades into booking tables, whose append-only trigger is not wanted here.
+    await app.get<Database>(DATABASE).transaction(async (tx) => {
+      await tx.execute(sql`set local session_replication_role = replica`);
+      await tx.execute(sql`truncate table "users" cascade`);
+      await tx.execute(sql`truncate table "analytics_snapshots"`);
+      await tx.execute(sql`truncate table "idempotency_keys"`);
+    });
+  }
 
   return {
     app,

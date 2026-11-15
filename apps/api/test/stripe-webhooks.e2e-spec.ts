@@ -1,4 +1,3 @@
-import { createHmac, randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import {
   bookingEvents,
@@ -13,41 +12,14 @@ import { DATABASE } from "../src/database/postgres.database";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous, insertBooking, insertHotel, registerUser } from "./support/helpers";
 import { routes } from "./support/routes";
-
-const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET as string;
+import {
+  deliverStripeWebhook,
+  stripeEvent as event,
+  stripePaymentIntent as paymentIntent,
+  stripeSignature as signatureFor,
+} from "./support/webhooks";
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
-
-function event(type: string, object: Record<string, unknown>, id = `evt_${randomUUID()}`) {
-  return {
-    id,
-    object: "event",
-    api_version: "2025-01-01",
-    created: nowSeconds(),
-    livemode: false,
-    pending_webhooks: 1,
-    request: { id: null, idempotency_key: null },
-    type,
-    data: { object },
-  };
-}
-
-function signatureFor(payload: string, timestamp = nowSeconds(), secret = WEBHOOK_SECRET) {
-  const digest = createHmac("sha256", secret).update(`${timestamp}.${payload}`).digest("hex");
-  return `t=${timestamp},v1=${digest}`;
-}
-
-const paymentIntent = (id: string, overrides: Record<string, unknown> = {}) => ({
-  id,
-  object: "payment_intent",
-  amount: 10_000,
-  amount_received: 0,
-  amount_capturable: 0,
-  currency: "gbp",
-  status: "requires_payment_method",
-  metadata: {},
-  ...overrides,
-});
 
 describe("stripe webhooks", () => {
   let t: TestApp;
@@ -141,14 +113,8 @@ describe("stripe webhooks", () => {
     return rows.map((row) => row.to);
   };
 
-  const deliver = (payloadEvent: ReturnType<typeof event>, header?: string) => {
-    const payload = JSON.stringify(payloadEvent);
-    return anonymous(t)
-      .post(routes.webhooks.stripe)
-      .set("Content-Type", "application/json")
-      .set("stripe-signature", header ?? signatureFor(payload))
-      .send(payload);
-  };
+  const deliver = (payloadEvent: ReturnType<typeof event>, header?: string) =>
+    deliverStripeWebhook(t, payloadEvent, header);
 
   it("applies a signed payment_intent.succeeded once and confirms the booking", async () => {
     const bookingId = await pendingBooking("pi_wh_success");
