@@ -501,6 +501,41 @@ export class BookingsService {
     return { amountMinor: quote.refundMinor };
   }
 
+  /** Refund minor units a concurrent request already settled on this booking. */
+  private async settledRefundMinor(bookingId: string): Promise<number> {
+    const record = await this.bookings.findById(bookingId);
+    if (!record) return 0;
+    return record.payments
+      .filter((payment) => payment.originalPaymentId !== null && payment.status === "refunded")
+      .reduce((total, payment) => total + payment.amountMinor, 0);
+  }
+
+  /**
+   * Completes a cancellation whose refund another request settled while this one was working. A
+   * conflict means the winner finished first, which is the outcome this request wanted anyway.
+   */
+  private async finishConcurrentCancellation(
+    bookingId: string,
+    userId: string,
+    cancellationReason: string,
+    requestId?: string,
+  ): Promise<void> {
+    const record = await this.bookings.findById(bookingId);
+    if (!record || record.booking.status !== "cancelling") return;
+    try {
+      await this.transitionBooking(
+        bookingId,
+        "cancelling",
+        "cancelled",
+        userId,
+        cancellationReason,
+        requestId,
+      );
+    } catch (error) {
+      if (!(error instanceof ConflictException)) throw error;
+    }
+  }
+
   private async settleCancellation(
     id: string,
     userId: string,
@@ -514,6 +549,15 @@ export class BookingsService {
       try {
         refundMinor = (await this.payments.refundBooking(id, plan.amountMinor)).amountMinor;
       } catch (error) {
+        // Two cancellations of the same booking can race for the same refund. The loser must not
+        // park a booking the winner is cancelling: re-read and report what actually happened.
+        const settled = await this.settledRefundMinor(id);
+        if (settled > 0) {
+          await this.finishConcurrentCancellation(id, userId, cancellationReason, requestId);
+          return { result: { refundMinor: settled } };
+        }
+        if (error instanceof ConflictException) throw error;
+
         const message = error instanceof Error ? error.message : "Stripe refund failed";
         this.logger.error(
           `Refund failed for cancelling booking ${id}`,
