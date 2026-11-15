@@ -16,6 +16,7 @@
     "clean": "rm -rf dist",
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
+    "test:resilience": "vitest run test/m2-acceptance.e2e-spec.ts",
     "test:watch": "vitest"
   },
   "dependencies": {
