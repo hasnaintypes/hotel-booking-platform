@@ -7,9 +7,9 @@ import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import {
   HotelSearchQueryDto,
-  HotelSearchResponseDto,
   PublicHotelDto,
-  PublicHotelListDto,
+  PublicHotelListQueryDto,
+  PublicHotelPageDto,
 } from "./dto/hotel.dto";
 import { HotelsService } from "./hotels.service";
 
@@ -19,7 +19,7 @@ export class HotelsController {
 
   @Get("search")
   @ZodResponse({
-    type: HotelSearchResponseDto,
+    type: PublicHotelPageDto,
     status: 200,
     description: "Active hotels matching the filters",
   })
@@ -28,9 +28,13 @@ export class HotelsController {
   }
 
   @Get()
-  @ZodResponse({ type: PublicHotelListDto, status: 200, description: "Every active hotel" })
-  findAll() {
-    return this.hotelsService.findAll();
+  @ZodResponse({
+    type: PublicHotelPageDto,
+    status: 200,
+    description: "One page of active hotels, newest first",
+  })
+  findAll(@Query() query: PublicHotelListQueryDto) {
+    return this.hotelsService.findAll(query);
   }
 
   @Get(":id")

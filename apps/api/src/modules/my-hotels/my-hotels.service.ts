@@ -1,5 +1,8 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
+import type { CursorPage } from "@hotel-booking/contracts";
 import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
+import { anchorOf, pageOf, pageSize } from "../../common/pagination/cursor-page";
+import { readTimestampCursor } from "../../common/pagination/sorted-cursor";
 import {
   assertValidImages,
   HOTEL_MAX_IMAGES,
@@ -10,9 +13,12 @@ import {
   type HotelWriteInput,
 } from "../../database/repositories/hotels.repository";
 import { CloudinaryService } from "../../integrations/cloudinary/cloudinary.service";
-import { toManageHotelResponse } from "../hotels/hotel-response";
+import { toManageHotelResponse, type ManageHotelListItem } from "../hotels/hotel-response";
 import { HotelStatsService } from "../hotels/hotel-stats.service";
+import type { MyHotelListQueryDto } from "../hotels/dto/hotel.dto";
 import { HotelFormDto } from "./dto/hotel-form.dto";
+
+const OWNER_LIST_SCOPE = "hotels:owner";
 
 const asFileList = (files: unknown): Express.Multer.File[] =>
   Array.isArray(files) ? (files as Express.Multer.File[]) : [];
@@ -75,22 +81,34 @@ export class MyHotelsService {
     return toManageHotelResponse(hotel);
   }
 
-  async findAll(userId: string) {
-    const hotels = await this.hotels.findByOwner(userId);
-    if (hotels.length === 0) return [];
+  async findAll(
+    userId: string,
+    query: MyHotelListQueryDto,
+  ): Promise<CursorPage<ManageHotelListItem>> {
+    const limit = pageSize(query);
+    const rows = await this.hotels.findByOwnerPage(userId, {
+      limit,
+      cursor: readTimestampCursor(query.cursor, OWNER_LIST_SCOPE),
+    });
 
-    const ids = hotels.map((hotel) => hotel.id);
+    const page = pageOf(rows, limit, OWNER_LIST_SCOPE, anchorOf);
+    if (page.data.length === 0) return { data: [], pageInfo: page.pageInfo };
+
+    const ids = page.data.map((hotel) => hotel.id);
     const [stats, counts] = await Promise.all([
       this.hotelStats.forHotels(ids),
       this.hotelStats.ownerBookingCounts(ids),
     ]);
 
-    return hotels.map((hotel) => ({
-      ...toManageHotelResponse(hotel, stats.get(hotel.id)),
-      upcomingBookings: counts.get(hotel.id)?.upcomingBookings ?? 0,
-      completedBookings: counts.get(hotel.id)?.completedBookings ?? 0,
-      cancelledBookings: counts.get(hotel.id)?.cancelledBookings ?? 0,
-    }));
+    return {
+      data: page.data.map((hotel) => ({
+        ...toManageHotelResponse(hotel, stats.get(hotel.id)),
+        upcomingBookings: counts.get(hotel.id)?.upcomingBookings ?? 0,
+        completedBookings: counts.get(hotel.id)?.completedBookings ?? 0,
+        cancelledBookings: counts.get(hotel.id)?.cancelledBookings ?? 0,
+      })),
+      pageInfo: page.pageInfo,
+    };
   }
 
   async findOne(id: string, userId: string) {

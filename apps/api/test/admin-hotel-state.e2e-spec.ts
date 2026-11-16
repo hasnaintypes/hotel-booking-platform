@@ -71,7 +71,9 @@ describe("admin role and hotel state changes", () => {
       expect(res.body.isActive).toBe(false);
 
       const guestView = await anonymous(t).get(routes.hotels.list);
-      expect(guestView.body.map((h: { name: string }) => h.name)).not.toContain("Togglable Inn");
+      expect(guestView.body.data.map((h: { name: string }) => h.name)).not.toContain(
+        "Togglable Inn",
+      );
 
       await admin.agent.patch(routes.hotels.active(hotel.id)).send({ isActive: true });
     });

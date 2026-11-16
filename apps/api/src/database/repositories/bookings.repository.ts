@@ -25,6 +25,7 @@ import {
   type Transaction,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
+import { afterDesc, timestampCursorKey } from "../../common/pagination/cursor-sql";
 import { withRequestTransaction, runInRequestTransaction } from "../request-transaction";
 import { isUuid } from "../../common/utils/uuid";
 import {
@@ -49,8 +50,18 @@ export type BookingListFilters = {
   hotelId?: string;
   /** Matches guest name, email or the public reference. */
   query?: string;
-  limit?: number;
-  offset?: number;
+};
+
+/** A page request: how many rows, and where the previous page stopped. */
+export type BookingPageParams = {
+  limit: number;
+  cursor?: { key: string; id: string };
+};
+
+/** A page row: the booking with its exact sort key, plus its payments. */
+export type CursorBooking = {
+  booking: Booking & { cursorKey: string };
+  payments: Payment[];
 };
 
 export type BookingNoteInput = {
@@ -107,9 +118,6 @@ export type OwnerBookingCounts = {
   cancelledBookings: number;
 };
 
-/** Default bound for list endpoints; callers cannot load an unbounded table scan. */
-export const BOOKING_LIST_LIMIT = 200;
-
 /**
  * Booking aggregate storage. Every write that changes state also records an append-only
  * booking event, and payment state lives in `payments` rather than on the booking row.
@@ -126,29 +134,32 @@ export class BookingsRepository {
     return record;
   }
 
-  async listByOwner(
-    ownerUserId: string,
-    limit = BOOKING_LIST_LIMIT,
-  ): Promise<BookingWithPayments[]> {
+  async listByOwnerPage(ownerUserId: string, params: BookingPageParams): Promise<CursorBooking[]> {
     if (!isUuid(ownerUserId)) return [];
     const rows = await this.db
-      .select()
+      .select({ booking: bookings, cursorKey: timestampCursorKey(bookings.createdAt) })
       .from(bookings)
-      .where(eq(bookings.ownerUserId, ownerUserId))
+      .where(
+        and(
+          eq(bookings.ownerUserId, ownerUserId),
+          params.cursor
+            ? afterDesc(bookings.createdAt, bookings.id, params.cursor, "timestamptz")
+            : undefined,
+        ),
+      )
       .orderBy(desc(bookings.createdAt), desc(bookings.id))
-      .limit(Math.min(limit, BOOKING_LIST_LIMIT));
-    return this.withPayments(rows);
-  }
-
-  async listAll(limit = BOOKING_LIST_LIMIT): Promise<BookingWithPayments[]> {
-    return this.searchAll({ limit });
+      .limit(params.limit + 1);
+    return this.withPayments(rows.map(({ booking, cursorKey }) => ({ ...booking, cursorKey })));
   }
 
   /**
-   * Admin queue query. Filters are applied in SQL and the result is bounded, so a "needs review"
-   * view cannot turn into a full-table read.
+   * Admin queue query. Filters and the keyset predicate are applied in SQL and the page is bound by
+   * the caller's limit, so a "needs review" view cannot turn into a full-table read.
    */
-  async searchAll(filters: BookingListFilters = {}): Promise<BookingWithPayments[]> {
+  async searchAllPage(
+    filters: BookingListFilters,
+    params: BookingPageParams,
+  ): Promise<CursorBooking[]> {
     const conditions = [];
     if (filters.status) {
       conditions.push(eq(bookings.status, filters.status));
@@ -170,17 +181,17 @@ export class BookingsRepository {
       );
     }
 
-    const limit = Math.min(Math.max(filters.limit ?? BOOKING_LIST_LIMIT, 1), BOOKING_LIST_LIMIT);
-    const offset = Math.max(filters.offset ?? 0, 0);
+    if (params.cursor) {
+      conditions.push(afterDesc(bookings.createdAt, bookings.id, params.cursor, "timestamptz"));
+    }
 
     const rows = await this.db
-      .select()
+      .select({ booking: bookings, cursorKey: timestampCursorKey(bookings.createdAt) })
       .from(bookings)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(bookings.createdAt), desc(bookings.id))
-      .limit(limit)
-      .offset(offset);
-    return this.withPayments(rows);
+      .limit(params.limit + 1);
+    return this.withPayments(rows.map(({ booking, cursorKey }) => ({ ...booking, cursorKey })));
   }
 
   /** Full booking history, oldest first, for the admin detail timeline. */
@@ -227,15 +238,22 @@ export class BookingsRepository {
     });
   }
 
-  async listByHotel(hotelId: string, limit = BOOKING_LIST_LIMIT): Promise<BookingWithPayments[]> {
+  async listByHotelPage(hotelId: string, params: BookingPageParams): Promise<CursorBooking[]> {
     if (!isUuid(hotelId)) return [];
     const rows = await this.db
-      .select()
+      .select({ booking: bookings, cursorKey: timestampCursorKey(bookings.createdAt) })
       .from(bookings)
-      .where(eq(bookings.hotelId, hotelId))
+      .where(
+        and(
+          eq(bookings.hotelId, hotelId),
+          params.cursor
+            ? afterDesc(bookings.createdAt, bookings.id, params.cursor, "timestamptz")
+            : undefined,
+        ),
+      )
       .orderBy(desc(bookings.createdAt), desc(bookings.id))
-      .limit(Math.min(limit, BOOKING_LIST_LIMIT));
-    return this.withPayments(rows);
+      .limit(params.limit + 1);
+    return this.withPayments(rows.map(({ booking, cursorKey }) => ({ ...booking, cursorKey })));
   }
 
   /**
@@ -557,7 +575,9 @@ export class BookingsRepository {
       .limit(Math.min(Math.max(limit, 1), 500));
   }
 
-  private async withPayments(rows: Booking[]): Promise<BookingWithPayments[]> {
+  private async withPayments<T extends Booking>(
+    rows: T[],
+  ): Promise<Array<{ booking: T; payments: Payment[] }>> {
     if (rows.length === 0) return [];
     const ids = rows.map((row) => row.id);
     const paymentRows = await this.db

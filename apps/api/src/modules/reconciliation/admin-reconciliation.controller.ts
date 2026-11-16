@@ -28,13 +28,7 @@ export class AdminReconciliationController {
   @Get("discrepancies")
   @RequirePermissions("reconciliation.read")
   list(@Query() query: ListDiscrepanciesQueryDto) {
-    return this.reconciliationService.listDiscrepancies({
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.kind ? { kind: query.kind } : {}),
-      ...(query.assignedToUserId ? { assignedToUserId: query.assignedToUserId } : {}),
-      ...(query.limit ? { limit: query.limit } : {}),
-      ...(query.offset ? { offset: query.offset } : {}),
-    });
+    return this.reconciliationService.listDiscrepancies(query);
   }
 
   @Patch("discrepancies/:id")

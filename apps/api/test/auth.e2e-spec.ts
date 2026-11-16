@@ -144,6 +144,6 @@ describe("auth and sessions", () => {
     await promoteToAdmin(t, user._id);
     const allowed = await agent.get(routes.users.list);
     expect(allowed.status).toBe(200);
-    expect(Array.isArray(allowed.body)).toBe(true);
+    expect(Array.isArray(allowed.body.data)).toBe(true);
   });
 });

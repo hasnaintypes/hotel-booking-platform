@@ -56,7 +56,7 @@ describe("hotel search at scale", () => {
       select "id" from "hotels"
       where lower("city") like ${"%zanzibar%"} escape '\\'
         or lower("country") like ${"%zanzibar%"} escape '\\'
-      order by "updated_at" desc, "id" asc
+      order by "updated_at" desc, "id" desc
       limit 5
     `);
 
@@ -66,11 +66,12 @@ describe("hotel search at scale", () => {
 
   it("returns one page from 10k hotels without loading the table", async () => {
     const started = Date.now();
-    const result = await repo.search({ destination: "Zanzibar" });
+    const rows = await repo.searchPage({ destination: "Zanzibar" }, { limit: 5 });
     const elapsed = Date.now() - started;
 
-    expect(result.data).toHaveLength(5);
-    expect(result.pagination).toEqual({ total: 10, page: 1, pages: 2 });
+    // The repository fetches one probe row so the service can tell whether a next page exists.
+    expect(rows).toHaveLength(6);
+    expect(rows.every((row) => row.city.startsWith("Zanzibar"))).toBe(true);
     expect(elapsed).toBeLessThan(2000);
   });
 });

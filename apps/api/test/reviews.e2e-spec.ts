@@ -157,14 +157,15 @@ describe("reviews", () => {
     it("lists the hotel's reviews", async () => {
       const res = await anonymous(t).get(routes.reviews.byHotel(hotelId));
       expect(res.status).toBe(200);
-      expect(res.body.map((review: { _id: string }) => review._id)).toContain(reviewId);
-      for (const review of res.body) expect(review.hotelId).toBe(hotelId);
+      expect(res.body.data.map((review: { _id: string }) => review._id)).toContain(reviewId);
+      for (const review of res.body.data) expect(review.hotelId).toBe(hotelId);
+      expect(res.body.pageInfo).toEqual({ hasMore: false, nextCursor: null });
     });
 
     it("returns an empty list for a hotel with no reviews", async () => {
       const res = await anonymous(t).get(routes.reviews.byHotel(otherHotelId));
       expect(res.status).toBe(200);
-      expect(res.body).toEqual([]);
+      expect(res.body).toEqual({ data: [], pageInfo: { hasMore: false, nextCursor: null } });
     });
   });
 
@@ -186,11 +187,13 @@ describe("reviews", () => {
     it("lists reviews for an admin and honours the limit", async () => {
       const all = await admin.agent.get(routes.reviews.list);
       expect(all.status).toBe(200);
-      expect(all.body.length).toBeGreaterThanOrEqual(2);
+      expect(all.body.data.length).toBeGreaterThanOrEqual(2);
 
       const limited = await admin.agent.get(`${routes.reviews.list}?limit=1`);
       expect(limited.status).toBe(200);
-      expect(limited.body).toHaveLength(1);
+      expect(limited.body.data).toHaveLength(1);
+      expect(limited.body.pageInfo.hasMore).toBe(true);
+      expect(typeof limited.body.pageInfo.nextCursor).toBe("string");
     });
 
     it("is closed to normal users and anonymous callers", async () => {

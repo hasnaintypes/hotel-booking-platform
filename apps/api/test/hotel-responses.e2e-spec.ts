@@ -77,7 +77,7 @@ describe("hotel response allow-lists", () => {
   it("returns only public fields from the catalogue list", async () => {
     const res = await anonymous(t).get(routes.hotels.list);
     expect(res.status).toBe(200);
-    const listed = res.body.find((item: { _id: string }) => item._id === hotel.id);
+    const listed = res.body.data.find((item: { _id: string }) => item._id === hotel.id);
     expect(listed).toBeDefined();
     expectAllowList(listed, PUBLIC_HOTEL_KEYS);
     expect(listed).not.toHaveProperty("userId");
@@ -104,18 +104,14 @@ describe("hotel response allow-lists", () => {
     expect(res.body).not.toHaveProperty("totalBookings");
   });
 
-  it("returns only public hotel fields embedded in a customer booking", async () => {
+  it("returns a flat booking page instead of embedding hotel fields", async () => {
     const res = await guest.agent.get(routes.bookings.myBookings);
     expect(res.status).toBe(200);
-    const entry = res.body.find((item: { _id: string }) => item._id === hotel.id);
+    const entry = res.body.data.find((item: { hotelId: string }) => item.hotelId === hotel.id);
     expect(entry).toBeDefined();
-
-    const { bookings, ...embeddedHotel } = entry;
-    expect(bookings).toHaveLength(1);
-    expectAllowList(embeddedHotel, PUBLIC_HOTEL_KEYS);
-    expect(embeddedHotel).not.toHaveProperty("userId");
-    expect(embeddedHotel).not.toHaveProperty("totalRevenue");
-    expect(embeddedHotel).not.toHaveProperty("totalBookings");
+    expect(entry).not.toHaveProperty("bookings");
+    expect(entry).not.toHaveProperty("name");
+    expect(res.body.pageInfo).toEqual({ hasMore: false, nextCursor: null });
   });
 
   it("keeps owner counters and listing state on the manage response", async () => {

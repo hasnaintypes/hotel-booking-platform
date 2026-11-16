@@ -131,10 +131,11 @@ export const bookings = pgTable(
     uniqueIndex("bookings_organisation_idempotency_unique")
       .on(table.organisationId, table.idempotencyKey)
       .where(sql`${table.idempotencyKey} is not null and ${table.organisationId} is not null`),
-    index("bookings_owner_created_at_idx").on(table.ownerUserId, table.createdAt),
-    index("bookings_created_at_idx").on(table.createdAt),
+    index("bookings_owner_created_at_id_idx").on(table.ownerUserId, table.createdAt, table.id),
+    index("bookings_created_at_id_idx").on(table.createdAt, table.id),
     index("bookings_hotel_check_in_idx").on(table.hotelId, table.checkIn),
-    index("bookings_status_created_at_idx").on(table.status, table.createdAt),
+    index("bookings_hotel_created_at_id_idx").on(table.hotelId, table.createdAt, table.id),
+    index("bookings_status_created_at_id_idx").on(table.status, table.createdAt, table.id),
     index("bookings_status_expires_at_idx").on(table.status, table.expiresAt),
     index("bookings_organisation_created_at_idx").on(table.organisationId, table.createdAt),
     index("bookings_created_by_idx").on(table.createdByUserId),

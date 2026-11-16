@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { paginationSchema, uuidSchema, isoDateTimeSchema } from "./primitives";
+import { uuidSchema, isoDateTimeSchema } from "./primitives";
+import { cursorPageQuerySchema, cursorPageSchema } from "./pagination";
 import {
   optionalQueryEnum,
   optionalQueryInt,
@@ -14,8 +15,6 @@ export const HOTEL_SEARCH_SORT_OPTIONS = [
   "pricePerNightAsc",
   "pricePerNightDesc",
 ] as const;
-
-export const MAX_SEARCH_PAGE = 1000;
 
 const addressSchema = z.object({
   street: z.string(),
@@ -70,7 +69,7 @@ export const publicHotelSchema = z.object({
 });
 
 /** `GET /api/v1/hotels/search` query parameters. */
-export const hotelSearchQuerySchema = z.object({
+export const hotelSearchQuerySchema = cursorPageQuerySchema.extend({
   destination: optionalQueryString(100),
   adultCount: optionalQueryInt(0, 50),
   childCount: optionalQueryInt(0, 50),
@@ -79,13 +78,12 @@ export const hotelSearchQuerySchema = z.object({
   stars: optionalQueryIntList(5, 1, 5),
   maxPrice: optionalQueryInt(0, 1_000_000),
   sortOption: optionalQueryEnum(HOTEL_SEARCH_SORT_OPTIONS),
-  page: optionalQueryInt(1, MAX_SEARCH_PAGE),
 });
 
-export const hotelSearchResponseSchema = z.object({
-  data: z.array(publicHotelSchema),
-  pagination: paginationSchema,
-});
+/** A cursor page of public hotels, shared by the catalogue and search responses. */
+export const publicHotelPageSchema = cursorPageSchema(publicHotelSchema);
+
+export const hotelSearchResponseSchema = publicHotelPageSchema;
 
 export type HotelLocation = z.infer<typeof hotelLocationSchema>;
 export type HotelContact = z.infer<typeof hotelContactSchema>;

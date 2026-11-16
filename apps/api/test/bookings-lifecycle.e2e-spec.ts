@@ -51,11 +51,12 @@ describe("bookings", () => {
   });
 
   describe("GET /api/bookings (admin list)", () => {
-    it("returns every booking with the hotel summary", async () => {
+    it("returns every booking as a cursor page", async () => {
       const res = await admin.agent.get(routes.bookings.list);
       expect(res.status).toBe(200);
-      expect(res.body).toHaveLength(1);
-      expect(res.body[0]).toMatchObject({
+      expect(res.body.data).toHaveLength(1);
+      expect(res.body.pageInfo).toEqual({ hasMore: false, nextCursor: null });
+      expect(res.body.data[0]).toMatchObject({
         _id: bookingId,
         status: "confirmed",
         allowedTransitions: expect.arrayContaining(["cancelling", "cancelled", "needs_review"]),
@@ -102,8 +103,8 @@ describe("bookings", () => {
     it("lists the hotel's bookings for its owner and for admins", async () => {
       const asOwner = await owner.agent.get(routes.bookings.forHotel(hotelId));
       expect(asOwner.status).toBe(200);
-      expect(asOwner.body).toHaveLength(1);
-      expect(asOwner.body[0]).toMatchObject({
+      expect(asOwner.body.data).toHaveLength(1);
+      expect(asOwner.body.data[0]).toMatchObject({
         _id: bookingId,
         // Response ids are PostgreSQL UUID strings.
         userId: guest.user._id,
@@ -185,20 +186,19 @@ describe("bookings", () => {
   });
 
   describe("GET /api/my-bookings", () => {
-    it("groups only the caller's bookings under their hotels", async () => {
+    it("returns only the caller's bookings as a flat page", async () => {
       const res = await guest.agent.get(routes.bookings.myBookings);
       expect(res.status).toBe(200);
-      const entries = res.body.filter((hotel: { _id: string }) => hotel._id === hotelId);
-      expect(entries.length).toBeGreaterThan(0);
-      expect(entries[0].name).toBe("Lifecycle Inn");
-      const bookingIds = entries.flatMap((entry: { bookings: { _id: string }[] }) =>
-        entry.bookings.map((booking) => booking._id),
+      expect(res.body.pageInfo).toEqual({ hasMore: false, nextCursor: null });
+      const entries = res.body.data.filter(
+        (booking: { hotelId: string }) => booking.hotelId === hotelId,
       );
-      expect(bookingIds).toContain(bookingId);
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries.map((booking: { _id: string }) => booking._id)).toContain(bookingId);
 
       const otherView = await other.agent.get(routes.bookings.myBookings);
       expect(otherView.status).toBe(200);
-      expect(otherView.body).toEqual([]);
+      expect(otherView.body.data).toEqual([]);
     });
 
     it("requires a session", async () => {

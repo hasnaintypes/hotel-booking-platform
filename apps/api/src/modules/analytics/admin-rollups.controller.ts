@@ -3,6 +3,7 @@ import { Roles } from "../../common/decorators/roles.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { AnalyticsService } from "./analytics.service";
+import { RollupListQueryDto } from "./dto/list-rollups-query.dto";
 
 @Controller("reports")
 export class AdminRollupsController {
@@ -11,8 +12,8 @@ export class AdminRollupsController {
   @Get("rollups")
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")
-  findRollups(@Query("limit") limit?: string) {
-    return this.analyticsService.findRollups(limit);
+  findRollups(@Query() query: RollupListQueryDto) {
+    return this.analyticsService.findRollups(query);
   }
 
   @Post("rollups")

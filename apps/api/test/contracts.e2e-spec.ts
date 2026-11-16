@@ -1,6 +1,7 @@
 import {
   hotelSearchResponseSchema,
   problemDetailsSchema,
+  publicHotelPageSchema,
   publicHotelSchema,
 } from "@hotel-booking/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -30,8 +31,9 @@ describe("hotel contracts", () => {
     const res = await anonymous(t).get(routes.hotels.list);
 
     expect(res.status).toBe(200);
-    const parsed = publicHotelSchema.array().parse(res.body);
-    expect(parsed.map((item) => item._id)).toContain(hotel.id);
+    const parsed = publicHotelPageSchema.parse(res.body);
+    expect(parsed.data.map((item) => item._id)).toContain(hotel.id);
+    expect(parsed.pageInfo.nextCursor).toBeNull();
   });
 
   it("returns a search page that satisfies the published schema", async () => {
@@ -39,7 +41,7 @@ describe("hotel contracts", () => {
 
     expect(res.status).toBe(200);
     const page = hotelSearchResponseSchema.parse(res.body);
-    expect(page.pagination.total).toBeGreaterThan(0);
+    expect(page.pageInfo.hasMore).toBe(false);
     expect(page.data.length).toBeGreaterThan(0);
   });
 
@@ -61,7 +63,7 @@ describe("hotel contracts", () => {
   });
 
   it("returns a validation failure in the documented problem shape", async () => {
-    const res = await anonymous(t).get(routes.hotels.search).query({ page: "0" });
+    const res = await anonymous(t).get(routes.hotels.search).query({ limit: "0" });
 
     expect(res.status).toBe(400);
     expect(res.headers["content-type"]).toMatch(/problem\+json/);
@@ -69,7 +71,7 @@ describe("hotel contracts", () => {
     const problem = problemDetailsSchema.parse(res.body);
     expect(problem.code).toBe("VALIDATION_FAILED");
     expect(problem.instance).toBe(routes.hotels.search);
-    expect(problem.errors?.map((error) => error.field)).toContain("page");
+    expect(problem.errors?.map((error) => error.field)).toContain("limit");
     expect(problem.type).toBe("urn:hotel-booking:problem:validation-failed");
   });
 
@@ -83,10 +85,10 @@ describe("hotel contracts", () => {
   it("reports every invalid field at once", async () => {
     const res = await anonymous(t)
       .get(routes.hotels.search)
-      .query({ page: "0", adultCount: "-1", sortOption: "drop" });
+      .query({ limit: "0", adultCount: "-1", sortOption: "drop" });
 
     expect(res.status).toBe(400);
     const fields = res.body.errors.map((error: { field: string }) => error.field).sort();
-    expect(fields).toEqual(["adultCount", "page", "sortOption"]);
+    expect(fields).toEqual(["adultCount", "limit", "sortOption"]);
   });
 });

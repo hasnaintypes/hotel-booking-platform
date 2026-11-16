@@ -25,240 +25,6 @@
         "properties": {},
         "type": "object"
       },
-      "HotelSearchResponseDto_Output": {
-        "additionalProperties": false,
-        "properties": {
-          "data": {
-            "items": {
-              "additionalProperties": false,
-              "properties": {
-                "_id": {
-                  "format": "uuid",
-                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-                  "type": "string"
-                },
-                "adultCount": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
-                  "type": "integer"
-                },
-                "averageRating": {
-                  "type": "number"
-                },
-                "childCount": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
-                  "type": "integer"
-                },
-                "city": {
-                  "type": "string"
-                },
-                "contact": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "email": {
-                      "type": "string"
-                    },
-                    "phone": {
-                      "type": "string"
-                    },
-                    "website": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "phone",
-                    "email",
-                    "website"
-                  ],
-                  "type": "object"
-                },
-                "country": {
-                  "type": "string"
-                },
-                "createdAt": {
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "facilities": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                "imageUrls": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                "lastUpdated": {
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                  "type": "string"
-                },
-                "location": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "address": {
-                      "additionalProperties": false,
-                      "properties": {
-                        "city": {
-                          "type": "string"
-                        },
-                        "country": {
-                          "type": "string"
-                        },
-                        "state": {
-                          "type": "string"
-                        },
-                        "street": {
-                          "type": "string"
-                        },
-                        "zipCode": {
-                          "type": "string"
-                        }
-                      },
-                      "required": [
-                        "street",
-                        "city",
-                        "state",
-                        "country",
-                        "zipCode"
-                      ],
-                      "type": "object"
-                    },
-                    "latitude": {
-                      "type": "number"
-                    },
-                    "longitude": {
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "latitude",
-                    "longitude",
-                    "address"
-                  ],
-                  "type": "object"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "policies": {
-                  "additionalProperties": false,
-                  "properties": {
-                    "cancellationPolicy": {
-                      "type": "string"
-                    },
-                    "checkInTime": {
-                      "type": "string"
-                    },
-                    "checkOutTime": {
-                      "type": "string"
-                    },
-                    "petPolicy": {
-                      "type": "string"
-                    },
-                    "smokingPolicy": {
-                      "type": "string"
-                    }
-                  },
-                  "required": [
-                    "checkInTime",
-                    "checkOutTime",
-                    "cancellationPolicy",
-                    "petPolicy",
-                    "smokingPolicy"
-                  ],
-                  "type": "object"
-                },
-                "pricePerNight": {
-                  "type": "number"
-                },
-                "reviewCount": {
-                  "maximum": 9007199254740991,
-                  "minimum": -9007199254740991,
-                  "type": "integer"
-                },
-                "starRating": {
-                  "type": "number"
-                },
-                "type": {
-                  "items": {
-                    "type": "string"
-                  },
-                  "type": "array"
-                },
-                "updatedAt": {
-                  "format": "date-time",
-                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-                  "type": "string"
-                }
-              },
-              "required": [
-                "_id",
-                "name",
-                "city",
-                "country",
-                "description",
-                "type",
-                "adultCount",
-                "childCount",
-                "facilities",
-                "pricePerNight",
-                "starRating",
-                "imageUrls",
-                "lastUpdated",
-                "contact",
-                "policies",
-                "averageRating",
-                "reviewCount",
-                "createdAt",
-                "updatedAt"
-              ],
-              "type": "object"
-            },
-            "type": "array"
-          },
-          "pagination": {
-            "additionalProperties": false,
-            "properties": {
-              "page": {
-                "exclusiveMinimum": true,
-                "maximum": 9007199254740991,
-                "minimum": 0,
-                "type": "integer"
-              },
-              "pages": {
-                "maximum": 9007199254740991,
-                "minimum": 0,
-                "type": "integer"
-              },
-              "total": {
-                "maximum": 9007199254740991,
-                "minimum": 0,
-                "type": "integer"
-              }
-            },
-            "required": [
-              "total",
-              "page",
-              "pages"
-            ],
-            "type": "object"
-          }
-        },
-        "required": [
-          "data",
-          "pagination"
-        ],
-        "type": "object"
-      },
       "LoginDto": {
         "properties": {},
         "type": "object"
@@ -461,202 +227,229 @@
         ],
         "type": "object"
       },
-      "PublicHotelListDto_Output": {
-        "items": {
-          "additionalProperties": false,
-          "properties": {
-            "_id": {
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
-              "type": "string"
-            },
-            "adultCount": {
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "type": "integer"
-            },
-            "averageRating": {
-              "type": "number"
-            },
-            "childCount": {
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "type": "integer"
-            },
-            "city": {
-              "type": "string"
-            },
-            "contact": {
+      "PublicHotelPageDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
               "additionalProperties": false,
               "properties": {
-                "email": {
+                "_id": {
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
                   "type": "string"
                 },
-                "phone": {
+                "adultCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "averageRating": {
+                  "type": "number"
+                },
+                "childCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "city": {
                   "type": "string"
                 },
-                "website": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "phone",
-                "email",
-                "website"
-              ],
-              "type": "object"
-            },
-            "country": {
-              "type": "string"
-            },
-            "createdAt": {
-              "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-              "type": "string"
-            },
-            "description": {
-              "type": "string"
-            },
-            "facilities": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "imageUrls": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "lastUpdated": {
-              "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-              "type": "string"
-            },
-            "location": {
-              "additionalProperties": false,
-              "properties": {
-                "address": {
+                "contact": {
                   "additionalProperties": false,
                   "properties": {
-                    "city": {
+                    "email": {
                       "type": "string"
                     },
-                    "country": {
+                    "phone": {
                       "type": "string"
                     },
-                    "state": {
-                      "type": "string"
-                    },
-                    "street": {
-                      "type": "string"
-                    },
-                    "zipCode": {
+                    "website": {
                       "type": "string"
                     }
                   },
                   "required": [
-                    "street",
-                    "city",
-                    "state",
-                    "country",
-                    "zipCode"
+                    "phone",
+                    "email",
+                    "website"
                   ],
                   "type": "object"
                 },
-                "latitude": {
+                "country": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "facilities": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "imageUrls": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "lastUpdated": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "location": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "address": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        },
+                        "country": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "zipCode": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "street",
+                        "city",
+                        "state",
+                        "country",
+                        "zipCode"
+                      ],
+                      "type": "object"
+                    },
+                    "latitude": {
+                      "type": "number"
+                    },
+                    "longitude": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "latitude",
+                    "longitude",
+                    "address"
+                  ],
+                  "type": "object"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "policies": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cancellationPolicy": {
+                      "type": "string"
+                    },
+                    "checkInTime": {
+                      "type": "string"
+                    },
+                    "checkOutTime": {
+                      "type": "string"
+                    },
+                    "petPolicy": {
+                      "type": "string"
+                    },
+                    "smokingPolicy": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "checkInTime",
+                    "checkOutTime",
+                    "cancellationPolicy",
+                    "petPolicy",
+                    "smokingPolicy"
+                  ],
+                  "type": "object"
+                },
+                "pricePerNight": {
                   "type": "number"
                 },
-                "longitude": {
+                "reviewCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "starRating": {
                   "type": "number"
+                },
+                "type": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "updatedAt": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
                 }
               },
               "required": [
-                "latitude",
-                "longitude",
-                "address"
+                "_id",
+                "name",
+                "city",
+                "country",
+                "description",
+                "type",
+                "adultCount",
+                "childCount",
+                "facilities",
+                "pricePerNight",
+                "starRating",
+                "imageUrls",
+                "lastUpdated",
+                "contact",
+                "policies",
+                "averageRating",
+                "reviewCount",
+                "createdAt",
+                "updatedAt"
               ],
               "type": "object"
             },
-            "name": {
-              "type": "string"
-            },
-            "policies": {
-              "additionalProperties": false,
-              "properties": {
-                "cancellationPolicy": {
-                  "type": "string"
-                },
-                "checkInTime": {
-                  "type": "string"
-                },
-                "checkOutTime": {
-                  "type": "string"
-                },
-                "petPolicy": {
-                  "type": "string"
-                },
-                "smokingPolicy": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "checkInTime",
-                "checkOutTime",
-                "cancellationPolicy",
-                "petPolicy",
-                "smokingPolicy"
-              ],
-              "type": "object"
-            },
-            "pricePerNight": {
-              "type": "number"
-            },
-            "reviewCount": {
-              "maximum": 9007199254740991,
-              "minimum": -9007199254740991,
-              "type": "integer"
-            },
-            "starRating": {
-              "type": "number"
-            },
-            "type": {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            "updatedAt": {
-              "format": "date-time",
-              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
-              "type": "string"
-            }
+            "type": "array"
           },
-          "required": [
-            "_id",
-            "name",
-            "city",
-            "country",
-            "description",
-            "type",
-            "adultCount",
-            "childCount",
-            "facilities",
-            "pricePerNight",
-            "starRating",
-            "imageUrls",
-            "lastUpdated",
-            "contact",
-            "policies",
-            "averageRating",
-            "reviewCount",
-            "createdAt",
-            "updatedAt"
-          ],
-          "type": "object"
+          "pageInfo": {
+            "additionalProperties": false,
+            "properties": {
+              "hasMore": {
+                "type": "boolean"
+              },
+              "nextCursor": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "nextCursor",
+              "hasMore"
+            ],
+            "type": "object"
+          }
         },
-        "type": "array"
+        "required": [
+          "data",
+          "pageInfo"
+        ],
+        "type": "object"
       },
       "RegisterDto": {
         "properties": {},
@@ -711,7 +504,65 @@
     "/api/v1/admin/bookings": {
       "get": {
         "operationId": "AdminBookingsController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "pending_payment",
+                "authorized",
+                "confirming",
+                "confirmed",
+                "cancelling",
+                "cancelled",
+                "failed",
+                "expired",
+                "needs_review"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hotelId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -847,7 +698,50 @@
     "/api/v1/admin/hotels": {
       "get": {
         "operationId": "AdminHotelsController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "draft",
+                "active",
+                "inactive",
+                "archived"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -927,7 +821,67 @@
     "/api/v1/admin/reconciliation/discrepancies": {
       "get": {
         "operationId": "AdminReconciliationController_list_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "open",
+                "resolved",
+                "ignored"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "enum": [
+                "payment_status_mismatch",
+                "payment_amount_mismatch",
+                "refund_mismatch",
+                "local_without_provider",
+                "provider_missing",
+                "provider_without_local",
+                "ledger_mismatch"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assignedToUserId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -1006,8 +960,19 @@
           {
             "in": "query",
             "name": "limit",
-            "required": true,
+            "required": false,
             "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }
@@ -1055,9 +1020,40 @@
           {
             "in": "query",
             "name": "limit",
-            "required": true,
+            "required": false,
             "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hotelId",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rating",
+            "required": false,
+            "schema": {
+              "maximum": 5,
+              "minimum": 1,
+              "type": "integer"
             }
           }
         ],
@@ -1102,7 +1098,60 @@
     "/api/v1/admin/users": {
       "get": {
         "operationId": "AdminUsersController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "enum": [
+                "user",
+                "admin"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "active",
+                "suspended"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "maxLength": 120,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -1239,7 +1288,27 @@
     "/api/v1/bookings": {
       "get": {
         "operationId": "BookingsController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -1364,17 +1433,79 @@
     "/api/v1/hotels": {
       "get": {
         "operationId": "HotelsController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "city",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "country",
+            "required": false,
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "stars",
+            "required": false,
+            "schema": {
+              "items": {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "maxItems": 5,
+              "type": "array"
+            }
+          },
+          {
+            "in": "query",
+            "name": "maxPrice",
+            "required": false,
+            "schema": {
+              "maximum": 1000000,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/PublicHotelListDto_Output"
+                  "$ref": "#/components/schemas/PublicHotelPageDto_Output"
                 }
               }
             },
-            "description": "Every active hotel"
+            "description": "One page of active hotels, newest first"
           }
         },
         "tags": [
@@ -1386,6 +1517,25 @@
       "get": {
         "operationId": "HotelsController_search_v1",
         "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          },
           {
             "in": "query",
             "name": "destination",
@@ -1477,16 +1627,6 @@
               ],
               "type": "string"
             }
-          },
-          {
-            "in": "query",
-            "name": "page",
-            "required": false,
-            "schema": {
-              "maximum": 1000,
-              "minimum": 1,
-              "type": "integer"
-            }
           }
         ],
         "responses": {
@@ -1494,7 +1634,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HotelSearchResponseDto_Output"
+                  "$ref": "#/components/schemas/PublicHotelPageDto_Output"
                 }
               }
             },
@@ -1538,6 +1678,25 @@
             "name": "hotelId",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }
@@ -1611,7 +1770,27 @@
     "/api/v1/manage/hotels": {
       "get": {
         "operationId": "MyHotelsController_findAll_v1",
-        "parameters": [],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -1686,6 +1865,25 @@
             "name": "hotelId",
             "required": true,
             "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "maxLength": 512,
               "type": "string"
             }
           }

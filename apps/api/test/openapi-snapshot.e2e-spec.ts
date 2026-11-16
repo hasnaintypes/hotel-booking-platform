@@ -81,13 +81,9 @@ describe("OpenAPI snapshot", () => {
     expect(search?.responses?.["200"]).toBeDefined();
 
     const searchDocument = JSON.stringify(search);
-    expect(searchDocument).toContain("#/components/schemas/HotelSearchResponseDto_Output");
+    expect(searchDocument).toContain("#/components/schemas/PublicHotelPageDto_Output");
     expect(Object.keys(combined.components?.schemas ?? {})).toEqual(
-      expect.arrayContaining([
-        "HotelSearchResponseDto_Output",
-        "PublicHotelListDto_Output",
-        "PublicHotelDto_Output",
-      ]),
+      expect.arrayContaining(["PublicHotelPageDto_Output", "PublicHotelDto_Output"]),
     );
 
     const parameters = (search?.parameters ?? []).map((parameter) =>
@@ -95,6 +91,8 @@ describe("OpenAPI snapshot", () => {
     );
     expect(parameters).toEqual(
       expect.arrayContaining([
+        "limit",
+        "cursor",
         "destination",
         "adultCount",
         "childCount",
@@ -103,9 +101,9 @@ describe("OpenAPI snapshot", () => {
         "stars",
         "maxPrice",
         "sortOption",
-        "page",
       ]),
     );
+    expect(parameters).not.toContain("page");
   });
 
   it("documents every routed endpoint with a response and only matrix statuses", () => {

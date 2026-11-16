@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -19,6 +20,7 @@ import { BookingReferencePipe } from "../../common/pipes/booking-reference.pipe"
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { BookingsService } from "./bookings.service";
+import { MyBookingListQueryDto } from "./dto/booking-list-queries.dto";
 import { CancelBookingDto } from "./dto/cancel-booking.dto";
 import { CreateBookingDto } from "./dto/create-booking.dto";
 
@@ -34,8 +36,8 @@ export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 
   @Get()
-  findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.bookingsService.myBookings(user.userId);
+  findAll(@CurrentUser() user: AuthenticatedUser, @Query() query: MyBookingListQueryDto) {
+    return this.bookingsService.myBookings(user.userId, query);
   }
 
   @Post()

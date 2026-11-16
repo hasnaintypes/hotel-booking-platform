@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Query,
   Req,
   UseGuards,
 } from "@nestjs/common";
@@ -17,6 +18,7 @@ import { RolesGuard } from "../../common/guards/roles.guard";
 import { ResponseEtag } from "../../common/http/response-etag.decorator";
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { ToggleActiveDto } from "./dto/toggle-active.dto";
+import { AdminHotelListQueryDto } from "./dto/hotel.dto";
 import { HotelsService } from "./hotels.service";
 
 @Controller("hotels")
@@ -26,8 +28,8 @@ export class AdminHotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
   @Get()
-  findAll() {
-    return this.hotelsService.findAllAdmin();
+  findAll(@Query() query: AdminHotelListQueryDto) {
+    return this.hotelsService.findAllAdmin(query);
   }
 
   @Get(":id")
