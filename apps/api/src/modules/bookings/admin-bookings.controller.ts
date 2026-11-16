@@ -40,13 +40,7 @@ export class AdminBookingsController {
 
   @Get()
   findAll(@Query() query: ListBookingsQueryDto) {
-    return this.bookingsService.findAllAdmin({
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.hotelId ? { hotelId: query.hotelId } : {}),
-      ...(query.q ? { query: query.q } : {}),
-      ...(query.limit ? { limit: query.limit } : {}),
-      ...(query.offset ? { offset: query.offset } : {}),
-    });
+    return this.bookingsService.findAllAdmin(query);
   }
 
   @Get(":id")

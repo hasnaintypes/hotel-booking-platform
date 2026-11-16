@@ -20,10 +20,18 @@ import {
   type PaymentStatus,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
+import type { CursorRow } from "../../common/pagination/cursor-page";
+import { afterDesc, timestampCursorKey } from "../../common/pagination/cursor-sql";
 import { DATABASE } from "../postgres.database";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export const SNAPSHOT_LIST_LIMIT = 50;
+
+/** A page request: how many rows, and where the previous page stopped. */
+export type SnapshotPageParams = {
+  limit: number;
+  cursor?: { key: string; id: string };
+};
 
 export type AnalyticsOverview = {
   totalBookings: number;
@@ -523,12 +531,22 @@ export class AnalyticsRepository {
     };
   }
 
-  async listSnapshots(limit = 20): Promise<AnalyticsSnapshot[]> {
-    return this.db
-      .select()
+  async listSnapshotsPage(params: SnapshotPageParams): Promise<CursorRow<AnalyticsSnapshot>[]> {
+    const rows = await this.db
+      .select({
+        snapshot: analyticsSnapshots,
+        cursorKey: timestampCursorKey(analyticsSnapshots.date),
+      })
       .from(analyticsSnapshots)
+      .where(
+        params.cursor
+          ? afterDesc(analyticsSnapshots.date, analyticsSnapshots.id, params.cursor, "timestamptz")
+          : undefined,
+      )
       .orderBy(desc(analyticsSnapshots.date), desc(analyticsSnapshots.id))
-      .limit(clampLimit(limit, 20));
+      .limit(params.limit + 1);
+
+    return rows.map(({ snapshot, cursorKey }) => ({ ...snapshot, cursorKey }));
   }
 
   async createSnapshot(input: SnapshotInput): Promise<AnalyticsSnapshot> {

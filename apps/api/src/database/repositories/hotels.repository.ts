@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, inArray, lte, type SQL, sql } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, lte, type SQL, sql } from "drizzle-orm";
 import {
   facilities,
   hotelFacilities,
@@ -13,6 +13,12 @@ import {
   type Transaction,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
+import type { CursorRow } from "../../common/pagination/cursor-page";
+import {
+  afterAscWithDescTiebreak,
+  afterDesc,
+  timestampCursorKey,
+} from "../../common/pagination/cursor-sql";
 import { countryCodeFor } from "../../common/utils/country-code";
 import { isUuid } from "../../common/utils/uuid";
 import { DATABASE } from "../postgres.database";
@@ -52,6 +58,14 @@ export type HotelWriteInput = {
   imageUrls?: string[];
 };
 
+/** Filters shared by the public catalogue and hotel search. */
+export type HotelListFilters = {
+  city?: string;
+  country?: string;
+  stars?: number[];
+  maxPrice?: number;
+};
+
 export type HotelSearchFilters = {
   destination?: string;
   adultCount?: number;
@@ -61,12 +75,20 @@ export type HotelSearchFilters = {
   stars?: number[];
   maxPrice?: number;
   sortOption?: "starRating" | "pricePerNightAsc" | "pricePerNightDesc";
-  page?: number;
-  pageSize?: number;
+};
+
+export type AdminHotelListFilters = {
+  status?: Hotel["status"];
+  q?: string;
+};
+
+/** A page request: how many rows, and where the previous page stopped. */
+export type PageParams = {
+  limit: number;
+  cursor?: { key: string; id: string };
 };
 
 /** The route-level page size; callers cannot ask for more than the hard cap below. */
-export const HOTEL_SEARCH_PAGE_SIZE = 5;
 export const HOTEL_LIST_LIMIT = 500;
 
 /** A stable code for a facility/type name without running regexes over user input. */
@@ -127,32 +149,82 @@ export class HotelsRepository {
     return record;
   }
 
-  async findByOwner(ownerUserId: string): Promise<HotelRecord[]> {
+  async findByOwnerPage(
+    ownerUserId: string,
+    params: PageParams,
+  ): Promise<CursorRow<HotelRecord>[]> {
+    if (!isUuid(ownerUserId)) return [];
     const rows = await this.db
-      .select()
+      .select({ hotel: hotels, cursorKey: timestampCursorKey(hotels.updatedAt) })
       .from(hotels)
-      .where(eq(hotels.ownerUserId, ownerUserId))
-      .orderBy(desc(hotels.updatedAt), asc(hotels.id));
-    return this.withRelations(rows);
+      .where(
+        and(
+          eq(hotels.ownerUserId, ownerUserId),
+          params.cursor
+            ? afterDesc(hotels.updatedAt, hotels.id, params.cursor, "timestamptz")
+            : undefined,
+        ),
+      )
+      .orderBy(desc(hotels.updatedAt), desc(hotels.id))
+      .limit(params.limit + 1);
+    return this.withRelations(rows.map(({ hotel, cursorKey }) => ({ ...hotel, cursorKey })));
   }
 
-  async listActive(): Promise<HotelRecord[]> {
+  async listActivePage(
+    filters: HotelListFilters,
+    params: PageParams,
+  ): Promise<CursorRow<HotelRecord>[]> {
+    const conditions: SQL[] = [eq(hotels.status, "active")];
+
+    if (filters.city) {
+      conditions.push(sql`lower(${hotels.city}) = lower(${filters.city.trim()})`);
+    }
+    if (filters.country) {
+      conditions.push(sql`lower(${hotels.country}) = lower(${filters.country.trim()})`);
+    }
+    if (filters.stars?.length) {
+      conditions.push(inArray(hotels.starRating, filters.stars));
+    }
+    if (filters.maxPrice !== undefined) {
+      conditions.push(lte(hotels.pricePerNightMinor, Math.round(filters.maxPrice * 100)));
+    }
+    if (params.cursor) {
+      conditions.push(afterDesc(hotels.updatedAt, hotels.id, params.cursor, "timestamptz"));
+    }
+
     const rows = await this.db
-      .select()
+      .select({ hotel: hotels, cursorKey: timestampCursorKey(hotels.updatedAt) })
       .from(hotels)
-      .where(eq(hotels.status, "active"))
-      .orderBy(desc(hotels.updatedAt), asc(hotels.id))
-      .limit(HOTEL_LIST_LIMIT);
-    return this.withRelations(rows);
+      .where(and(...conditions))
+      .orderBy(desc(hotels.updatedAt), desc(hotels.id))
+      .limit(params.limit + 1);
+    return this.withRelations(rows.map(({ hotel, cursorKey }) => ({ ...hotel, cursorKey })));
   }
 
-  async listAll(): Promise<HotelRecord[]> {
+  async listAllPage(
+    filters: AdminHotelListFilters,
+    params: PageParams,
+  ): Promise<CursorRow<HotelRecord>[]> {
+    const conditions: SQL[] = [];
+
+    if (filters.status) {
+      conditions.push(eq(hotels.status, filters.status));
+    }
+    const query = filters.q?.trim();
+    if (query) {
+      conditions.push(ilike(hotels.name, `%${escapeLike(query)}%`));
+    }
+    if (params.cursor) {
+      conditions.push(afterDesc(hotels.updatedAt, hotels.id, params.cursor, "timestamptz"));
+    }
+
     const rows = await this.db
-      .select()
+      .select({ hotel: hotels, cursorKey: timestampCursorKey(hotels.updatedAt) })
       .from(hotels)
-      .orderBy(desc(hotels.updatedAt), asc(hotels.id))
-      .limit(HOTEL_LIST_LIMIT);
-    return this.withRelations(rows);
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(hotels.updatedAt), desc(hotels.id))
+      .limit(params.limit + 1);
+    return this.withRelations(rows.map(({ hotel, cursorKey }) => ({ ...hotel, cursorKey })));
   }
 
   /** A bounded catalogue sample for admin fallback aggregates. */
@@ -181,36 +253,55 @@ export class HotelsRepository {
     return rows.map((row) => ({ starRating: row.starRating, count: Number(row.count) }));
   }
 
-  async search(filters: HotelSearchFilters) {
-    const pageSize = Math.min(filters.pageSize ?? HOTEL_SEARCH_PAGE_SIZE, 100);
-    const page = Math.max(1, filters.page ?? 1);
-
+  async searchPage(
+    filters: HotelSearchFilters,
+    params: PageParams,
+  ): Promise<CursorRow<HotelRecord>[]> {
     const conditions = this.searchConditions(filters);
-    const where = and(...conditions);
+    if (params.cursor) {
+      conditions.push(this.searchCursor(filters.sortOption, params.cursor));
+    }
 
-    const orderBy = this.searchOrder(filters.sortOption);
     const rows = await this.db
-      .select()
+      .select({
+        hotel: hotels,
+        cursorKey: this.searchCursorKey(filters.sortOption),
+      })
       .from(hotels)
-      .where(where)
-      .orderBy(...orderBy)
-      .limit(pageSize)
-      .offset((page - 1) * pageSize);
+      .where(and(...conditions))
+      .orderBy(...this.searchOrder(filters.sortOption))
+      .limit(params.limit + 1);
 
-    const [countRow] = await this.db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(hotels)
-      .where(where);
+    return this.withRelations(rows.map(({ hotel, cursorKey }) => ({ ...hotel, cursorKey })));
+  }
 
-    const total = Number(countRow?.count ?? 0);
-    return {
-      data: await this.withRelations(rows),
-      pagination: {
-        total,
-        page,
-        pages: Math.ceil(total / pageSize),
-      },
-    };
+  /** The cursor column is the same one the page is ordered by, so each sort keeps its own key. */
+  private searchCursorKey(sortOption?: HotelSearchFilters["sortOption"]): SQL<string> {
+    switch (sortOption) {
+      case "starRating":
+        return sql<string>`${hotels.starRating}::text`;
+      case "pricePerNightAsc":
+      case "pricePerNightDesc":
+        return sql<string>`${hotels.pricePerNightMinor}::text`;
+      default:
+        return timestampCursorKey(hotels.updatedAt);
+    }
+  }
+
+  private searchCursor(
+    sortOption: HotelSearchFilters["sortOption"],
+    cursor: { key: string; id: string },
+  ): SQL {
+    switch (sortOption) {
+      case "starRating":
+        return afterDesc(hotels.starRating, hotels.id, cursor, "smallint");
+      case "pricePerNightAsc":
+        return afterAscWithDescTiebreak(hotels.pricePerNightMinor, hotels.id, cursor, "integer");
+      case "pricePerNightDesc":
+        return afterDesc(hotels.pricePerNightMinor, hotels.id, cursor, "integer");
+      default:
+        return afterDesc(hotels.updatedAt, hotels.id, cursor, "timestamptz");
+    }
   }
 
   private searchConditions(filters: HotelSearchFilters): SQL[] {
@@ -267,13 +358,13 @@ export class HotelsRepository {
   private searchOrder(sortOption?: HotelSearchFilters["sortOption"]) {
     switch (sortOption) {
       case "starRating":
-        return [desc(hotels.starRating), asc(hotels.id)];
+        return [desc(hotels.starRating), desc(hotels.id)];
       case "pricePerNightAsc":
-        return [asc(hotels.pricePerNightMinor), asc(hotels.id)];
+        return [asc(hotels.pricePerNightMinor), desc(hotels.id)];
       case "pricePerNightDesc":
-        return [desc(hotels.pricePerNightMinor), asc(hotels.id)];
+        return [desc(hotels.pricePerNightMinor), desc(hotels.id)];
       default:
-        return [desc(hotels.updatedAt), asc(hotels.id)];
+        return [desc(hotels.updatedAt), desc(hotels.id)];
     }
   }
 
@@ -514,7 +605,7 @@ export class HotelsRepository {
       .filter((id): id is string => typeof id === "string");
   }
 
-  private async withRelations(rows: Hotel[]): Promise<HotelRecord[]> {
+  private async withRelations<T extends Hotel>(rows: T[]): Promise<Array<T & HotelRelations>> {
     if (rows.length === 0) return [];
     const ids = rows.map((row) => row.id);
     const [images, facilityRows, typeRows] = await Promise.all([

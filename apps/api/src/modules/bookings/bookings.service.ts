@@ -9,6 +9,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { CursorPage } from "@hotel-booking/contracts";
 import {
   DEFAULT_MANAGED_CANCELLATION_POLICY,
   quoteCancellation,
@@ -19,11 +20,13 @@ import {
 import { CLOCK, type Clock } from "../../common/clock";
 import { UniqueViolationError } from "../../common/errors/postgres-errors";
 import { ValidationFailedException } from "../../common/errors/validation-failed.exception";
+import { pageOf, pageSize } from "../../common/pagination/cursor-page";
+import { readTimestampCursor } from "../../common/pagination/sorted-cursor";
 import { isUuid } from "../../common/utils/uuid";
 import {
   BookingsRepository,
-  type BookingListFilters,
   type BookingWithPayments,
+  type CursorBooking,
 } from "../../database/repositories/bookings.repository";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
@@ -33,8 +36,12 @@ import {
 } from "../../domain/bookings/booking-state-machine";
 import { validateStay } from "../../domain/bookings/stay-validation";
 import { PaymentsService } from "../payments/payments.service";
-import { toPublicHotelResponse } from "../hotels/hotel-response";
 import { OffersService } from "../inventory/offers.service";
+import type {
+  HotelBookingListQueryDto,
+  MyBookingListQueryDto,
+} from "./dto/booking-list-queries.dto";
+import type { ListBookingsQueryDto } from "./dto/list-bookings-query.dto";
 import {
   toBookingDetailResponse,
   toBookingResponse,
@@ -67,6 +74,24 @@ type AuthorizationResult = {
   ok: boolean;
   status?: number;
   message?: string;
+};
+
+/** Cursor scopes: a tag minted for one list is rejected by every other list. */
+const ADMIN_LIST_SCOPE = "bookings:admin";
+const HOTEL_LIST_SCOPE = "bookings:hotel";
+const MY_LIST_SCOPE = "bookings:mine";
+
+/** One cursor page of bookings, with each row's position taken from its stored sort key. */
+const bookingPage = (
+  rows: CursorBooking[],
+  limit: number,
+  scope: string,
+): CursorPage<BookingResponse> => {
+  const page = pageOf(rows, limit, scope, (row) => ({
+    key: row.booking.cursorKey,
+    id: row.booking.id,
+  }));
+  return { data: page.data.map(toBookingResponse), pageInfo: page.pageInfo };
 };
 
 @Injectable()
@@ -278,9 +303,19 @@ export class BookingsService {
     };
   }
 
-  async findAllAdmin(filters: BookingListFilters = {}): Promise<BookingResponse[]> {
-    const rows = await this.bookings.searchAll(filters);
-    return rows.map(toBookingResponse);
+  /** The admin queue is one page at a time; `cursor` is the last booking a caller received. */
+  async findAllAdmin(query: ListBookingsQueryDto): Promise<CursorPage<BookingResponse>> {
+    const limit = pageSize(query);
+    const rows = await this.bookings.searchAllPage(
+      {
+        ...(query.status ? { status: query.status } : {}),
+        ...(query.hotelId ? { hotelId: query.hotelId } : {}),
+        ...(query.q ? { query: query.q } : {}),
+      },
+      { limit, cursor: readTimestampCursor(query.cursor, ADMIN_LIST_SCOPE) },
+    );
+
+    return bookingPage(rows, limit, ADMIN_LIST_SCOPE);
   }
 
   async findOneAdmin(id: string): Promise<BookingDetailResponse> {
@@ -331,10 +366,18 @@ export class BookingsService {
     return toBookingDetailResponse(refreshed, events);
   }
 
-  async findForHotel(hotelId: string, userId: string): Promise<BookingResponse[]> {
+  async findForHotel(
+    hotelId: string,
+    userId: string,
+    query: HotelBookingListQueryDto,
+  ): Promise<CursorPage<BookingResponse>> {
     await this.assertOwnerOrAdmin(hotelId, userId);
-    const rows = await this.bookings.listByHotel(hotelId);
-    return rows.map(toBookingResponse);
+    const limit = pageSize(query);
+    const rows = await this.bookings.listByHotelPage(hotelId, {
+      limit,
+      cursor: readTimestampCursor(query.cursor, HOTEL_LIST_SCOPE),
+    });
+    return bookingPage(rows, limit, HOTEL_LIST_SCOPE);
   }
 
   async findOne(reference: string, userId: string): Promise<BookingResponse> {
@@ -349,28 +392,21 @@ export class BookingsService {
     return toBookingResponse(booking);
   }
 
-  async myBookings(userId: string) {
-    const rows = await this.bookings.listByOwner(userId);
-    if (rows.length === 0) return [];
-
-    const hotelRecords = await this.hotels.findByIds(rows.map((row) => row.booking.hotelId));
-    const hotelsById = new Map(hotelRecords.map((hotel) => [hotel.id, hotel]));
-
-    const grouped = new Map<string, BookingResponse[]>();
-    for (const row of rows) {
-      const hotel = hotelsById.get(row.booking.hotelId);
-      if (!hotel) continue;
-      const list = grouped.get(hotel.id) ?? [];
-      list.push(toBookingResponse(row));
-      grouped.set(hotel.id, list);
-    }
-
-    return hotelRecords
-      .filter((hotel) => grouped.has(hotel.id))
-      .map((hotel) => ({
-        ...toPublicHotelResponse(hotel),
-        bookings: grouped.get(hotel.id) ?? [],
-      }));
+  /**
+   * The guest's bookings as a flat page, newest first. Clients group by hotel if they want to; the
+   * API no longer does it, because grouping a page would either split a hotel across pages or
+   * require reading the whole history to fill one.
+   */
+  async myBookings(
+    userId: string,
+    query: MyBookingListQueryDto,
+  ): Promise<CursorPage<BookingResponse>> {
+    const limit = pageSize(query);
+    const rows = await this.bookings.listByOwnerPage(userId, {
+      limit,
+      cursor: readTimestampCursor(query.cursor, MY_LIST_SCOPE),
+    });
+    return bookingPage(rows, limit, MY_LIST_SCOPE);
   }
 
   /**

@@ -1,19 +1,32 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import type { CursorPage } from "@hotel-booking/contracts";
 import { PreconditionFailedException } from "../../common/errors/precondition-failed.exception";
 import { ifMatchSatisfied, representationEtag } from "../../common/http/etag";
+import { anchorOf, pageOf, pageSize } from "../../common/pagination/cursor-page";
+import { readNumberCursor, readTimestampCursor } from "../../common/pagination/sorted-cursor";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
-import { HotelSearchQueryDto } from "./dto/hotel.dto";
+import {
+  AdminHotelListQueryDto,
+  HotelSearchQueryDto,
+  PublicHotelListQueryDto,
+} from "./dto/hotel.dto";
 import { ToggleActiveDto } from "./dto/toggle-active.dto";
 import {
   toAdminHotelResponse,
   toPublicHotelResponse,
   type AdminHotelResponse,
   type PublicHotelResponse,
-  type PublicHotelSearchResponse,
 } from "./hotel-response";
 import { HotelStatsService } from "./hotel-stats.service";
+
+/** Cursor scopes: a tag minted for one list or sort is rejected by every other one. */
+const SCOPE = {
+  publicList: "hotels:list",
+  adminList: "hotels:admin",
+  search: (sortOption?: string) => `hotels:search:${sortOption ?? "updatedAt"}`,
+} as const;
 
 @Injectable()
 export class HotelsService {
@@ -47,32 +60,63 @@ export class HotelsService {
     return toAdminHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
   }
 
-  async search(queryParams: HotelSearchQueryDto): Promise<PublicHotelSearchResponse> {
-    const result = await this.hotels.search({
-      destination: queryParams.destination,
-      adultCount: queryParams.adultCount,
-      childCount: queryParams.childCount,
-      facilities: queryParams.facilities,
-      types: queryParams.types,
-      stars: queryParams.stars,
-      maxPrice: queryParams.maxPrice,
-      sortOption: queryParams.sortOption,
-      page: queryParams.page,
-    });
+  async search(query: HotelSearchQueryDto): Promise<CursorPage<PublicHotelResponse>> {
+    const limit = pageSize(query);
+    const scope = SCOPE.search(query.sortOption);
+    const numericSort =
+      query.sortOption === "starRating" ||
+      query.sortOption === "pricePerNightAsc" ||
+      query.sortOption === "pricePerNightDesc";
 
-    return {
-      data: await this.enrich(result.data),
-      pagination: result.pagination,
-    };
+    const rows = await this.hotels.searchPage(
+      {
+        destination: query.destination,
+        adultCount: query.adultCount,
+        childCount: query.childCount,
+        facilities: query.facilities,
+        types: query.types,
+        stars: query.stars,
+        maxPrice: query.maxPrice,
+        sortOption: query.sortOption,
+      },
+      {
+        limit,
+        cursor: numericSort
+          ? readNumberCursor(query.cursor, scope)
+          : readTimestampCursor(query.cursor, scope),
+      },
+    );
+
+    const page = pageOf(rows, limit, scope, anchorOf);
+    return { data: await this.enrich(page.data), pageInfo: page.pageInfo };
   }
 
   /** Guests and owners see active hotels; administrators use the admin list. */
-  findAll() {
-    return this.hotels.listActive().then((records) => this.enrich(records));
+  async findAll(query: PublicHotelListQueryDto): Promise<CursorPage<PublicHotelResponse>> {
+    const limit = pageSize(query);
+    const rows = await this.hotels.listActivePage(
+      {
+        city: query.city,
+        country: query.country,
+        stars: query.stars,
+        maxPrice: query.maxPrice,
+      },
+      { limit, cursor: readTimestampCursor(query.cursor, SCOPE.publicList) },
+    );
+
+    const page = pageOf(rows, limit, SCOPE.publicList, anchorOf);
+    return { data: await this.enrich(page.data), pageInfo: page.pageInfo };
   }
 
-  findAllAdmin() {
-    return this.hotels.listAll().then((records) => this.enrichAdmin(records));
+  async findAllAdmin(query: AdminHotelListQueryDto): Promise<CursorPage<AdminHotelResponse>> {
+    const limit = pageSize(query);
+    const rows = await this.hotels.listAllPage(
+      { status: query.status, q: query.q },
+      { limit, cursor: readTimestampCursor(query.cursor, SCOPE.adminList) },
+    );
+
+    const page = pageOf(rows, limit, SCOPE.adminList, anchorOf);
+    return { data: await this.enrichAdmin(page.data), pageInfo: page.pageInfo };
   }
 
   async setActive(id: string, dto: ToggleActiveDto, options: { ifMatch?: string } = {}) {

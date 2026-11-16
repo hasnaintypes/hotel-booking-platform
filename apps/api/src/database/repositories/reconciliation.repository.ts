@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, type SQL, sql } from "drizzle-orm";
 import {
   ledgerEntries,
   payments,
@@ -7,6 +7,8 @@ import {
   type Database,
   type ReconciliationDiscrepancy,
 } from "@hotel-booking/db";
+import type { CursorRow } from "../../common/pagination/cursor-page";
+import { afterAsc, afterDesc, timestampCursorKey } from "../../common/pagination/cursor-sql";
 import { DATABASE } from "../postgres.database";
 
 export const DISCREPANCY_KINDS = [
@@ -29,9 +31,16 @@ export type DiscrepancyListFilters = {
   status?: DiscrepancyStatus;
   kind?: DiscrepancyKind;
   assignedToUserId?: string;
-  limit?: number;
-  offset?: number;
 };
+
+/** A page request: how many rows, and where the previous page stopped. */
+export type DiscrepancyPageParams = {
+  limit: number;
+  cursor?: { key: string; id: string };
+};
+
+/** The stored finding as the admin API returns it, once its cursor anchor is stripped. */
+export type DiscrepancyRecord = ReconciliationDiscrepancy;
 
 export type NewDiscrepancyInput = {
   dedupeKey: string;
@@ -113,8 +122,11 @@ export class ReconciliationRepository {
    * Lists findings for the admin queue. Open findings sort oldest first so the longest-waiting
    * discrepancy is triaged first; closed history sorts newest first.
    */
-  async listForAdmin(filters: DiscrepancyListFilters = {}): Promise<ReconciliationDiscrepancy[]> {
-    const conditions = [];
+  async listForAdminPage(
+    filters: DiscrepancyListFilters,
+    params: DiscrepancyPageParams,
+  ): Promise<CursorRow<ReconciliationDiscrepancy>[]> {
+    const conditions: SQL[] = [];
     if (filters.status) {
       conditions.push(eq(reconciliationDiscrepancies.status, filters.status));
     }
@@ -125,12 +137,30 @@ export class ReconciliationRepository {
       conditions.push(eq(reconciliationDiscrepancies.assignedToUserId, filters.assignedToUserId));
     }
 
-    const limit = Math.min(Math.max(filters.limit ?? 200, 1), 500);
-    const offset = Math.max(filters.offset ?? 0, 0);
     const oldestFirst = !filters.status || filters.status === "open";
+    if (params.cursor) {
+      conditions.push(
+        oldestFirst
+          ? afterAsc(
+              reconciliationDiscrepancies.detectedAt,
+              reconciliationDiscrepancies.id,
+              params.cursor,
+              "timestamptz",
+            )
+          : afterDesc(
+              reconciliationDiscrepancies.detectedAt,
+              reconciliationDiscrepancies.id,
+              params.cursor,
+              "timestamptz",
+            ),
+      );
+    }
 
-    return this.db
-      .select()
+    const rows = await this.db
+      .select({
+        discrepancy: reconciliationDiscrepancies,
+        cursorKey: timestampCursorKey(reconciliationDiscrepancies.detectedAt),
+      })
       .from(reconciliationDiscrepancies)
       .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(
@@ -139,8 +169,14 @@ export class ReconciliationRepository {
           : desc(reconciliationDiscrepancies.detectedAt),
         oldestFirst ? asc(reconciliationDiscrepancies.id) : desc(reconciliationDiscrepancies.id),
       )
-      .limit(limit)
-      .offset(offset);
+      .limit(params.limit + 1);
+
+    return rows.map(({ discrepancy, cursorKey }) => ({ ...discrepancy, cursorKey }));
+  }
+
+  /** Whether a listing with these filters reads oldest-first; the queue and cursor share it. */
+  oldestFirstFor(status?: DiscrepancyStatus): boolean {
+    return !status || status === "open";
   }
 
   /** Loads one finding; the admin API uses it to reject updates to an already-closed row. */

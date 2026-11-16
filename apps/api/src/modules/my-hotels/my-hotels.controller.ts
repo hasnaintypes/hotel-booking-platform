@@ -9,6 +9,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UploadedFiles,
   UseGuards,
@@ -23,6 +24,7 @@ import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { imageFileFilter, MAX_IMAGE_BYTES } from "../../common/uploads/image-validation";
 import { HotelFormDto } from "./dto/hotel-form.dto";
+import { MyHotelListQueryDto } from "../hotels/dto/hotel.dto";
 import { MyHotelsService } from "./my-hotels.service";
 
 const uploadOptions = {
@@ -49,8 +51,8 @@ export class MyHotelsController {
   }
 
   @Get()
-  findAll(@CurrentUser() user: AuthenticatedUser) {
-    return this.myHotelsService.findAll(user.userId);
+  findAll(@CurrentUser() user: AuthenticatedUser, @Query() query: MyHotelListQueryDto) {
+    return this.myHotelsService.findAll(user.userId, query);
   }
 
   @Get(":id")

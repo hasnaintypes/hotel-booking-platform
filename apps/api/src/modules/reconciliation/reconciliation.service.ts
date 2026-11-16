@@ -7,12 +7,15 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import type { CursorPage } from "@hotel-booking/contracts";
 import type Stripe from "stripe";
 import { CLOCK, type Clock } from "../../common/clock";
+import { pageOf, pageSize } from "../../common/pagination/cursor-page";
+import { readTimestampCursor } from "../../common/pagination/sorted-cursor";
 import {
   type BookingLedgerTotals,
   type BookingPaymentTotals,
-  type DiscrepancyListFilters,
+  type DiscrepancyRecord,
   type NewDiscrepancyInput,
   ReconciliationRepository,
 } from "../../database/repositories/reconciliation.repository";
@@ -24,7 +27,12 @@ import {
 } from "../../domain/payments/provider-status";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { isMissingProviderResource } from "../payments/payments.service";
+import type { ListDiscrepanciesQueryDto } from "./dto/list-discrepancies-query.dto";
 import { UpdateDiscrepancyDto } from "./dto/update-discrepancy.dto";
+
+/** The queue's scope also encodes its direction, because the direction depends on the filter. */
+const discrepancyScope = (oldestFirst: boolean) =>
+  `discrepancies:${oldestFirst ? "open" : "closed"}`;
 
 const HOUR_MS = 60 * 60 * 1_000;
 const DAY_MS = 24 * HOUR_MS;
@@ -425,9 +433,29 @@ export class ReconciliationService {
     return this.discrepancies.listOpen(limit);
   }
 
-  /** Filtered queue for the admin UI, including closed history. */
-  async listDiscrepancies(filters: DiscrepancyListFilters = {}) {
-    return this.discrepancies.listForAdmin(filters);
+  /** Filtered queue for the admin UI, including closed history, one cursor page at a time. */
+  async listDiscrepancies(
+    query: ListDiscrepanciesQueryDto,
+  ): Promise<CursorPage<DiscrepancyRecord>> {
+    const limit = pageSize(query);
+    const oldestFirst = this.discrepancies.oldestFirstFor(query.status);
+    const scope = discrepancyScope(oldestFirst);
+
+    const rows = await this.discrepancies.listForAdminPage(
+      {
+        status: query.status,
+        kind: query.kind,
+        assignedToUserId: query.assignedToUserId,
+      },
+      { limit, cursor: readTimestampCursor(query.cursor, scope) },
+    );
+
+    const page = pageOf(rows, limit, scope, (row) => ({ key: row.cursorKey, id: row.id }));
+    // The row carries its cursor key for the anchor only; it is not part of the resource.
+    return {
+      data: page.data.map(({ cursorKey: _cursorKey, ...row }) => row),
+      pageInfo: page.pageInfo,
+    };
   }
 
   /**

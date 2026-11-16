@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Patch,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -14,6 +15,7 @@ import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { RolesGuard } from "../../common/guards/roles.guard";
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
+import { AdminUserListQueryDto } from "./dto/list-users-query.dto";
 import { UpdateRoleDto } from "./dto/update-role.dto";
 import { UsersService } from "./users.service";
 
@@ -24,8 +26,8 @@ export class AdminUsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  findAll(@Query() query: AdminUserListQueryDto) {
+    return this.usersService.findAll(query);
   }
 
   @Patch(":id")

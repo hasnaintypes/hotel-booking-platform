@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { eq, sql } from "drizzle-orm";
+import { and, desc, eq, ilike, or, type SQL, sql } from "drizzle-orm";
 import {
   credentials,
   users,
@@ -10,8 +10,23 @@ import {
   type User,
 } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
+import type { CursorRow } from "../../common/pagination/cursor-page";
+import { afterDesc, timestampCursorKey } from "../../common/pagination/cursor-sql";
 import { isUuid } from "../../common/utils/uuid";
 import { DATABASE } from "../postgres.database";
+
+export type UserListFilters = {
+  role?: User["role"];
+  status?: User["status"];
+  /** Matches the account's email or name. */
+  q?: string;
+};
+
+/** A page request: how many rows, and where the previous page stopped. */
+export type UserPageParams = {
+  limit: number;
+  cursor?: { key: string; id: string };
+};
 
 export type NewPasswordAccount = {
   email: string;
@@ -151,12 +166,34 @@ export class UsersRepository {
     });
   }
 
-  async list(limit = 200): Promise<User[]> {
-    return this.db
-      .select()
+  /** One cursor page of accounts, newest first; filters are applied in SQL. */
+  async listPage(filters: UserListFilters, params: UserPageParams): Promise<CursorRow<User>[]> {
+    const conditions: SQL[] = [];
+    if (filters.role) conditions.push(eq(users.role, filters.role));
+    if (filters.status) conditions.push(eq(users.status, filters.status));
+
+    const query = filters.q?.trim();
+    if (query) {
+      const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+      const match = or(
+        ilike(users.email, pattern),
+        ilike(users.firstName, pattern),
+        ilike(users.lastName, pattern),
+      );
+      if (match) conditions.push(match);
+    }
+    if (params.cursor) {
+      conditions.push(afterDesc(users.createdAt, users.id, params.cursor, "timestamptz"));
+    }
+
+    const rows = await this.db
+      .select({ user: users, cursorKey: timestampCursorKey(users.createdAt) })
       .from(users)
-      .orderBy(sql`${users.createdAt} desc`)
-      .limit(limit);
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(desc(users.createdAt), desc(users.id))
+      .limit(params.limit + 1);
+
+    return rows.map(({ user, cursorKey }) => ({ ...user, cursorKey }));
   }
 
   async count(): Promise<number> {

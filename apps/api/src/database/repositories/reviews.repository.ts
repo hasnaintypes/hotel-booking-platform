@@ -1,7 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, type SQL, sql } from "drizzle-orm";
 import { reviews, type Database, type NewReview, type Review } from "@hotel-booking/db";
 import { throwPostgresError } from "../../common/errors/postgres-errors";
+import type { CursorRow } from "../../common/pagination/cursor-page";
+import { afterDesc, timestampCursorKey } from "../../common/pagination/cursor-sql";
 import { isUuid } from "../../common/utils/uuid";
 import { DATABASE } from "../postgres.database";
 
@@ -12,11 +14,15 @@ export type ReviewSummary = {
   reviewCount: number;
 };
 
-export const REVIEW_LIST_LIMIT = 200;
+export type ReviewListFilters = {
+  hotelId?: string;
+  rating?: number;
+};
 
-const clampLimit = (value: number, fallback: number) => {
-  if (!Number.isFinite(value) || value <= 0) return fallback;
-  return Math.min(Math.floor(value), REVIEW_LIST_LIMIT);
+/** A page request: how many rows, and where the previous page stopped. */
+export type ReviewPageParams = {
+  limit: number;
+  cursor?: { key: string; id: string };
 };
 
 /** Review storage. Rating summaries are derived from rows rather than written back to hotels. */
@@ -24,22 +30,36 @@ const clampLimit = (value: number, fallback: number) => {
 export class ReviewsRepository {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async listAdmin(limit = 100): Promise<Review[]> {
-    return this.db
-      .select()
+  /** One cursor page of reviews, newest first; filters are applied in SQL. */
+  async listPage(
+    filters: ReviewListFilters,
+    params: ReviewPageParams,
+  ): Promise<CursorRow<Review>[]> {
+    const conditions: SQL[] = [];
+    if (filters.hotelId) {
+      if (!isUuid(filters.hotelId)) return [];
+      conditions.push(eq(reviews.hotelId, filters.hotelId));
+    }
+    if (filters.rating !== undefined) {
+      conditions.push(eq(reviews.rating, filters.rating));
+    }
+    if (params.cursor) {
+      conditions.push(afterDesc(reviews.createdAt, reviews.id, params.cursor, "timestamptz"));
+    }
+
+    const rows = await this.db
+      .select({ review: reviews, cursorKey: timestampCursorKey(reviews.createdAt) })
       .from(reviews)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
       .orderBy(desc(reviews.createdAt), desc(reviews.id))
-      .limit(clampLimit(limit, 100));
+      .limit(params.limit + 1);
+
+    return rows.map(({ review, cursorKey }) => ({ ...review, cursorKey }));
   }
 
-  async listByHotel(hotelId: string, limit = 100): Promise<Review[]> {
+  async listByHotelPage(hotelId: string, params: ReviewPageParams): Promise<CursorRow<Review>[]> {
     if (!isUuid(hotelId)) return [];
-    return this.db
-      .select()
-      .from(reviews)
-      .where(eq(reviews.hotelId, hotelId))
-      .orderBy(desc(reviews.createdAt), desc(reviews.id))
-      .limit(clampLimit(limit, 100));
+    return this.listPage({ hotelId }, params);
   }
 
   async summary(hotelId: string): Promise<ReviewSummary> {

@@ -18,15 +18,6 @@ export const EMPTY_HOTEL_STATS: HotelStats = {
 /** Fields every anonymous or signed-in customer may see. */
 export type PublicHotelResponse = PublicHotel;
 
-export type PublicHotelSearchResponse = {
-  data: PublicHotelResponse[];
-  pagination: {
-    total: number;
-    page: number;
-    pages: number;
-  };
-};
-
 /** Public fields plus the owner's own counters and listing controls. */
 export type ManageHotelResponse = PublicHotelResponse & {
   userId: string;
@@ -38,6 +29,13 @@ export type ManageHotelResponse = PublicHotelResponse & {
   occupancyRate: number;
   isActive: boolean;
   isFeatured: boolean;
+};
+
+/** The owner's list row: their own counters plus the booking counts the dashboard shows. */
+export type ManageHotelListItem = ManageHotelResponse & {
+  upcomingBookings: number;
+  completedBookings: number;
+  cancelledBookings: number;
 };
 
 /** Owner fields plus internal ownership and moderation fields. */
