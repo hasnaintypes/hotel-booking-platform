@@ -4,9 +4,11 @@ import { NestFactory } from "@nestjs/core";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { OpenAPIObject } from "@nestjs/swagger";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { ROUTE_TABLE } from "../src/common/routing/route-table";
 import { AppModule } from "../src/app.module";
 import { configureApp } from "../src/app.setup";
 import { buildApiDocuments } from "../src/config/swagger.config";
+import { ADR_STATUSES } from "./support/status-matrix";
 
 /**
  * The committed OpenAPI snapshot is the contract's documentation half: a changed schema, path or
@@ -104,5 +106,32 @@ describe("OpenAPI snapshot", () => {
         "page",
       ]),
     );
+  });
+
+  it("documents every routed endpoint with a response and only matrix statuses", () => {
+    const { combined } = buildApiDocuments(app);
+    const pathOf = (segments: string[]) =>
+      `/${segments.map((segment) => (segment.startsWith(":") ? `{${segment.slice(1)}}` : segment)).join("/")}`;
+
+    const paths = (combined.paths ?? {}) as Record<string, Record<string, unknown>>;
+    const missing = ROUTE_TABLE.flatMap((route) => {
+      const path = pathOf(route.segments);
+      const operation = paths[path]?.[route.method.toLowerCase()] as
+        { responses?: Record<string, unknown> } | undefined;
+      if (!operation || Object.keys(operation.responses ?? {}).length === 0) {
+        return [`${route.method} ${path}`];
+      }
+      return [];
+    });
+    expect(missing).toEqual([]);
+
+    const outsideMatrix = Object.entries(paths).flatMap(([path, operations]) =>
+      Object.entries(operations).flatMap(([method, operation]) =>
+        Object.keys((operation as { responses?: Record<string, unknown> }).responses ?? {})
+          .filter((status) => !ADR_STATUSES.has(Number(status)))
+          .map((status) => `${method.toUpperCase()} ${path} ${status}`),
+      ),
+    );
+    expect(outsideMatrix).toEqual([]);
   });
 });
