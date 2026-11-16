@@ -1,7 +1,8 @@
 import { INestApplication, type Type } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { DocumentBuilder, SwaggerModule, type OpenAPIObject } from "@nestjs/swagger";
+import { cleanupOpenApiDoc } from "nestjs-zod";
 import type { NextFunction, Request, Response } from "express";
 import { AUDIENCE_GROUPS, type Audience } from "../common/routing/controllers";
 import { AdminRoutesModule } from "../routes/admin.routes.module";
@@ -83,6 +84,44 @@ const adminOnly = (app: INestApplication) => {
   };
 };
 
+/** The document metadata shared by the served docs and the committed snapshots. */
+const openApiConfig = () =>
+  new DocumentBuilder()
+    .setTitle("Hotel Booking API")
+    .setDescription("A comprehensive API for hotel booking and management system")
+    .setVersion("1.0.0")
+    .setContact("API Support", "", "support@HolidayHotel.com")
+    .addCookieAuth("session_id", { type: "apiKey", in: "cookie" }, "jwt")
+    .addBearerAuth()
+    .build();
+
+export type ApiDocuments = {
+  combined: OpenAPIObject;
+  audiences: Record<Audience, OpenAPIObject>;
+};
+
+/**
+ * Builds every OpenAPI document from the mounted routes. Shared by the running server and by
+ * `scripts/openapi.ts`, so the committed snapshot is the same document the docs UI serves.
+ */
+export const buildApiDocuments = (app: INestApplication): ApiDocuments => {
+  const swaggerConfig = openApiConfig();
+  const audiences = {} as Record<Audience, OpenAPIObject>;
+
+  for (const group of AUDIENCE_GROUPS) {
+    audiences[group.audience] = cleanupOpenApiDoc(
+      SwaggerModule.createDocument(app, swaggerConfig, {
+        include: [AUDIENCE_MODULES[group.audience]],
+      }),
+    );
+  }
+
+  return {
+    combined: cleanupOpenApiDoc(SwaggerModule.createDocument(app, swaggerConfig)),
+    audiences,
+  };
+};
+
 /**
  * Mounts the API documentation when it is enabled (`apiDocs.enabled`: on outside production, off
  * in production unless ENABLE_API_DOCS=true). In production it is served only to admins, because
@@ -105,27 +144,16 @@ export const setupSwagger = (app: INestApplication, config: ConfigService): bool
     app.use(DOCS_PATHS, adminOnly(app));
   }
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle("Hotel Booking API")
-    .setDescription("A comprehensive API for hotel booking and management system")
-    .setVersion("1.0.0")
-    .setContact("API Support", "", "support@HolidayHotel.com")
-    .addCookieAuth("session_id", { type: "apiKey", in: "cookie" }, "jwt")
-    .addBearerAuth()
-    .build();
+  const { combined, audiences } = buildApiDocuments(app);
+  combined.servers = servers;
 
-  const document = SwaggerModule.createDocument(app, swaggerConfig);
-  document.servers = servers;
-
-  SwaggerModule.setup("api-docs", app, document, {
+  SwaggerModule.setup("api-docs", app, combined, {
     customCss: ".swagger-ui .topbar { display: none }",
     customSiteTitle: "Hotel Booking API Documentation",
   });
 
   for (const group of AUDIENCE_GROUPS) {
-    const audienceDocument = SwaggerModule.createDocument(app, swaggerConfig, {
-      include: [AUDIENCE_MODULES[group.audience]],
-    });
+    const audienceDocument = audiences[group.audience];
     audienceDocument.servers = servers;
 
     SwaggerModule.setup(`api/docs/${group.audience}`, app, audienceDocument, {

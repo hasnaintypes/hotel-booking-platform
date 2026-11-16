@@ -6,20 +6,23 @@
   "description": "Hotel booking platform API",
   "main": "./dist/apps/api/src/main.js",
   "scripts": {
-    "dev": "pnpm --filter @hotel-booking/db build && nest start --watch --entryFile ../apps/api/src/main",
     "build": "nest build",
+    "clean": "rm -rf dist",
+    "dev": "pnpm --filter @hotel-booking/db build && nest start --watch --entryFile ../apps/api/src/main",
+    "gen:controller": "node scripts/new-controller.mjs",
+    "lint": "eslint . --max-warnings 0",
+    "openapi:check": "vitest run test/openapi-snapshot.e2e-spec.ts",
+    "openapi:generate": "UPDATE_OPENAPI=1 vitest run test/openapi-snapshot.e2e-spec.ts",
+    "seed": "tsx src/database/seeds/seed.ts",
     "start": "node dist/apps/api/src/main.js",
     "start:worker": "node dist/apps/api/src/worker.js",
-    "seed": "tsx src/database/seeds/seed.ts",
-    "gen:controller": "node scripts/new-controller.mjs",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.spec.json",
-    "clean": "rm -rf dist",
-    "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:resilience": "vitest run test/m2-acceptance.e2e-spec.ts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.spec.json"
   },
   "dependencies": {
+    "@hotel-booking/contracts": "workspace:*",
     "@hotel-booking/db": "workspace:*",
     "@hotel-booking/pricing": "workspace:*",
     "@nestjs/common": "^11.2.8",
@@ -41,12 +44,14 @@
     "helmet": "^8.3.0",
     "multer": "^2.5.0",
     "nestjs-pino": "^5.3.1",
+    "nestjs-zod": "^5.6.0",
     "pg-boss": "12.38.1",
     "pino": "^10.4.0",
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "stripe": "^23.1.0"
+    "stripe": "^23.1.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

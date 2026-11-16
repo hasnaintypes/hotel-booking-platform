@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
-import { SearchHotelsDto } from "./dto/search-hotels.dto";
+import { HotelSearchQueryDto } from "./dto/hotel.dto";
 import { ToggleActiveDto } from "./dto/toggle-active.dto";
 import {
   toAdminHotelResponse,
@@ -45,7 +45,7 @@ export class HotelsService {
     return toAdminHotelResponse(hotel, await this.hotelStats.forHotel(hotel.id));
   }
 
-  async search(queryParams: SearchHotelsDto): Promise<PublicHotelSearchResponse> {
+  async search(queryParams: HotelSearchQueryDto): Promise<PublicHotelSearchResponse> {
     const result = await this.hotels.search({
       destination: queryParams.destination,
       adultCount: queryParams.adultCount,

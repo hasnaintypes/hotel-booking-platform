@@ -1,0 +1,45 @@
+{
+  "components": {
+    "schemas": {},
+    "securitySchemes": {
+      "bearer": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "jwt": {
+        "in": "cookie",
+        "name": "session_id",
+        "type": "apiKey"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "support@HolidayHotel.com",
+      "name": "API Support",
+      "url": ""
+    },
+    "description": "A comprehensive API for hotel booking and management system",
+    "title": "Hotel Booking API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/partner/capabilities": {
+      "get": {
+        "operationId": "PartnerCapabilitiesController_capabilities_v1",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PartnerCapabilities"
+        ]
+      }
+    }
+  },
+  "tags": []
+}

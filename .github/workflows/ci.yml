@@ -55,6 +55,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm db:migrate
       - run: pnpm db:check
+      - run: pnpm check:openapi
       - run: pnpm test
       - run: pnpm build
       - run: pnpm check:bundle

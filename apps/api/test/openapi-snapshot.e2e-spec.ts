@@ -1,0 +1,108 @@
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { NestFactory } from "@nestjs/core";
+import type { NestExpressApplication } from "@nestjs/platform-express";
+import type { OpenAPIObject } from "@nestjs/swagger";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { AppModule } from "../src/app.module";
+import { configureApp } from "../src/app.setup";
+import { buildApiDocuments } from "../src/config/swagger.config";
+
+/**
+ * The committed OpenAPI snapshot is the contract's documentation half: a changed schema, path or
+ * status code fails here until the snapshot is regenerated deliberately.
+ *
+ * Regenerate with `pnpm --filter @hotel-booking/api openapi:generate`.
+ */
+const snapshotDir = resolve(process.cwd(), "openapi");
+const update = process.env.UPDATE_OPENAPI === "1";
+
+/**
+ * Removes environment-dependent values and sorts keys, so the same routes always serialise alike
+ * regardless of machine, timezone or configured URLs.
+ */
+const normalize = (value: unknown): unknown => {
+  if (Array.isArray(value)) return value.map(normalize);
+  if (!value || typeof value !== "object") return value;
+
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .filter(([key]) => key !== "servers")
+      .sort(([left], [right]) => (left < right ? -1 : left > right ? 1 : 0))
+      .map(([key, entry]) => [key, normalize(entry)]),
+  );
+};
+
+const serialize = (document: OpenAPIObject): string =>
+  `${JSON.stringify(normalize(document), null, 2)}\n`;
+
+describe("OpenAPI snapshot", () => {
+  let app: NestExpressApplication;
+
+  beforeAll(async () => {
+    app = await NestFactory.create<NestExpressApplication>(AppModule, { logger: false });
+    configureApp(app);
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app?.close();
+  });
+
+  it("matches the committed documents for every audience", async () => {
+    const documents = buildApiDocuments(app);
+    const files = {
+      "combined.json": documents.combined,
+      "public.json": documents.audiences.public,
+      "manage.json": documents.audiences.manage,
+      "admin.json": documents.audiences.admin,
+      "partner.json": documents.audiences.partner,
+    };
+
+    if (update) await mkdir(snapshotDir, { recursive: true });
+
+    for (const [name, document] of Object.entries(files)) {
+      const expected = serialize(document);
+      if (update) await writeFile(join(snapshotDir, name), expected, "utf8");
+      const actual = await readFile(join(snapshotDir, name), "utf8");
+      expect(actual, `${name} is out of date; run openapi:generate and commit the result`).toBe(
+        expected,
+      );
+    }
+  });
+
+  it("documents the migrated hotel routes with request and response schemas", async () => {
+    const { combined } = buildApiDocuments(app);
+
+    const search = combined.paths?.["/api/v1/hotels/search"]?.get;
+    expect(search).toBeDefined();
+    expect(search?.responses?.["200"]).toBeDefined();
+
+    const searchDocument = JSON.stringify(search);
+    expect(searchDocument).toContain("#/components/schemas/HotelSearchResponseDto_Output");
+    expect(Object.keys(combined.components?.schemas ?? {})).toEqual(
+      expect.arrayContaining([
+        "HotelSearchResponseDto_Output",
+        "PublicHotelListDto_Output",
+        "PublicHotelDto_Output",
+      ]),
+    );
+
+    const parameters = (search?.parameters ?? []).map((parameter) =>
+      "name" in parameter ? parameter.name : undefined,
+    );
+    expect(parameters).toEqual(
+      expect.arrayContaining([
+        "destination",
+        "adultCount",
+        "childCount",
+        "facilities",
+        "types",
+        "stars",
+        "maxPrice",
+        "sortOption",
+        "page",
+      ]),
+    );
+  });
+});
