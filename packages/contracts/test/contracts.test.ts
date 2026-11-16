@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  cursorPageQuerySchema,
+  cursorPageSchema,
+  DEFAULT_PAGE_LIMIT,
   hotelSearchQuerySchema,
+  pageInfoSchema,
+  pageLimit,
   problemDetailsSchema,
   problemType,
   publicHotelSchema,
@@ -154,5 +159,51 @@ describe("problemDetailsSchema", () => {
         message: "x",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("cursorPageQuerySchema", () => {
+  it("treats an empty limit and cursor as not provided", () => {
+    expect(cursorPageQuerySchema.parse({ limit: "", cursor: "" })).toEqual({});
+  });
+
+  it("parses the limit from the query string", () => {
+    expect(cursorPageQuerySchema.parse({ limit: "50", cursor: "abc" })).toEqual({
+      limit: 50,
+      cursor: "abc",
+    });
+    expect(pageLimit({})).toBe(DEFAULT_PAGE_LIMIT);
+    expect(pageLimit({ limit: 50 })).toBe(50);
+  });
+
+  it.each([["0"], ["101"], ["1.5"], ["abc"]])("rejects limit=%s", (limit) => {
+    const result = cursorPageQuerySchema.safeParse({ limit });
+
+    expect(result.success).toBe(false);
+    expect(result.error!.issues[0].path).toEqual(["limit"]);
+  });
+});
+
+describe("pageInfoSchema", () => {
+  it("accepts the last page and a following page", () => {
+    expect(pageInfoSchema.parse({ nextCursor: null, hasMore: false })).toEqual({
+      nextCursor: null,
+      hasMore: false,
+    });
+    expect(pageInfoSchema.parse({ nextCursor: "abc", hasMore: true }).hasMore).toBe(true);
+  });
+
+  it("rejects a missing hasMore, so clients can never infer it", () => {
+    expect(pageInfoSchema.safeParse({ nextCursor: null }).success).toBe(false);
+  });
+
+  it("wraps items with the page metadata", () => {
+    const page = cursorPageSchema(publicHotelSchema).parse({
+      data: [hotel],
+      pageInfo: { nextCursor: null, hasMore: false },
+    });
+
+    expect(page.data[0]._id).toBe(hotel._id);
+    expect(page.pageInfo.hasMore).toBe(false);
   });
 });
