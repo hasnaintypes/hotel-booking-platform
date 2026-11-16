@@ -44,16 +44,16 @@ describe("inactive hotels", () => {
   it("lists only active hotels for guests and ordinary users", async () => {
     const guest = await anonymous(t).get(routes.hotels.list);
     expect(guest.status).toBe(200);
-    expect(names(guest.body)).toContain("Visible Inn");
-    expect(names(guest.body)).not.toContain("Hidden Inn");
+    expect(names(guest.body.data)).toContain("Visible Inn");
+    expect(names(guest.body.data)).not.toContain("Hidden Inn");
 
     const user = await other.agent.get(routes.hotels.list);
-    expect(names(user.body)).not.toContain("Hidden Inn");
+    expect(names(user.body.data)).not.toContain("Hidden Inn");
   });
 
   it("lists every hotel for admins", async () => {
     const res = await admin.agent.get(routes.hotels.adminList);
-    expect(names(res.body)).toEqual(expect.arrayContaining(["Visible Inn", "Hidden Inn"]));
+    expect(names(res.body.data)).toEqual(expect.arrayContaining(["Visible Inn", "Hidden Inn"]));
   });
 
   it("leaves inactive hotels out of search results", async () => {
@@ -61,7 +61,7 @@ describe("inactive hotels", () => {
     expect(res.status).toBe(200);
     expect(names(res.body.data)).toContain("Visible Inn");
     expect(names(res.body.data)).not.toContain("Hidden Inn");
-    expect(res.body.pagination.total).toBeGreaterThanOrEqual(1);
+    expect(res.body.pageInfo.hasMore).toBe(false);
   });
 
   it("answers 404 for an inactive hotel requested by a guest or another user", async () => {
@@ -84,7 +84,7 @@ describe("inactive hotels", () => {
 
   it("lists inactive hotels in the owner's own view", async () => {
     const res = await owner.agent.get(routes.myHotels.list);
-    expect(names(res.body)).toEqual(expect.arrayContaining(["Visible Inn", "Hidden Inn"]));
+    expect(names(res.body.data)).toEqual(expect.arrayContaining(["Visible Inn", "Hidden Inn"]));
   });
 
   it("serves an active hotel to everyone", async () => {

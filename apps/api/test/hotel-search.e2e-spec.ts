@@ -65,10 +65,11 @@ describe("hotel search", () => {
 
   it("treats the empty parameters the web client sends as not provided", async () => {
     const res = await search(
-      "destination=&checkIn=&checkOut=&adultCount=&childCount=&page=&maxPrice=&sortOption=",
+      "destination=&checkIn=&checkOut=&adultCount=&childCount=&limit=&maxPrice=&sortOption=",
     );
     expect(res.status).toBe(200);
-    expect(res.body.pagination).toMatchObject({ total: 9, page: 1, pages: 2 });
+    expect(res.body.data).toHaveLength(9);
+    expect(res.body.pageInfo).toEqual({ hasMore: false, nextCursor: null });
   });
 
   it("matches a destination against city or country, ignoring case", async () => {
@@ -119,21 +120,27 @@ describe("hotel search", () => {
     expect(names(desc)).toEqual(["Rome Palace", "Paris Nook", "Ives Cottage"]);
   });
 
-  it("pages results five at a time", async () => {
-    const first = await search("destination=Oslo");
-    expect(first.body.data).toHaveLength(5);
-    expect(first.body.pagination).toEqual({ total: 6, page: 1, pages: 2 });
+  it("pages results with an opaque cursor", async () => {
+    const first = await search("destination=Oslo&limit=4");
+    expect(first.body.data).toHaveLength(4);
+    expect(first.body.pageInfo.hasMore).toBe(true);
+    expect(typeof first.body.pageInfo.nextCursor).toBe("string");
 
-    const second = await search("destination=Oslo&page=2");
-    expect(second.body.data).toHaveLength(1);
-    expect(second.body.pagination.page).toBe(2);
+    const second = await search(
+      `destination=Oslo&limit=4&cursor=${encodeURIComponent(first.body.pageInfo.nextCursor)}`,
+    );
+    expect(second.body.data).toHaveLength(2);
+    expect(second.body.pageInfo).toEqual({ hasMore: false, nextCursor: null });
+
+    const ids = [...first.body.data, ...second.body.data].map((h: { _id: string }) => h._id);
+    expect(new Set(ids).size).toBe(6);
   });
 
   it.each([
-    ["page=0", "page"],
-    ["page=abc", "page"],
-    ["page=1.5", "page"],
-    ["page=1001", "page"],
+    ["limit=0", "limit"],
+    ["limit=101", "limit"],
+    ["limit=abc", "limit"],
+    ["cursor=not-a-cursor", "cursor"],
     ["maxPrice=-1", "maxPrice"],
     ["maxPrice=abc", "maxPrice"],
     ["stars=9", "stars"],
@@ -160,7 +167,7 @@ describe("hotel search", () => {
     ]) {
       const res = await search(query);
       expect(res.status).toBe(200);
-      expect(res.body.pagination.total).toBe(baseline.body.pagination.total);
+      expect(res.body.data).toHaveLength(baseline.body.data.length);
     }
   });
 });

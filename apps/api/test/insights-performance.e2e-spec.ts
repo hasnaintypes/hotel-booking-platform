@@ -71,7 +71,7 @@ describe("business insights at scale", () => {
     const db = t.app.get<Database>(DATABASE);
     const result = await db.execute(sql`
       select indexname from pg_indexes
-      where tablename = 'bookings' and indexname = 'bookings_created_at_idx'
+      where tablename = 'bookings' and indexname = 'bookings_created_at_id_idx'
     `);
     const rows = (result as unknown as { rows: Array<{ indexname: string }> }).rows ?? result;
     expect(rows).toHaveLength(1);
@@ -109,6 +109,8 @@ describe("business insights at scale", () => {
 
     const listed = await admin.agent.get(routes.insights.rollups);
     expect(listed.status).toBe(200);
-    expect(listed.body.map((rollup: { _id: string }) => rollup._id)).toContain(created.body._id);
+    expect(listed.body.data.map((rollup: { _id: string }) => rollup._id)).toContain(
+      created.body._id,
+    );
   });
 });

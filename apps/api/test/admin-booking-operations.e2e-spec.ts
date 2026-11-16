@@ -91,7 +91,7 @@ describe("admin booking operations", () => {
         .query({ status: "needs_review" });
 
       expect(response.status).toBe(200);
-      const ids = response.body.map((booking: { _id: string }) => booking._id);
+      const ids = response.body.data.map((booking: { _id: string }) => booking._id);
       expect(ids).toContain(review.id);
       expect(ids).not.toContain(confirmed.id);
     });
@@ -102,7 +102,7 @@ describe("admin booking operations", () => {
 
       const response = await admin.agent.get(routes.bookings.list).query({ q: marker });
       expect(response.status).toBe(200);
-      expect(response.body.map((booking: { _id: string }) => booking._id)).toEqual([found.id]);
+      expect(response.body.data.map((booking: { _id: string }) => booking._id)).toEqual([found.id]);
 
       const invalid = await admin.agent.get(routes.bookings.list).query({ status: "not-a-status" });
       expect(invalid.status).toBe(400);
@@ -285,7 +285,7 @@ describe("admin booking operations", () => {
         .get(routes.reconciliation.discrepancies)
         .query({ status: "open", kind: "payment_status_mismatch" });
       expect(list.status).toBe(200);
-      expect(list.body.map((row: { id: string }) => row.id)).toContain(finding!.id);
+      expect(list.body.data.map((row: { id: string }) => row.id)).toContain(finding!.id);
 
       const assigned = await admin.agent
         .patch(routes.reconciliation.discrepancy(finding!.id))
