@@ -11,6 +11,8 @@
     "dev": "pnpm --filter @hotel-booking/db build && nest start --watch --entryFile ../apps/api/src/main",
     "gen:controller": "node scripts/new-controller.mjs",
     "lint": "eslint . --max-warnings 0",
+    "openapi:check": "vitest run test/openapi-snapshot.e2e-spec.ts",
+    "openapi:generate": "UPDATE_OPENAPI=1 vitest run test/openapi-snapshot.e2e-spec.ts",
     "seed": "tsx src/database/seeds/seed.ts",
     "start": "node dist/apps/api/src/main.js",
     "start:worker": "node dist/apps/api/src/worker.js",

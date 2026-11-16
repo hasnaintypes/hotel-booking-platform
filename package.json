@@ -19,7 +19,8 @@
     "format:code": "prettier --write \"{apps,packages}/**/*.{ts,tsx,js,jsx,mjs,cjs,css,html}\"",
     "lint": "turbo run lint",
     "test": "turbo run test --concurrency=1",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "check:openapi": "pnpm --filter @hotel-booking/contracts build && pnpm --filter @hotel-booking/api openapi:check"
   },
   "devDependencies": {
     "knip": "^6.44.1",
