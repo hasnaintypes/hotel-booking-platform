@@ -7,6 +7,8 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { ZodSerializerInterceptor } from "nestjs-zod";
+import { DeprecationInterceptor } from "./common/http/deprecation.interceptor";
+import { ResponseEtagInterceptor } from "./common/http/response-etag.interceptor";
 import { CORS_REJECTION_MESSAGE } from "./common/errors/exception-mapper";
 import {
   flattenValidationErrors,
@@ -121,9 +123,13 @@ export function configureApp(app: NestExpressApplication): void {
       }),
     ),
   );
-  // Routes annotated with @ZodResponse are parsed against their contract before they are sent;
-  // routes that still use class-validator DTOs pass through untouched.
-  app.useGlobalInterceptors(new ZodSerializerInterceptor(app.get(Reflector)));
+  // Response headers: deprecation announcements, then entity tags over the serialised body, then the
+  // Zod serialiser that produces that body.
+  app.useGlobalInterceptors(
+    new DeprecationInterceptor(app.get(Reflector)),
+    new ResponseEtagInterceptor(app.get(Reflector)),
+    new ZodSerializerInterceptor(app.get(Reflector)),
+  );
   app.useGlobalGuards(new OriginGuard(config));
 
   app.enableCors({

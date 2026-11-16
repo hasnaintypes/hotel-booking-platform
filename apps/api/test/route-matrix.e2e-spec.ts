@@ -1,9 +1,11 @@
 import { randomUUID } from "node:crypto";
+import { problemDetailsSchema, problemType } from "@hotel-booking/contracts";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ROUTE_TABLE } from "../src/common/routing/route-table";
 import { createTestApp, type TestApp } from "./support/create-app";
 import { anonymous } from "./support/helpers";
 import { routes } from "./support/routes";
+import { expectedCodes, UUID_RE } from "./support/status-matrix";
 
 const id = randomUUID();
 const hotelId = randomUUID();
@@ -191,5 +193,38 @@ describe("route status matrix", () => {
   it.each(MATRIX)("$name", async ({ method, path, status }) => {
     const res = await anonymous(t)[method](path);
     expect(res.status, `${method.toUpperCase()} ${path}`).toBe(status);
+
+    const requestId = res.headers["x-request-id"];
+    expect(requestId, "every response is correlated").toMatch(UUID_RE);
+
+    if (status >= 400) {
+      // Every failure answers in the ADR-024 problem shape, with a code the matrix allows.
+      expect(res.headers["content-type"], "problem+json").toMatch(/application\/problem\+json/);
+      const problem = problemDetailsSchema.parse(res.body);
+      expect(problem.status).toBe(status);
+      expect(problem.instance).toBe(path);
+      expect(problem.type).toBe(problemType(problem.code));
+      expect(expectedCodes(status)).toContain(problem.code);
+      expect(problem.requestId).toBe(requestId);
+      expect(problem.message).toBe(problem.detail);
+      expect(problem.title.length).toBeGreaterThan(0);
+    } else {
+      expect(res.headers["content-type"] ?? "").not.toMatch(/problem\+json/);
+    }
+  });
+
+  it("sends the rate-limit headers on ordinary responses", async () => {
+    const res = await anonymous(t).get(routes.hotels.list).expect(200);
+
+    expect(Number(res.headers["x-ratelimit-limit"])).toBeGreaterThan(0);
+    expect(Number(res.headers["x-ratelimit-remaining"])).toBeGreaterThanOrEqual(0);
+    expect(Number(res.headers["x-ratelimit-reset"])).toBeGreaterThan(0);
+  });
+
+  it("answers a known path with the wrong method with 405 and Allow", async () => {
+    const res = await anonymous(t).delete(routes.hotels.list).expect(405);
+
+    expect(res.headers.allow).toContain("GET");
+    expect(res.body.code).toBe("METHOD_NOT_ALLOWED");
   });
 });
