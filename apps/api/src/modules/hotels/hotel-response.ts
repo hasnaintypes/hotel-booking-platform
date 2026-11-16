@@ -1,3 +1,4 @@
+import type { PublicHotel } from "@hotel-booking/contracts";
 import type { HotelRecord } from "../../database/repositories/hotels.repository";
 
 export type HotelStats = {
@@ -14,55 +15,8 @@ export const EMPTY_HOTEL_STATS: HotelStats = {
   reviewCount: 0,
 };
 
-type HotelLocation = {
-  latitude: number;
-  longitude: number;
-  address: {
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    zipCode: string;
-  };
-};
-
-type HotelContact = {
-  phone: string;
-  email: string;
-  website: string;
-};
-
-type HotelPolicies = {
-  checkInTime: string;
-  checkOutTime: string;
-  cancellationPolicy: string;
-  petPolicy: string;
-  smokingPolicy: string;
-};
-
 /** Fields every anonymous or signed-in customer may see. */
-export type PublicHotelResponse = {
-  _id: string;
-  name: string;
-  city: string;
-  country: string;
-  description: string;
-  type: string[];
-  adultCount: number;
-  childCount: number;
-  facilities: string[];
-  pricePerNight: number;
-  starRating: number;
-  imageUrls: string[];
-  lastUpdated: Date;
-  location?: HotelLocation;
-  contact: HotelContact;
-  policies: HotelPolicies;
-  averageRating: number;
-  reviewCount: number;
-  createdAt: Date;
-  updatedAt: Date;
-};
+export type PublicHotelResponse = PublicHotel;
 
 export type PublicHotelSearchResponse = {
   data: PublicHotelResponse[];
@@ -112,7 +66,7 @@ const withBaseFields = (
     pricePerNight: hotel.pricePerNightMinor / 100,
     starRating: hotel.starRating,
     imageUrls: hotel.images,
-    lastUpdated: hotel.updatedAt,
+    lastUpdated: hotel.updatedAt.toISOString(),
     contact: {
       phone: hotel.contactPhone ?? "",
       email: hotel.contactEmail ?? "",
@@ -127,8 +81,8 @@ const withBaseFields = (
     },
     averageRating: stats.averageRating,
     reviewCount: stats.reviewCount,
-    createdAt: hotel.createdAt,
-    updatedAt: hotel.updatedAt,
+    createdAt: hotel.createdAt.toISOString(),
+    updatedAt: hotel.updatedAt.toISOString(),
   };
 };
 
