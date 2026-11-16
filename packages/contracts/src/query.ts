@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { uuidSchema } from "./primitives";
 
 /**
  * Query-string coercion for request schemas.
@@ -50,3 +51,7 @@ export const optionalQueryStringList = (maxItems: number, maxLength: number) =>
 /** A closed set of query values, e.g. a sort option. Empty means "not provided". */
 export const optionalQueryEnum = <T extends readonly [string, ...string[]]>(values: T) =>
   z.preprocess((value) => scalar(absent(value)), z.enum(values).optional());
+
+/** A uuid-valued filter (for example `?hotelId=`); empty means "not provided". */
+export const optionalQueryUuid = () =>
+  z.preprocess((value) => scalar(absent(value)), uuidSchema.optional());

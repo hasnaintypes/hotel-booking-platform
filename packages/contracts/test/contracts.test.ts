@@ -42,7 +42,9 @@ const hotel = {
 
 describe("hotelSearchQuerySchema", () => {
   it("treats empty values as not provided", () => {
-    expect(hotelSearchQuerySchema.parse({ destination: "", page: "", stars: "" })).toEqual({});
+    expect(
+      hotelSearchQuerySchema.parse({ destination: "", limit: "", cursor: "", stars: "" }),
+    ).toEqual({});
   });
 
   it("parses numbers and repeated values from the query string", () => {
@@ -51,7 +53,8 @@ describe("hotelSearchQuerySchema", () => {
       adultCount: "2",
       stars: ["4", "5"],
       types: ["Luxury", "Budget"],
-      page: "2",
+      limit: "2",
+      cursor: "abc",
     });
 
     expect(parsed).toEqual({
@@ -59,7 +62,8 @@ describe("hotelSearchQuerySchema", () => {
       adultCount: 2,
       stars: [4, 5],
       types: ["Luxury", "Budget"],
-      page: 2,
+      limit: 2,
+      cursor: "abc",
     });
   });
 
@@ -68,7 +72,9 @@ describe("hotelSearchQuerySchema", () => {
   });
 
   it("strips unknown keys instead of forwarding them", () => {
-    expect(hotelSearchQuerySchema.parse({ isActive: "false", page: "1" })).toEqual({ page: 1 });
+    expect(hotelSearchQuerySchema.parse({ isActive: "false", page: "1", offset: "10" })).toEqual(
+      {},
+    );
   });
 
   it("ignores operator-shaped values rather than failing or forwarding them", () => {
@@ -76,10 +82,11 @@ describe("hotelSearchQuerySchema", () => {
   });
 
   it.each([
-    [{ page: "0" }, "page"],
-    [{ page: "abc" }, "page"],
-    [{ page: "1.5" }, "page"],
-    [{ page: "1001" }, "page"],
+    [{ limit: "0" }, "limit"],
+    [{ limit: "101" }, "limit"],
+    [{ limit: "1.5" }, "limit"],
+    [{ limit: "abc" }, "limit"],
+    [{ cursor: "x".repeat(513) }, "cursor"],
     [{ maxPrice: "-1" }, "maxPrice"],
     [{ stars: "9" }, "stars"],
     [{ stars: "abc" }, "stars"],
@@ -101,7 +108,8 @@ describe("hotelSearchQuerySchema", () => {
       properties: Record<string, { type?: string }>;
     };
 
-    expect(json.properties.page).toEqual({ type: "integer", minimum: 1, maximum: 1000 });
+    expect(json.properties.limit).toEqual({ type: "integer", minimum: 1, maximum: 100 });
+    expect(json.properties.cursor).toEqual({ type: "string", maxLength: 512 });
     expect(json.properties.destination).toEqual({ type: "string", maxLength: 100 });
   });
 });
