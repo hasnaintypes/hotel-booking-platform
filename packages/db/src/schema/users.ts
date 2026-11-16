@@ -21,7 +21,7 @@ export const users = pgTable(
     // Case-insensitive uniqueness: "Grace@example.com" and "grace@example.com" are one account.
     uniqueIndex("users_email_unique").on(sql`lower(${table.email})`),
     index("users_status_idx").on(table.status),
-    index("users_created_at_idx").on(table.createdAt),
+    index("users_created_at_id_idx").on(table.createdAt, table.id),
   ],
 );
 

@@ -92,12 +92,14 @@ export const hotels = pgTable(
     index("hotels_city_trgm_idx").using("gin", sql`lower(${table.city}) gin_trgm_ops`),
     index("hotels_country_trgm_idx").using("gin", sql`lower(${table.country}) gin_trgm_ops`),
     index("hotels_country_code_idx").on(table.countryCode),
-    index("hotels_price_idx").on(table.pricePerNightMinor),
-    index("hotels_star_rating_idx").on(table.starRating),
-    index("hotels_owner_idx").on(table.ownerUserId),
+    /** Keyset pages sort by the display column plus `id`; the composite keeps the walk indexed. */
+    index("hotels_price_id_idx").on(table.pricePerNightMinor, table.id),
+    index("hotels_star_rating_id_idx").on(table.starRating, table.id),
+    index("hotels_updated_at_id_idx").on(table.updatedAt, table.id),
+    index("hotels_status_updated_at_id_idx").on(table.status, table.updatedAt, table.id),
+    index("hotels_owner_updated_at_id_idx").on(table.ownerUserId, table.updatedAt, table.id),
     index("hotels_organisation_idx").on(table.organisationId),
     index("hotels_created_by_idx").on(table.createdByUserId),
-    index("hotels_status_idx").on(table.status),
     index("hotels_city_star_rating_idx").on(table.city, table.starRating),
   ],
 );

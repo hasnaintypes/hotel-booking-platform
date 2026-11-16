@@ -86,7 +86,12 @@ export const reconciliationDiscrepancies = pgTable(
     uniqueIndex("reconciliation_discrepancies_open_dedupe_unique")
       .on(table.dedupeKey)
       .where(sql`${table.status} = 'open'`),
-    index("reconciliation_discrepancies_status_detected_at_idx").on(table.status, table.detectedAt),
+    index("reconciliation_discrepancies_detected_at_id_idx").on(table.detectedAt, table.id),
+    index("reconciliation_discrepancies_status_detected_at_id_idx").on(
+      table.status,
+      table.detectedAt,
+      table.id,
+    ),
     index("reconciliation_discrepancies_assigned_idx").on(table.assignedToUserId, table.status),
     index("reconciliation_discrepancies_booking_idx").on(table.bookingId),
     index("reconciliation_discrepancies_payment_idx").on(table.paymentId),

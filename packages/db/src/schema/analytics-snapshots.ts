@@ -89,7 +89,7 @@ export const analyticsSnapshots = pgTable(
       sql`${table.cancellationRate} between 0 and 100`,
     ),
     check("analytics_snapshots_average_rating_check", sql`${table.averageRating} between 0 and 5`),
-    index("analytics_snapshots_date_idx").on(table.date),
+    index("analytics_snapshots_date_id_idx").on(table.date, table.id),
   ],
 );
 
