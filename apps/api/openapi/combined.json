@@ -890,6 +890,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "description": "ETag from GET /api/v1/admin/hotels/:id; a stale value returns 412.",
+            "in": "header",
+            "name": "If-Match",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -904,7 +913,10 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "description": "The hotel with its updated state"
+          },
+          "412": {
+            "description": "If-Match does not match the current representation"
           }
         },
         "tags": [

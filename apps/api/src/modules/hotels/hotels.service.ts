@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { PreconditionFailedException } from "../../common/errors/precondition-failed.exception";
+import { ifMatchSatisfied, representationEtag } from "../../common/http/etag";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { HotelsRepository, type HotelRecord } from "../../database/repositories/hotels.repository";
 import { UsersRepository } from "../../database/repositories/users.repository";
@@ -73,12 +75,25 @@ export class HotelsService {
     return this.hotels.listAll().then((records) => this.enrichAdmin(records));
   }
 
-  async setActive(id: string, dto: ToggleActiveDto) {
+  async setActive(id: string, dto: ToggleActiveDto, options: { ifMatch?: string } = {}) {
     // ToggleActiveDto already guarantees a boolean. Checked again here so that a caller that
     // bypasses the DTO can never write anything but a boolean into the update.
     const isActive: unknown = dto.isActive;
     if (typeof isActive !== "boolean") {
       throw new BadRequestException("isActive boolean required");
+    }
+
+    // A conditional update compares the caller's tag with the representation they would have
+    // received from GET /admin/hotels/:id, before anything is written.
+    if (options.ifMatch !== undefined) {
+      const current = await this.hotels.findById(id);
+      if (!current) {
+        throw new NotFoundException("Hotel not found");
+      }
+      const representation = toAdminHotelResponse(current, await this.hotelStats.forHotel(id));
+      if (!ifMatchSatisfied(options.ifMatch, representationEtag(representation))) {
+        throw new PreconditionFailedException();
+      }
     }
 
     const hotel = await this.hotels.setStatus(id, isActive);
