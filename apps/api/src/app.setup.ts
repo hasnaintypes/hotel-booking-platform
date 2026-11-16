@@ -1,15 +1,18 @@
 import { ForbiddenException, Logger, ValidationPipe, VersioningType } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { Reflector } from "@nestjs/core";
 import { NestExpressApplication } from "@nestjs/platform-express";
 import type { NextFunction, Request, Response } from "express";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import { ZodSerializerInterceptor } from "nestjs-zod";
 import { CORS_REJECTION_MESSAGE } from "./common/errors/exception-mapper";
 import {
   flattenValidationErrors,
   ValidationFailedException,
 } from "./common/errors/validation-failed.exception";
+import { AppValidationPipe } from "./common/validation/app-validation.pipe";
 import { REQUEST_ID_HEADER, resolveRequestId } from "./common/logging/request-id";
 import { InvalidJsonException } from "./common/errors/invalid-json.exception";
 import { OriginGuard } from "./common/guards/origin.guard";
@@ -106,15 +109,21 @@ export function configureApp(app: NestExpressApplication): void {
   });
 
   app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      // No implicit conversion: it turns any object, and even the string "false", into `true` for a
-      // boolean, and coerces objects to the text "[object Object]". DTOs that accept text input
-      // (query strings, multipart forms) convert explicitly with @Transform.
-      transform: true,
-      exceptionFactory: (errors) => new ValidationFailedException(flattenValidationErrors(errors)),
-    }),
+    new AppValidationPipe(
+      new ValidationPipe({
+        whitelist: true,
+        // No implicit conversion: it turns any object, and even the string "false", into `true` for
+        // a boolean, and coerces objects to the text "[object Object]". DTOs that accept text input
+        // (query strings, multipart forms) convert explicitly with @Transform.
+        transform: true,
+        exceptionFactory: (errors) =>
+          new ValidationFailedException(flattenValidationErrors(errors)),
+      }),
+    ),
   );
+  // Routes annotated with @ZodResponse are parsed against their contract before they are sent;
+  // routes that still use class-validator DTOs pass through untouched.
+  app.useGlobalInterceptors(new ZodSerializerInterceptor(app.get(Reflector)));
   app.useGlobalGuards(new OriginGuard(config));
 
   app.enableCors({

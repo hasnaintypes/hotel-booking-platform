@@ -1,9 +1,11 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
+import { ZodValidationException } from "nestjs-zod";
 import type { ErrorCode, FieldError } from "./problem";
 import { InvalidJsonException } from "./invalid-json.exception";
 import { mapPostgresError } from "./postgres-errors";
 import { RateLimitedException } from "./rate-limited.exception";
 import { ValidationFailedException } from "./validation-failed.exception";
+import { fieldErrorsFromZod } from "./zod-errors";
 
 export type MappedError = {
   status: number;
@@ -110,6 +112,12 @@ export function mapException(exception: unknown): MappedError {
   if (exception instanceof ValidationFailedException) {
     return make(400, "VALIDATION_FAILED", "Request validation failed", {
       errors: exception.fieldErrors,
+    });
+  }
+  // Zod-backed DTOs (contracts) report the same shape as the class-validator pipeline.
+  if (exception instanceof ZodValidationException) {
+    return make(400, "VALIDATION_FAILED", "Request validation failed", {
+      errors: fieldErrorsFromZod(exception.getZodError()),
     });
   }
   if (exception instanceof InvalidJsonException) {
