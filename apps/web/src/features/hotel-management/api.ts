@@ -1,5 +1,5 @@
 import axiosInstance from "@hotel-booking/api-client";
-import type { BookingType, HotelType } from "@hotel-booking/types";
+import type { BookingType, CursorPage, HotelType, ListQuery } from "@hotel-booking/types";
 
 /** JSON body accepted by the hotel create/update endpoints. */
 export type HotelFormPayload = {
@@ -42,8 +42,8 @@ export const addMyHotel = async (
   return uploadImages(response.data._id, imageFiles);
 };
 
-export const fetchMyHotels = async (): Promise<HotelType[]> => {
-  const response = await axiosInstance.get("/api/v1/manage/hotels");
+export const fetchMyHotels = async (params: ListQuery = {}): Promise<CursorPage<HotelType>> => {
+  const response = await axiosInstance.get("/api/v1/manage/hotels", { params });
   return response.data;
 };
 
@@ -76,7 +76,12 @@ export const updateMyHotelActive = async (
   return response.data;
 };
 
-export const fetchHotelBookings = async (hotelId: string): Promise<BookingType[]> => {
-  const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}/bookings`);
+export const fetchHotelBookings = async (
+  hotelId: string,
+  params: ListQuery = {},
+): Promise<CursorPage<BookingType>> => {
+  const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}/bookings`, {
+    params,
+  });
   return response.data;
 };
