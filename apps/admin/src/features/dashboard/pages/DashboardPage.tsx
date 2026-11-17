@@ -21,7 +21,7 @@ const DashboardPage = () => {
 
   const rollupsQuery = useQuery({
     queryKey: adminKeys.rollups,
-    queryFn: fetchRollups,
+    queryFn: () => fetchRollups({ limit: 100 }),
   });
 
   const captureMutation = useMutation({
@@ -61,7 +61,7 @@ const DashboardPage = () => {
   });
 
   const overview = insightsQuery.data?.overview;
-  const rollups = rollupsQuery.data;
+  const rollups = rollupsQuery.data?.data;
 
   return (
     <div className="space-y-6">

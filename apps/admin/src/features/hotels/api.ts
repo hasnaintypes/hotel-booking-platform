@@ -1,8 +1,8 @@
 import apiClient from "@hotel-booking/api-client";
-import type { HotelType } from "@hotel-booking/types";
+import type { CursorPage, HotelType, ListQuery } from "@hotel-booking/types";
 
-export const fetchHotels = async (): Promise<HotelType[]> => {
-  const response = await apiClient.get("/api/v1/admin/hotels");
+export const fetchHotels = async (params: ListQuery = {}): Promise<CursorPage<HotelType>> => {
+  const response = await apiClient.get("/api/v1/admin/hotels", { params });
   return response.data;
 };
 

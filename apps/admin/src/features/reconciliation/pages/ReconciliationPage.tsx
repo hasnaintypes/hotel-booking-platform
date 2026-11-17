@@ -1,17 +1,26 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiErrorMessage } from "@hotel-booking/api-client";
 import type {
   DiscrepancyKind,
   DiscrepancyStatus,
   ReconciliationDiscrepancyType,
 } from "@hotel-booking/types";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  LoadMore,
+} from "@hotel-booking/ui";
 import { toast } from "sonner";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminReconciliation } from "@/shared/lib/query-invalidation";
+import { flattenPages, nextCursorPageParam } from "@/shared/lib/infinite-pages";
 import { fetchDiscrepancies, updateDiscrepancy, type DiscrepancyUpdate } from "../api";
 
 const KINDS: DiscrepancyKind[] = [
@@ -201,14 +210,15 @@ const ReconciliationPage = () => {
     [status, kind],
   );
 
-  const discrepanciesQuery = useQuery({
-    queryKey: [...adminKeys.reconciliation, filters],
-    queryFn: () => fetchDiscrepancies(filters),
+  const discrepanciesQuery = useInfiniteQuery({
+    queryKey: [...adminKeys.reconciliation, filters, "infinite"],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchDiscrepancies({ ...filters, cursor: pageParam }),
+    getNextPageParam: nextCursorPageParam,
   });
+  const discrepancies = flattenPages(discrepanciesQuery.data);
 
-  const openCount = (discrepanciesQuery.data ?? []).filter(
-    (discrepancy) => discrepancy.status === "open",
-  ).length;
+  const openCount = discrepancies.filter((discrepancy) => discrepancy.status === "open").length;
 
   return (
     <div className="space-y-4">
@@ -251,8 +261,8 @@ const ReconciliationPage = () => {
           </select>
         </label>
         <p className="text-sm text-slate-600">
-          Showing {discrepanciesQuery.data?.length ?? 0} finding
-          {(discrepanciesQuery.data?.length ?? 0) === 1 ? "" : "s"}
+          Showing {discrepancies.length} finding
+          {discrepancies.length === 1 ? "" : "s"}
           {status === "open" ? ` (${openCount} open)` : ""}
         </p>
       </div>
@@ -266,11 +276,11 @@ const ReconciliationPage = () => {
             <div className="h-24 animate-pulse rounded-xl bg-slate-200" />
           ) : discrepanciesQuery.isError ? (
             <p className="text-sm text-red-600">Could not load findings.</p>
-          ) : (discrepanciesQuery.data ?? []).length === 0 ? (
+          ) : discrepancies.length === 0 ? (
             <p className="text-sm text-slate-500">No findings match these filters.</p>
           ) : (
             <ul className="space-y-3">
-              {(discrepanciesQuery.data ?? []).map((discrepancy) => (
+              {discrepancies.map((discrepancy) => (
                 <DiscrepancyRow
                   key={discrepancy.id}
                   discrepancy={discrepancy}
@@ -281,6 +291,11 @@ const ReconciliationPage = () => {
           )}
         </CardContent>
       </Card>
+      <LoadMore
+        hasMore={discrepanciesQuery.hasNextPage}
+        isFetching={discrepanciesQuery.isFetchingNextPage}
+        onClick={() => void discrepanciesQuery.fetchNextPage()}
+      />
     </div>
   );
 };
