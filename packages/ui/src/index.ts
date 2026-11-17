@@ -8,6 +8,7 @@ export * from "./components/dropdown-menu";
 export * from "./components/error-boundary";
 export * from "./components/input";
 export * from "./components/label";
+export * from "./components/load-more";
 export * from "./components/safe-image";
 export * from "./components/select";
 export * from "./components/select-option-label";
