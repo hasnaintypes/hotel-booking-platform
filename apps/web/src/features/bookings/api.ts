@@ -3,7 +3,7 @@ import axiosInstance, {
   getErrorStatus,
   idempotencyHeaders,
 } from "@hotel-booking/api-client";
-import type { BookingCreationType, BookingType, HotelWithBookingsType } from "@hotel-booking/types";
+import type { BookingCreationType, BookingType, CursorPage, ListQuery } from "@hotel-booking/types";
 import type { BookingFormData } from "./types";
 
 type CheckoutStay = Pick<
@@ -53,8 +53,8 @@ export const fetchBooking = async (reference: string): Promise<BookingType> => {
   return response.data;
 };
 
-export const fetchMyBookings = async (): Promise<HotelWithBookingsType[]> => {
-  const response = await axiosInstance.get("/api/v1/bookings");
+export const fetchMyBookings = async (params: ListQuery = {}): Promise<CursorPage<BookingType>> => {
+  const response = await axiosInstance.get("/api/v1/bookings", { params });
   return response.data;
 };
 

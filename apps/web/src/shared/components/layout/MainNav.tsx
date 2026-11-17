@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 import useAuth from "@/features/auth/hooks/useAuth";
 import { getHotelsSearchUrl } from "@/shared/lib/nav-utils";
 import { queryClient } from "@hotel-booking/api-client";
-import * as bookingsApi from "@/features/bookings/api";
 import * as hotelManagementApi from "@/features/hotel-management/api";
-import { bookingKeys, hotelKeys } from "@/shared/lib/query-keys";
+import { myBookingsQueryOptions } from "@/features/bookings/hooks/useMyBookings";
+import { hotelKeys } from "@/shared/lib/query-keys";
 import {
   prefetchMyBookingsRoute,
   prefetchMyHotelsRoute,
@@ -25,10 +25,7 @@ const MainNav = () => {
   const prefetchMyBookings = () => {
     prefetchMyBookingsRoute();
     if (!isLoggedIn) return;
-    void queryClient.prefetchQuery({
-      queryKey: bookingKeys.mine(),
-      queryFn: bookingsApi.fetchMyBookings,
-    });
+    void queryClient.prefetchInfiniteQuery(myBookingsQueryOptions);
   };
 
   const prefetchMyHotels = () => {
@@ -36,7 +33,7 @@ const MainNav = () => {
     if (!isLoggedIn) return;
     void queryClient.prefetchQuery({
       queryKey: hotelKeys.mine(),
-      queryFn: hotelManagementApi.fetchMyHotels,
+      queryFn: () => hotelManagementApi.fetchMyHotels({ limit: 100 }),
     });
   };
 
