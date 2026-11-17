@@ -1,9 +1,11 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import type { UserType } from "@hotel-booking/types";
+import type { CursorPage, UserType } from "@hotel-booking/types";
 import {
   DataTable,
+  LoadMore,
   Select,
   SelectContent,
   SelectItem,
@@ -17,6 +19,7 @@ import { toast } from "sonner";
 import { apiErrorMessage } from "@hotel-booking/api-client";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminCatalogs } from "@/shared/lib/query-invalidation";
+import { flattenPages, mapInfiniteRows, nextCursorPageParam } from "@/shared/lib/infinite-pages";
 import { fetchUsers, updateUserRole, type AdminRole } from "../api";
 
 const ROLES: AdminRole[] = ["user", "admin"];
@@ -26,22 +29,27 @@ const ROLE_ICONS: Record<AdminRole, LucideIcon> = {
   admin: Shield,
 };
 
+type UsersCache = InfiniteData<CursorPage<UserType>>;
+
 const UsersPage = () => {
   const queryClient = useQueryClient();
-  const usersQuery = useQuery({
+  const usersQuery = useInfiniteQuery({
     queryKey: adminKeys.users,
-    queryFn: fetchUsers,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchUsers({ limit: 100, cursor: pageParam }),
+    getNextPageParam: nextCursorPageParam,
   });
+  const users = flattenPages(usersQuery.data);
 
   const mutation = useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: AdminRole }) =>
       updateUserRole(userId, role),
     onMutate: async ({ userId, role }) => {
       await queryClient.cancelQueries({ queryKey: adminKeys.users });
-      const previous = queryClient.getQueryData<UserType[]>(adminKeys.users);
+      const previous = queryClient.getQueryData<UsersCache>(adminKeys.users);
 
-      queryClient.setQueryData<UserType[]>(adminKeys.users, (users) =>
-        users?.map((user) => (user._id === userId ? { ...user, role } : user)),
+      queryClient.setQueryData<UsersCache>(adminKeys.users, (data) =>
+        mapInfiniteRows(data, (user) => (user._id === userId ? { ...user, role } : user)),
       );
 
       return { previous };
@@ -135,11 +143,14 @@ const UsersPage = () => {
       ) : usersQuery.isError ? (
         <p className="text-sm text-red-600">Could not load users.</p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={usersQuery.data || []}
-          searchPlaceholder="Search users…"
-        />
+        <>
+          <DataTable columns={columns} data={users} searchPlaceholder="Search users…" />
+          <LoadMore
+            hasMore={usersQuery.hasNextPage}
+            isFetching={usersQuery.isFetchingNextPage}
+            onClick={() => void usersQuery.fetchNextPage()}
+          />
+        </>
       )}
     </div>
   );

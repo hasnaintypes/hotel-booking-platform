@@ -13,17 +13,17 @@ type ActivityItem = {
 
 const ActivityPage = () => {
   const bookingsQuery = useQuery({
-    queryKey: adminKeys.bookings,
-    queryFn: () => fetchBookings(),
+    queryKey: [...adminKeys.bookings, "activity"],
+    queryFn: () => fetchBookings({ limit: 50 }),
   });
   const reviewsQuery = useQuery({
-    queryKey: adminKeys.reviews,
-    queryFn: fetchReviews,
+    queryKey: [...adminKeys.reviews, "activity"],
+    queryFn: () => fetchReviews({ limit: 50 }),
   });
 
   const items: ActivityItem[] = [];
 
-  bookingsQuery.data?.forEach((booking) => {
+  bookingsQuery.data?.data.forEach((booking) => {
     items.push({
       id: `b-${booking._id}`,
       at: new Date(booking.createdAt || booking.checkIn).getTime(),
@@ -33,7 +33,7 @@ const ActivityPage = () => {
     });
   });
 
-  reviewsQuery.data?.forEach((review) => {
+  reviewsQuery.data?.data.forEach((review) => {
     items.push({
       id: `r-${review._id}`,
       at: new Date(review.createdAt || Date.now()).getTime(),

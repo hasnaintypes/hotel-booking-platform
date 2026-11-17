@@ -46,11 +46,12 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [dateFilter, setDateFilter] = useState<string>("all");
 
-  const { data: bookings, isLoading } = useQuery({
+  const { data: bookingsPage, isLoading } = useQuery({
     queryKey: hotelKeys.bookings(hotelId),
-    queryFn: () => hotelManagementApi.fetchHotelBookings(hotelId),
+    queryFn: () => hotelManagementApi.fetchHotelBookings(hotelId, { limit: 100 }),
     enabled: isOpen && !!hotelId,
   });
+  const bookings = bookingsPage?.data;
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {

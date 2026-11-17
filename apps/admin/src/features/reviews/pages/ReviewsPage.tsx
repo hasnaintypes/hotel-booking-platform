@@ -1,17 +1,21 @@
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import type { ReviewType } from "@hotel-booking/types";
-import { Badge, DataTable } from "@hotel-booking/ui";
+import { Badge, DataTable, LoadMore } from "@hotel-booking/ui";
 import { getHotelUrl } from "@/shared/lib/app-urls";
 import { adminKeys } from "@/shared/lib/query-keys";
+import { flattenPages, nextCursorPageParam } from "@/shared/lib/infinite-pages";
 import { fetchReviews } from "../api";
 
 const ReviewsPage = () => {
-  const reviewsQuery = useQuery({
-    queryKey: adminKeys.reviews,
-    queryFn: fetchReviews,
+  const reviewsQuery = useInfiniteQuery({
+    queryKey: [...adminKeys.reviews, "infinite"],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchReviews({ cursor: pageParam }),
+    getNextPageParam: nextCursorPageParam,
   });
+  const reviews = flattenPages(reviewsQuery.data);
 
   const columns = useMemo<LegacyColumnDef<ReviewType, unknown>[]>(
     () => [
@@ -79,11 +83,14 @@ const ReviewsPage = () => {
       ) : reviewsQuery.isError ? (
         <p className="text-sm text-red-600">Could not load reviews.</p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={reviewsQuery.data || []}
-          searchPlaceholder="Search reviews…"
-        />
+        <>
+          <DataTable columns={columns} data={reviews} searchPlaceholder="Search loaded reviews…" />
+          <LoadMore
+            hasMore={reviewsQuery.hasNextPage}
+            isFetching={reviewsQuery.isFetchingNextPage}
+            onClick={() => void reviewsQuery.fetchNextPage()}
+          />
+        </>
       )}
     </div>
   );

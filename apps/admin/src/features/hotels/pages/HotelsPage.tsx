@@ -1,31 +1,38 @@
 import { useMemo } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { InfiniteData } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import type { HotelType } from "@hotel-booking/types";
-import { Badge, Button, DataTable } from "@hotel-booking/ui";
+import type { CursorPage, HotelType } from "@hotel-booking/types";
+import { Badge, Button, DataTable, LoadMore } from "@hotel-booking/ui";
 import { apiErrorMessage } from "@hotel-booking/api-client";
 import { toast } from "sonner";
 import { getHotelUrl } from "@/shared/lib/app-urls";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { invalidateAdminCatalogs } from "@/shared/lib/query-invalidation";
+import { flattenPages, mapInfiniteRows, nextCursorPageParam } from "@/shared/lib/infinite-pages";
 import { fetchHotels, updateHotelActive } from "../api";
+
+type HotelsCache = InfiniteData<CursorPage<HotelType>>;
 
 const HotelsPage = () => {
   const queryClient = useQueryClient();
-  const hotelsQuery = useQuery({
+  const hotelsQuery = useInfiniteQuery({
     queryKey: adminKeys.hotels,
-    queryFn: fetchHotels,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchHotels({ limit: 100, cursor: pageParam }),
+    getNextPageParam: nextCursorPageParam,
   });
+  const hotels = flattenPages(hotelsQuery.data);
 
   const mutation = useMutation({
     mutationFn: ({ hotelId, isActive }: { hotelId: string; isActive: boolean }) =>
       updateHotelActive(hotelId, isActive),
     onMutate: async ({ hotelId, isActive }) => {
       await queryClient.cancelQueries({ queryKey: adminKeys.hotels });
-      const previous = queryClient.getQueryData<HotelType[]>(adminKeys.hotels);
+      const previous = queryClient.getQueryData<HotelsCache>(adminKeys.hotels);
 
-      queryClient.setQueryData<HotelType[]>(adminKeys.hotels, (hotels) =>
-        hotels?.map((hotel) => (hotel._id === hotelId ? { ...hotel, isActive } : hotel)),
+      queryClient.setQueryData<HotelsCache>(adminKeys.hotels, (data) =>
+        mapInfiniteRows(data, (hotel) => (hotel._id === hotelId ? { ...hotel, isActive } : hotel)),
       );
 
       return { previous };
@@ -124,11 +131,14 @@ const HotelsPage = () => {
       ) : hotelsQuery.isError ? (
         <p className="text-sm text-red-600">Could not load hotels.</p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={hotelsQuery.data || []}
-          searchPlaceholder="Search hotels…"
-        />
+        <>
+          <DataTable columns={columns} data={hotels} searchPlaceholder="Search hotels…" />
+          <LoadMore
+            hasMore={hotelsQuery.hasNextPage}
+            isFetching={hotelsQuery.isFetchingNextPage}
+            onClick={() => void hotelsQuery.fetchNextPage()}
+          />
+        </>
       )}
     </div>
   );

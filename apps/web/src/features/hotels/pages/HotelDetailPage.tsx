@@ -33,7 +33,8 @@ const Detail = () => {
 
   const { data: reviews, isLoading: isReviewsLoading } = useQuery<ReviewType[]>({
     queryKey: hotelKeys.reviews(hotelId || ""),
-    queryFn: () => reviewsApi.fetchHotelReviews(hotelId || ""),
+    // The detail page shows the latest first page of reviews; there is no "load more" here yet.
+    queryFn: async () => (await reviewsApi.fetchHotelReviews(hotelId || "", { limit: 20 })).data,
     enabled: !!hotelId,
   });
 

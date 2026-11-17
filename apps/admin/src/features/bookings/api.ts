@@ -3,7 +3,12 @@ import apiClient, {
   getErrorStatus,
   idempotencyHeaders,
 } from "@hotel-booking/api-client";
-import type { BookingDetailType, BookingListFilters, BookingType } from "@hotel-booking/types";
+import type {
+  BookingDetailType,
+  BookingListFilters,
+  BookingType,
+  CursorPage,
+} from "@hotel-booking/types";
 
 const queryParams = (filters: BookingListFilters) =>
   Object.fromEntries(
@@ -12,7 +17,9 @@ const queryParams = (filters: BookingListFilters) =>
     ),
   );
 
-export const fetchBookings = async (filters: BookingListFilters = {}): Promise<BookingType[]> => {
+export const fetchBookings = async (
+  filters: BookingListFilters = {},
+): Promise<CursorPage<BookingType>> => {
   const response = await apiClient.get("/api/v1/admin/bookings", {
     params: queryParams(filters),
   });

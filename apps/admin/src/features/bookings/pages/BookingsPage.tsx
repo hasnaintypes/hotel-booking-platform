@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import { Link } from "react-router-dom";
 import {
@@ -8,8 +8,9 @@ import {
   type BookingStatus,
   type BookingType,
 } from "@hotel-booking/types";
-import { Badge, DataTable } from "@hotel-booking/ui";
+import { Badge, DataTable, LoadMore } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
+import { flattenPages, nextCursorPageParam } from "@/shared/lib/infinite-pages";
 import { fetchBookings } from "../api";
 import CancelBookingButton from "../components/CancelBookingButton";
 import { bookingStatusClass } from "../lib/booking-status";
@@ -44,10 +45,13 @@ const BookingsPage = () => {
     [status, debouncedSearch],
   );
 
-  const bookingsQuery = useQuery({
-    queryKey: [...adminKeys.bookings, filters],
-    queryFn: () => fetchBookings(filters),
+  const bookingsQuery = useInfiniteQuery({
+    queryKey: [...adminKeys.bookings, filters, "infinite"],
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({ pageParam }) => fetchBookings({ ...filters, cursor: pageParam }),
+    getNextPageParam: nextCursorPageParam,
   });
+  const bookings = flattenPages(bookingsQuery.data);
 
   const columns = useMemo<LegacyColumnDef<BookingType, unknown>[]>(
     () => [
@@ -173,11 +177,18 @@ const BookingsPage = () => {
       ) : bookingsQuery.isError ? (
         <p className="text-sm text-red-600">Could not load bookings.</p>
       ) : (
-        <DataTable
-          columns={columns}
-          data={bookingsQuery.data || []}
-          searchPlaceholder="Search loaded bookings…"
-        />
+        <>
+          <DataTable
+            columns={columns}
+            data={bookings}
+            searchPlaceholder="Search loaded bookings…"
+          />
+          <LoadMore
+            hasMore={bookingsQuery.hasNextPage}
+            isFetching={bookingsQuery.isFetchingNextPage}
+            onClick={() => void bookingsQuery.fetchNextPage()}
+          />
+        </>
       )}
     </div>
   );

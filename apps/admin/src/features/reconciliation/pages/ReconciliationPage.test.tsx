@@ -45,7 +45,10 @@ const renderPage = () => {
 
 describe("ReconciliationPage", () => {
   beforeEach(() => {
-    reconciliationApi.fetchDiscrepancies.mockReset().mockResolvedValue([finding()]);
+    reconciliationApi.fetchDiscrepancies.mockReset().mockResolvedValue({
+      data: [finding()],
+      pageInfo: { nextCursor: null, hasMore: false },
+    });
     reconciliationApi.updateDiscrepancy.mockReset().mockResolvedValue(finding());
   });
 

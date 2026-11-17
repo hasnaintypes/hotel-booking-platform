@@ -1,8 +1,12 @@
 import axiosInstance from "@hotel-booking/api-client";
+import type { CursorPage, ListQuery, ReviewType } from "@hotel-booking/types";
 
-/** Public list of reviews for a hotel */
-export const fetchHotelReviews = async (hotelId: string) => {
-  const response = await axiosInstance.get(`/api/v1/hotels/${hotelId}/reviews`);
+/** Public list of reviews for a hotel, newest first. */
+export const fetchHotelReviews = async (
+  hotelId: string,
+  params: ListQuery = {},
+): Promise<CursorPage<ReviewType>> => {
+  const response = await axiosInstance.get(`/api/v1/hotels/${hotelId}/reviews`, { params });
   return response.data;
 };
 

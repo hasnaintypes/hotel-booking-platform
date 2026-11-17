@@ -1,12 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
-import { bookingKeys } from "@/shared/lib/query-keys";
-import * as bookingsApi from "@/features/bookings/api";
-import type { BookingType, HotelWithBookingsType } from "@hotel-booking/types";
+import { useInfiniteQuery, useQueries } from "@tanstack/react-query";
+import { hotelKeys } from "@/shared/lib/query-keys";
+import * as hotelsApi from "@/features/hotels/api";
+import type { BookingType } from "@hotel-booking/types";
 import { Badge } from "@hotel-booking/ui";
 import { Button } from "@hotel-booking/ui";
+import { LoadMore } from "@hotel-booking/ui";
 import { SafeImage } from "@hotel-booking/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { Link } from "react-router-dom";
+import { groupBookingsByHotel, summarizeBookings } from "@/features/bookings/lib/group-bookings";
+import { myBookingsQueryOptions } from "@/features/bookings/hooks/useMyBookings";
 import {
   Calendar,
   Users,
@@ -28,14 +31,34 @@ import CancelBookingButton from "@/features/bookings/components/CancelBookingBut
 const MyBookings = () => {
   const { isLoggedIn } = useAuth();
   const {
-    data: hotels,
+    data: bookingPages,
     isLoading: isBookingsLoading,
     isFetching,
-  } = useQuery<HotelWithBookingsType[]>({
-    queryKey: bookingKeys.mine(),
-    queryFn: bookingsApi.fetchMyBookings,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    ...myBookingsQueryOptions,
     enabled: isLoggedIn,
   });
+
+  const bookings = bookingPages?.pages.flatMap((page) => page.data) ?? [];
+  const groups = groupBookingsByHotel(bookings);
+
+  // The flat list only carries hotelId, so hydrate each card. A 404 is expected when a hotel has
+  // since been deactivated: GET /hotels/:id hides non-active hotels from non-owners.
+  const hotelQueries = useQueries({
+    queries: groups.map((group) => ({
+      queryKey: hotelKeys.detail(group.hotelId),
+      queryFn: () => hotelsApi.fetchHotelById(group.hotelId),
+      retry: false,
+      staleTime: 5 * 60_000,
+      enabled: isLoggedIn,
+    })),
+  });
+  const hotelByGroup = new Map(
+    groups.map((group, index) => [group.hotelId, hotelQueries[index]] as const),
+  );
 
   if (!isLoggedIn) {
     return (
@@ -73,7 +96,7 @@ const MyBookings = () => {
   }
 
   // Skeleton while query settles — avoids "No Bookings Found" flash on nav
-  if (isBookingsLoading || (isFetching && hotels === undefined)) {
+  if (isBookingsLoading || (isFetching && bookingPages === undefined)) {
     return (
       <div className="space-y-8">
         <div className="h-10 w-56 bg-gray-200 rounded-xl animate-pulse" />
@@ -97,7 +120,7 @@ const MyBookings = () => {
     );
   }
 
-  if (!hotels || hotels.length === 0) {
+  if (bookings.length === 0) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
@@ -109,28 +132,9 @@ const MyBookings = () => {
     );
   }
 
-  // Calculate booking statistics
-  const totalBookings = hotels.reduce((total, hotel) => total + hotel.bookings.length, 0);
-
-  // Count unique hotels by hotel ID
-  const uniqueHotelIds = new Set(hotels.map((hotel) => hotel._id));
-  const differentHotels = uniqueHotelIds.size;
-
-  // Calculate total spent across all bookings
-  const totalSpent = hotels.reduce((total, hotel) => {
-    return (
-      total +
-      hotel.bookings.reduce((hotelTotal, booking) => {
-        const checkInDate = new Date(booking.checkIn);
-        const checkOutDate = new Date(booking.checkOut);
-        const nights = Math.max(
-          1,
-          Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)),
-        );
-        return hotelTotal + hotel.pricePerNight * nights;
-      }, 0)
-    );
-  }, 0);
+  // Header totals across the pages loaded so far. `totalCost` is server-computed (price changes,
+  // refunds and taxes included), so the figure no longer assumes nightly price times nights.
+  const { totalBookings, differentHotels, totalSpent } = summarizeBookings(bookings);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -216,228 +220,267 @@ const MyBookings = () => {
       </div>
       {/* Bookings Grid */}
       <div className="grid grid-cols-1 gap-8">
-        {hotels.map((hotel, hotelIndex) => (
-          <div
-            key={`${hotel._id}-${hotelIndex}`}
-            className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300"
-          >
-            {/* Hotel Header */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
-              <div className="flex items-start gap-6">
-                <div className="relative">
-                  <SafeImage
-                    src={hotel.imageUrls[0]}
-                    alt={hotel.name}
-                    width={96}
-                    height={96}
-                    className="w-24 h-24 rounded-xl object-cover object-center shadow-xl"
-                  />
-                  <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-medium px-2 py-1 rounded-full">
-                    {hotel.starRating}★
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-2">
-                    {hotel.name}
-                  </h2>
-                  <div className="flex items-center gap-4 text-gray-600">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>
-                        {hotel.city}, {hotel.country}
-                      </span>
+        {groups.map((group) => {
+          const hotelQuery = hotelByGroup.get(group.hotelId);
+          const hotel = hotelQuery?.data;
+          return (
+            <div
+              key={group.hotelId}
+              className="bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow duration-300"
+            >
+              {/* Hotel Header */}
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
+                {hotel ? (
+                  <div className="flex items-start gap-6">
+                    <div className="relative">
+                      <SafeImage
+                        src={hotel.imageUrls[0]}
+                        alt={hotel.name}
+                        width={96}
+                        height={96}
+                        className="w-24 h-24 rounded-xl object-cover object-center shadow-xl"
+                      />
+                      <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-medium px-2 py-1 rounded-full">
+                        {hotel.starRating}★
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Building className="w-4 h-4" />
-                      <span>£{hotel.pricePerNight}/night</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bookings List */}
-            <div className="p-6">
-              <div className="space-y-6">
-                {hotel.bookings.map((booking: BookingType) => {
-                  const checkInDate = new Date(booking.checkIn);
-                  const checkOutDate = new Date(booking.checkOut);
-                  const createdAt = new Date(booking.createdAt || booking.checkIn);
-                  const nights = Math.max(
-                    1,
-                    Math.ceil(
-                      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
-                    ),
-                  );
-                  const totalPrice = hotel.pricePerNight * nights;
-
-                  return (
-                    <div
-                      key={booking._id}
-                      className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 border border-slate-200 hover:shadow-xl transition-shadow duration-200"
-                    >
-                      {/* Status Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className={`p-2 rounded-xl ${getStatusColor(
-                              booking.status || "pending_payment",
-                            )}`}
-                          >
-                            {getStatusIcon(booking.status || "pending_payment")}
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-gray-700">
-                              Booking #{booking._id.slice(-8).toUpperCase()}
-                            </h3>
-                            <p className="text-sm text-gray-500">
-                              Booked on {createdAt.toLocaleDateString()}
-                            </p>
-                          </div>
+                    <div className="flex-1">
+                      <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-2">
+                        {hotel.name}
+                      </h2>
+                      <div className="flex items-center gap-4 text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-4 h-4" />
+                          <span>
+                            {hotel.city}, {hotel.country}
+                          </span>
                         </div>
-                        <div className="flex gap-2">
-                          <Badge
-                            className={`${getStatusColor(booking.status || "pending_payment")} border`}
-                          >
-                            {getStatusIcon(booking.status || "pending_payment")}
-                            <span className="ml-1">{booking.status || "pending_payment"}</span>
-                          </Badge>
-                          <Badge
-                            className={`${getPaymentStatusColor(
-                              booking.paymentStatus || "pending",
-                            )} border`}
-                          >
-                            {booking.paymentStatus || "pending"}
-                          </Badge>
-                          {booking.paymentMethod && (
-                            <Badge variant="outline" className="border-gray-300">
-                              {booking.paymentMethod}
-                            </Badge>
-                          )}
+                        <div className="flex items-center gap-1">
+                          <Building className="w-4 h-4" />
+                          <span>£{hotel.pricePerNight}/night</span>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                ) : hotelQuery?.isLoading ? (
+                  <div className="flex items-start gap-6" aria-hidden>
+                    <div className="h-24 w-24 rounded-xl bg-gray-200 animate-pulse" />
+                    <div className="flex-1 space-y-3">
+                      <div className="h-7 w-2/3 rounded bg-gray-200 animate-pulse" />
+                      <div className="h-4 w-1/3 rounded bg-gray-200 animate-pulse" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-6">
+                    <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-gray-200 text-gray-500">
+                      <Building className="h-10 w-10" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-lg md:text-2xl font-medium text-gray-700 mb-2">
+                        Hotel unavailable
+                      </h2>
+                      <p className="text-gray-600">
+                        This property is no longer listed. Your booking details are below.
+                      </p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Reference {group.hotelId.slice(-8).toUpperCase()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-                      {/* Booking Details Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {/* Dates */}
-                        <div className="bg-white rounded-xl p-4 border border-gray-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Calendar className="w-4 h-4 text-blue-600" />
-                            <span className="font-medium text-gray-700">Stay Dates</span>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            <div className="mb-1">
-                              <span className="font-medium">Check-in:</span>{" "}
-                              {checkInDate.toDateString()}
+              {/* Bookings List */}
+              <div className="p-6">
+                <div className="space-y-6">
+                  {group.bookings.map((booking: BookingType) => {
+                    const checkInDate = new Date(booking.checkIn);
+                    const checkOutDate = new Date(booking.checkOut);
+                    const createdAt = new Date(booking.createdAt || booking.checkIn);
+                    const nights = Math.max(
+                      1,
+                      Math.ceil(
+                        (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
+                      ),
+                    );
+                    const totalPrice = booking.totalCost;
+
+                    return (
+                      <div
+                        key={booking._id}
+                        className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-xl p-6 border border-slate-200 hover:shadow-xl transition-shadow duration-200"
+                      >
+                        {/* Status Header */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`p-2 rounded-xl ${getStatusColor(
+                                booking.status || "pending_payment",
+                              )}`}
+                            >
+                              {getStatusIcon(booking.status || "pending_payment")}
                             </div>
                             <div>
-                              <span className="font-medium">Check-out:</span>{" "}
-                              {checkOutDate.toDateString()}
+                              <h3 className="font-medium text-gray-700">
+                                Booking #{booking._id.slice(-8).toUpperCase()}
+                              </h3>
+                              <p className="text-sm text-gray-500">
+                                Booked on {createdAt.toLocaleDateString()}
+                              </p>
                             </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Badge
+                              className={`${getStatusColor(booking.status || "pending_payment")} border`}
+                            >
+                              {getStatusIcon(booking.status || "pending_payment")}
+                              <span className="ml-1">{booking.status || "pending_payment"}</span>
+                            </Badge>
+                            <Badge
+                              className={`${getPaymentStatusColor(
+                                booking.paymentStatus || "pending",
+                              )} border`}
+                            >
+                              {booking.paymentStatus || "pending"}
+                            </Badge>
+                            {booking.paymentMethod && (
+                              <Badge variant="outline" className="border-gray-300">
+                                {booking.paymentMethod}
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
-                        {/* Guests */}
-                        <div className="bg-white rounded-xl p-4 border border-gray-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Users className="w-4 h-4 text-green-600" />
-                            <span className="font-medium text-gray-700">Guests</span>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            <div className="mb-1">
-                              <span className="font-medium">{booking.adultCount}</span> Adults
-                            </div>
-                            <div>
-                              <span className="font-medium">{booking.childCount}</span> Children
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Contact */}
-                        <div className="bg-white rounded-xl p-4 border border-gray-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Phone className="w-4 h-4 text-purple-600" />
-                            <span className="font-medium text-gray-700">Contact</span>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            <div className="mb-1">{booking.email}</div>
-                            {booking.phone && <div>{booking.phone}</div>}
-                          </div>
-                        </div>
-
-                        {/* Pricing */}
-                        {totalPrice > 0 && (
+                        {/* Booking Details Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {/* Dates */}
                           <div className="bg-white rounded-xl p-4 border border-gray-200">
                             <div className="flex items-center gap-2 mb-2">
-                              <CreditCard className="w-4 h-4 text-orange-600" />
-                              <span className="font-medium text-gray-700">Pricing</span>
+                              <Calendar className="w-4 h-4 text-blue-600" />
+                              <span className="font-medium text-gray-700">Stay Dates</span>
                             </div>
                             <div className="text-sm text-gray-600">
                               <div className="mb-1">
-                                <span className="font-medium">{nights}</span> Nights
+                                <span className="font-medium">Check-in:</span>{" "}
+                                {checkInDate.toDateString()}
                               </div>
-                              <div className="text-lg font-medium text-green-600">
-                                £{totalPrice}
+                              <div>
+                                <span className="font-medium">Check-out:</span>{" "}
+                                {checkOutDate.toDateString()}
                               </div>
-                              {/* Only show refund if it exists and is greater than 0 */}
-                              {booking.refundAmount !== undefined &&
-                                booking.refundAmount !== null &&
-                                booking.refundAmount > 0 && (
-                                  <div className="text-sm text-red-600">
-                                    Refund: £{booking.refundAmount}
-                                  </div>
-                                )}
                             </div>
+                          </div>
+
+                          {/* Guests */}
+                          <div className="bg-white rounded-xl p-4 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Users className="w-4 h-4 text-green-600" />
+                              <span className="font-medium text-gray-700">Guests</span>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <div className="mb-1">
+                                <span className="font-medium">{booking.adultCount}</span> Adults
+                              </div>
+                              <div>
+                                <span className="font-medium">{booking.childCount}</span> Children
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Contact */}
+                          <div className="bg-white rounded-xl p-4 border border-gray-200">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Phone className="w-4 h-4 text-purple-600" />
+                              <span className="font-medium text-gray-700">Contact</span>
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              <div className="mb-1">{booking.email}</div>
+                              {booking.phone && <div>{booking.phone}</div>}
+                            </div>
+                          </div>
+
+                          {/* Pricing */}
+                          {totalPrice > 0 && (
+                            <div className="bg-white rounded-xl p-4 border border-gray-200">
+                              <div className="flex items-center gap-2 mb-2">
+                                <CreditCard className="w-4 h-4 text-orange-600" />
+                                <span className="font-medium text-gray-700">Pricing</span>
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                <div className="mb-1">
+                                  <span className="font-medium">{nights}</span> Nights
+                                </div>
+                                <div className="text-lg font-medium text-green-600">
+                                  £{totalPrice}
+                                </div>
+                                {/* Only show refund if it exists and is greater than 0 */}
+                                {booking.refundAmount !== undefined &&
+                                  booking.refundAmount !== null &&
+                                  booking.refundAmount > 0 && (
+                                    <div className="text-sm text-red-600">
+                                      Refund: £{booking.refundAmount}
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Special Requests & Cancellation */}
+                        {(booking.specialRequests || booking.cancellationReason) && (
+                          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {booking.specialRequests && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                                <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
+                                  <Package className="w-4 h-4" />
+                                  Special Requests
+                                </h4>
+                                <p className="text-blue-700 text-sm">{booking.specialRequests}</p>
+                              </div>
+                            )}
+                            {booking.cancellationReason && (
+                              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                                <h4 className="font-medium text-red-800 mb-2 flex items-center gap-2">
+                                  <Building className="w-4 h-4" />
+                                  Cancellation Reason
+                                </h4>
+                                <p className="text-red-700 text-sm">{booking.cancellationReason}</p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Cancel upcoming stay */}
+                        <CancelBookingButton booking={booking} className="mt-4" />
+
+                        {/* Review after stay: confirmed, or any live booking past check-out. */}
+                        {(booking.status === "confirmed" ||
+                          (checkOutDate < new Date() &&
+                            booking.status !== "cancelled" &&
+                            booking.status !== "failed" &&
+                            booking.status !== "expired" &&
+                            booking.status !== "needs_review")) && (
+                          <div className="mt-4">
+                            <WriteReviewForm hotelId={group.hotelId} bookingId={booking._id} />
                           </div>
                         )}
                       </div>
-
-                      {/* Special Requests & Cancellation */}
-                      {(booking.specialRequests || booking.cancellationReason) && (
-                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {booking.specialRequests && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                              <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
-                                <Package className="w-4 h-4" />
-                                Special Requests
-                              </h4>
-                              <p className="text-blue-700 text-sm">{booking.specialRequests}</p>
-                            </div>
-                          )}
-                          {booking.cancellationReason && (
-                            <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                              <h4 className="font-medium text-red-800 mb-2 flex items-center gap-2">
-                                <Building className="w-4 h-4" />
-                                Cancellation Reason
-                              </h4>
-                              <p className="text-red-700 text-sm">{booking.cancellationReason}</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Cancel upcoming stay */}
-                      <CancelBookingButton booking={booking} className="mt-4" />
-
-                      {/* Review after stay: confirmed, or any live booking past check-out. */}
-                      {(booking.status === "confirmed" ||
-                        (checkOutDate < new Date() &&
-                          booking.status !== "cancelled" &&
-                          booking.status !== "failed" &&
-                          booking.status !== "expired" &&
-                          booking.status !== "needs_review")) && (
-                        <div className="mt-4">
-                          <WriteReviewForm hotelId={hotel._id} bookingId={booking._id} />
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+      {hasNextPage && (
+        <LoadMore
+          hasMore={Boolean(hasNextPage)}
+          isFetching={isFetchingNextPage}
+          onClick={() => void fetchNextPage()}
+          label="Load more bookings"
+        />
+      )}
     </div>
   );
 };

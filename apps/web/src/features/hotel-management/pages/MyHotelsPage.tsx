@@ -42,7 +42,7 @@ const MyHotels = () => {
     isFetching,
   } = useQuery({
     queryKey: hotelKeys.mine(),
-    queryFn: hotelManagementApi.fetchMyHotels,
+    queryFn: () => hotelManagementApi.fetchMyHotels({ limit: 100 }),
     enabled: isLoggedIn,
   });
 
@@ -138,7 +138,7 @@ const MyHotels = () => {
     );
   }
 
-  if (!hotelData || hotelData.length === 0) {
+  if (!hotelData || hotelData.data.length === 0) {
     return (
       <div className="text-center py-12">
         <div className="bg-gray-50 rounded-2xl p-8 max-w-md mx-auto">
@@ -182,7 +182,9 @@ const MyHotels = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Hotels</p>
-              <p className="text-sm md:text-lg font-medium text-gray-700">{hotelData.length}</p>
+              <p className="text-sm md:text-lg font-medium text-gray-700">
+                {hotelData.data.length}
+              </p>
             </div>
             <div className="bg-primary-100 p-3 rounded-xl">
               <Building2 className="w-6 h-6 text-primary-600" />
@@ -195,7 +197,7 @@ const MyHotels = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Total Bookings</p>
               <p className="text-sm md:text-lg font-medium text-gray-700">
-                {hotelData.reduce((sum, hotel) => sum + (hotel.totalBookings || 0), 0)}
+                {hotelData.data.reduce((sum, hotel) => sum + (hotel.totalBookings || 0), 0)}
               </p>
             </div>
             <div className="bg-green-100 p-3 rounded-xl">
@@ -210,7 +212,7 @@ const MyHotels = () => {
               <p className="text-sm font-medium text-gray-600">Total Revenue</p>
               <p className="text-sm md:text-lg font-medium text-gray-700">
                 £
-                {hotelData
+                {hotelData.data
                   .reduce((sum, hotel) => sum + (hotel.totalRevenue || 0), 0)
                   .toLocaleString()}
               </p>
@@ -226,10 +228,10 @@ const MyHotels = () => {
             <div>
               <p className="text-sm font-medium text-gray-600">Avg Rating</p>
               <p className="text-sm md:text-lg font-medium text-gray-700">
-                {hotelData.length > 0
+                {hotelData.data.length > 0
                   ? (
-                      hotelData.reduce((sum, hotel) => sum + (hotel.averageRating || 0), 0) /
-                      hotelData.length
+                      hotelData.data.reduce((sum, hotel) => sum + (hotel.averageRating || 0), 0) /
+                      hotelData.data.length
                     ).toFixed(1)
                   : "0.0"}
               </p>
@@ -243,7 +245,7 @@ const MyHotels = () => {
 
       {/* Hotels Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {hotelData.map((hotel) => (
+        {hotelData.data.map((hotel) => (
           <div
             key={hotel._id}
             data-testid="hotel-card"
