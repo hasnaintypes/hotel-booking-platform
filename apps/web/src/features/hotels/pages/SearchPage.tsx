@@ -5,7 +5,8 @@ import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelsApi from "@/features/hotels/api";
 import { useEffect, useState } from "react";
 import SearchResultsCard from "@/features/hotels/components/SearchResultsCard";
-import { Pagination } from "@hotel-booking/ui";
+import { Button } from "@hotel-booking/ui";
+import { emptyCursorStack, popCursor, pushCursor } from "@/features/hotels/lib/cursor-stack";
 import StarRatingFilter from "@/features/hotels/components/StarRatingFilter";
 import HotelTypesFilter from "@/features/hotels/components/HotelTypesFilter";
 import FacilitiesFilter from "@/features/hotels/components/FacilitiesFilter";
@@ -18,7 +19,8 @@ import { SEARCH_PAGE_SORT_OPTIONS } from "@/features/hotels/lib/select-option-ma
 const Search = () => {
   const [urlSearchParams] = useSearchParams();
   const search = useSearchContext();
-  const [page, setPage] = useState<number>(1);
+  const [cursorStack, setCursorStack] = useState(emptyCursorStack);
+  const [stackSignature, setStackSignature] = useState("");
   const urlQueryString = urlSearchParams.toString();
   const { saveSearchValues } = search;
 
@@ -46,13 +48,28 @@ const Search = () => {
   const [selectedPrice, setSelectedPrice] = useState<number | undefined>();
   const [sortOption, setSortOption] = useState<string>("");
 
+  // A cursor is only valid for the filters and sort it was minted for. Comparing signatures during
+  // render means a filter change immediately behaves like a first page instead of first firing a
+  // request with a cursor that the API will reject.
+  const filterSignature = [
+    search.destination?.trim() ?? "",
+    search.checkIn.toISOString(),
+    search.checkOut.toISOString(),
+    search.adultCount,
+    search.childCount,
+    selectedStars.join(","),
+    selectedHotelTypes.join(","),
+    selectedFacilities.join(","),
+    selectedPrice ?? "",
+    sortOption,
+  ].join("|");
+  const activeStack = stackSignature === filterSignature ? cursorStack : emptyCursorStack();
+
   const searchParams = {
     destination: search.destination?.trim() || "",
-    checkIn: search.checkIn.toISOString(),
-    checkOut: search.checkOut.toISOString(),
     adultCount: search.adultCount.toString(),
     childCount: search.childCount.toString(),
-    page: page.toString(),
+    cursor: activeStack.cursor,
     stars: selectedStars,
     types: selectedHotelTypes,
     facilities: selectedFacilities,
@@ -60,11 +77,27 @@ const Search = () => {
     sortOption,
   };
 
-  const { data: hotelData, isLoading: isSearchLoading } = useQuery({
+  const {
+    data: hotelData,
+    isLoading: isSearchLoading,
+    isFetching: isSearchFetching,
+  } = useQuery({
     queryKey: hotelKeys.search(searchParams),
     queryFn: () => hotelsApi.searchHotels(searchParams),
     placeholderData: keepPreviousData,
   });
+
+  const goToNextPage = () => {
+    const nextCursor = hotelData?.pageInfo.nextCursor;
+    if (!nextCursor) return;
+    setCursorStack(pushCursor(activeStack, nextCursor));
+    setStackSignature(filterSignature);
+  };
+
+  const goToPreviousPage = () => {
+    setCursorStack(popCursor(activeStack));
+    setStackSignature(filterSignature);
+  };
 
   const handleStarsChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const starRating = event.target.value;
@@ -127,7 +160,7 @@ const Search = () => {
         <div className="flex flex-col gap-5 order-1 lg:order-2">
           <div className="flex justify-between items-center">
             <span className="text-xl font-medium">
-              {isSearchLoading ? "Searching…" : `${hotelData?.pagination.total ?? 0} Hotels found`}
+              {isSearchLoading ? "Searching…" : `Showing ${hotelData?.data.length ?? 0} hotels`}
               {search.destination ? ` in ${search.destination}` : ""}
             </span>
             <Select
@@ -229,11 +262,30 @@ const Search = () => {
                 <SearchResultsCard key={hotel._id} hotel={hotel} />
               ))}
               <div>
-                <Pagination
-                  page={hotelData?.pagination.page || 1}
-                  pages={hotelData?.pagination.pages || 1}
-                  onPageChange={(page) => setPage(page)}
-                />
+                <div className="flex items-center justify-center gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={activeStack.history.length === 0 || isSearchFetching}
+                    onClick={goToPreviousPage}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={
+                      isSearchFetching ||
+                      !hotelData?.pageInfo.hasMore ||
+                      !hotelData?.pageInfo.nextCursor
+                    }
+                    onClick={goToNextPage}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </>
           )}

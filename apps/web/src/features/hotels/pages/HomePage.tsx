@@ -12,7 +12,7 @@ const DEST_SKELETON_COUNT = 3;
 const Home = () => {
   const { data: hotels, isLoading } = useQuery({
     queryKey: hotelKeys.home(),
-    queryFn: () => hotelsApi.fetchHotels(),
+    queryFn: () => hotelsApi.fetchHotels({ limit: 100 }),
   });
 
   const handleSearch = (_searchData: unknown) => {
@@ -42,7 +42,7 @@ const Home = () => {
                     aria-hidden
                   />
                 ))
-              : hotels?.map((hotel, i) => (
+              : hotels?.data.map((hotel, i) => (
                   <StaggerItem key={hotel._id} index={1 + Math.min(i, 8)}>
                     <LatestDestinationCard hotel={hotel} />
                   </StaggerItem>

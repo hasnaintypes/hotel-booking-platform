@@ -1,13 +1,12 @@
 import axiosInstance from "@hotel-booking/api-client";
-import type { HotelSearchResponse, HotelType } from "@hotel-booking/types";
+import type { CursorPage, HotelSearchResponse, HotelType, ListQuery } from "@hotel-booking/types";
 
 export type SearchParams = {
   destination?: string;
-  checkIn?: string;
-  checkOut?: string;
   adultCount?: string;
   childCount?: string;
-  page?: string;
+  cursor?: string;
+  limit?: number;
   facilities?: string[];
   types?: string[];
   stars?: string[];
@@ -23,13 +22,18 @@ export const searchHotels = async (searchParams: SearchParams): Promise<HotelSea
     queryParams.append("destination", searchParams.destination.trim());
   }
 
-  queryParams.append("checkIn", searchParams.checkIn || "");
-  queryParams.append("checkOut", searchParams.checkOut || "");
   queryParams.append("adultCount", searchParams.adultCount || "");
   queryParams.append("childCount", searchParams.childCount || "");
-  queryParams.append("page", searchParams.page || "");
   queryParams.append("maxPrice", searchParams.maxPrice || "");
   queryParams.append("sortOption", searchParams.sortOption || "");
+
+  if (searchParams.limit !== undefined) {
+    queryParams.append("limit", String(searchParams.limit));
+  }
+  // A null cursor means "last page"; never send it as a value.
+  if (searchParams.cursor) {
+    queryParams.append("cursor", searchParams.cursor);
+  }
 
   searchParams.facilities?.forEach((facility) => queryParams.append("facilities", facility));
 
@@ -40,8 +44,8 @@ export const searchHotels = async (searchParams: SearchParams): Promise<HotelSea
   return response.data;
 };
 
-export const fetchHotels = async (): Promise<HotelType[]> => {
-  const response = await axiosInstance.get("/api/v1/hotels");
+export const fetchHotels = async (params: ListQuery = {}): Promise<CursorPage<HotelType>> => {
+  const response = await axiosInstance.get("/api/v1/hotels", { params });
   return response.data;
 };
 

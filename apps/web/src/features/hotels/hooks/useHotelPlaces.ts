@@ -21,8 +21,8 @@ export function useHotelPlaces() {
       const soft = readHotelPlacesCache();
       if (soft) return soft;
 
-      const hotels = await hotelsApi.fetchHotels();
-      const places = extractHotelPlaces(hotels);
+      const hotels = await hotelsApi.fetchHotels({ limit: 100 });
+      const places = extractHotelPlaces(hotels.data);
       writeHotelPlacesCache(places);
       return places;
     },
