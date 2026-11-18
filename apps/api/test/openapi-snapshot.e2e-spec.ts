@@ -155,6 +155,29 @@ describe("OpenAPI snapshot", () => {
     );
   });
 
+  it("documents the reconciliation queue with response schemas", () => {
+    const { combined } = buildApiDocuments(app);
+    const schemaOf = (path: string, method: string, status: string) => {
+      const operation = combined.paths?.[path]?.[method] as
+        | {
+            responses?: Record<
+              string,
+              { content?: Record<string, { schema?: { $ref?: string } }> }
+            >;
+          }
+        | undefined;
+      return operation?.responses?.[status]?.content?.["application/json"]?.schema?.$ref;
+    };
+
+    const listPath = "/api/v1/admin/reconciliation/discrepancies";
+    expect(schemaOf(listPath, "get", "200")).toContain("DiscrepancyPageDto_Output");
+    expect(schemaOf(`${listPath}/{id}`, "patch", "200")).toContain("DiscrepancyDto_Output");
+
+    expect(Object.keys(combined.components?.schemas ?? {})).toEqual(
+      expect.arrayContaining(["DiscrepancyPageDto_Output", "DiscrepancyDto_Output"]),
+    );
+  });
+
   it("documents every routed endpoint with a response and only matrix statuses", () => {
     const { combined } = buildApiDocuments(app);
     const pathOf = (segments: string[]) =>

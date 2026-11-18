@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { BOOKING_STATUS_VALUES } from "./bookings";
 import { cursorPageQuerySchema } from "./pagination";
+import { DISCREPANCY_KIND_VALUES, DISCREPANCY_STATUS_VALUES } from "./reconciliation";
 import { USER_ROLE_VALUES, USER_STATUS_VALUES } from "./users";
 import {
   optionalQueryEnum,
@@ -19,16 +20,6 @@ import {
  * adds a state must be a deliberate contract change.
  */
 export const HOTEL_STATUS_VALUES = ["draft", "active", "inactive", "archived"] as const;
-export const DISCREPANCY_STATUS_VALUES = ["open", "resolved", "ignored"] as const;
-export const DISCREPANCY_KIND_VALUES = [
-  "payment_status_mismatch",
-  "payment_amount_mismatch",
-  "refund_mismatch",
-  "local_without_provider",
-  "provider_missing",
-  "provider_without_local",
-  "ledger_mismatch",
-] as const;
 
 /** `GET /api/v1/hotels` — the public catalogue. */
 export const publicHotelListQuerySchema = cursorPageQuerySchema.extend({
