@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  adminUserListItemSchema,
+  bookingCreationSchema,
+  bookingDetailSchema,
+  bookingSchema,
+  cancelBookingResponseSchema,
   cursorPageQuerySchema,
   cursorPageSchema,
   DEFAULT_PAGE_LIMIT,
@@ -10,6 +15,9 @@ import {
   problemDetailsSchema,
   problemType,
   publicHotelSchema,
+  publicUserSchema,
+  reviewSchema,
+  reviewSummarySchema,
 } from "../src";
 
 const hotel = {
@@ -213,5 +221,147 @@ describe("pageInfoSchema", () => {
 
     expect(page.data[0]._id).toBe(hotel._id);
     expect(page.pageInfo.hasMore).toBe(false);
+  });
+});
+
+const booking = {
+  _id: "11111111-1111-4111-8111-111111111111",
+  publicReference: "bkg_7f3a9c2e",
+  userId: "22222222-2222-4222-8222-222222222222",
+  hotelId: "33333333-3333-4333-8333-333333333333",
+  inventorySource: "managed",
+  firstName: "Guest",
+  lastName: "Traveler",
+  email: "guest@example.test",
+  adultCount: 2,
+  childCount: 0,
+  checkIn: "2026-06-13T00:00:00.000Z",
+  checkOut: "2026-06-16T00:00:00.000Z",
+  totalCost: 540,
+  status: "confirmed",
+  allowedTransitions: ["cancelling", "cancelled", "needs_review"],
+  paymentStatus: "paid",
+  refundAmount: 0,
+  createdAt: "2026-05-01T10:00:00.000Z",
+  updatedAt: "2026-05-01T10:00:00.000Z",
+};
+
+describe("bookingSchema", () => {
+  it("parses the wire shape with ISO dates", () => {
+    expect(bookingSchema.parse(booking)).toEqual(booking);
+  });
+
+  it("rejects Date objects and unknown statuses", () => {
+    expect(bookingSchema.safeParse({ ...booking, checkIn: new Date() }).success).toBe(false);
+    expect(bookingSchema.safeParse({ ...booking, status: "booked" }).success).toBe(false);
+    expect(bookingSchema.safeParse({ ...booking, paymentStatus: "authorized" }).success).toBe(
+      false,
+    );
+  });
+
+  it("rejects a booking without its public reference", () => {
+    const { publicReference: _removed, ...rest } = booking;
+    expect(bookingSchema.safeParse(rest).success).toBe(false);
+  });
+
+  it("adds the nullable client secret only on creation", () => {
+    expect(
+      bookingCreationSchema.parse({ ...booking, clientSecret: "pi_secret" }).clientSecret,
+    ).toBe("pi_secret");
+    expect(bookingCreationSchema.safeParse(booking).success).toBe(false);
+  });
+
+  it("parses the operator detail with events and ledger", () => {
+    const detail = {
+      ...booking,
+      version: 2,
+      events: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          fromStatus: null,
+          toStatus: "confirmed",
+          metadata: { source: "checkout" },
+          createdAt: "2026-05-01T10:00:00.000Z",
+        },
+      ],
+      payments: [
+        {
+          id: "55555555-5555-4555-8555-555555555555",
+          kind: "charge",
+          provider: "stripe",
+          status: "paid",
+          amountMinor: 54000,
+          currencyCode: "gbp",
+          createdAt: "2026-05-01T10:00:00.000Z",
+          updatedAt: "2026-05-01T10:00:00.000Z",
+        },
+      ],
+    };
+
+    expect(bookingDetailSchema.parse(detail).events[0]?.fromStatus).toBeNull();
+  });
+
+  it("requires the refund decision on cancellation", () => {
+    expect(cancelBookingResponseSchema.safeParse({ booking, refundAmount: 0 }).success).toBe(true);
+    expect(cancelBookingResponseSchema.safeParse({ booking }).success).toBe(false);
+  });
+});
+
+describe("reviewSchema", () => {
+  const review = {
+    _id: "66666666-6666-4666-8666-666666666666",
+    userId: booking.userId,
+    hotelId: booking.hotelId,
+    bookingId: booking._id,
+    rating: 5,
+    comment: "Quiet and central.",
+    categories: { cleanliness: 5, service: 4, location: 5, value: 4, amenities: 4 },
+    isVerified: true,
+    helpfulCount: 0,
+    createdAt: "2026-05-02T10:00:00.000Z",
+    updatedAt: "2026-05-02T10:00:00.000Z",
+  };
+
+  it("parses the wire shape and enforces the 1-5 rating bounds", () => {
+    expect(reviewSchema.parse(review)).toEqual(review);
+    expect(reviewSchema.safeParse({ ...review, rating: 6 }).success).toBe(false);
+    expect(
+      reviewSchema.safeParse({ ...review, categories: { ...review.categories, value: 0 } }).success,
+    ).toBe(false);
+  });
+
+  it("documents the rating summary", () => {
+    expect(
+      reviewSummarySchema.parse({ hotelId: booking.hotelId, averageRating: 4.5, reviewCount: 2 }),
+    ).toEqual({ hotelId: booking.hotelId, averageRating: 4.5, reviewCount: 2 });
+  });
+});
+
+describe("publicUserSchema", () => {
+  const user = {
+    _id: booking.userId,
+    email: "guest@example.test",
+    firstName: "Guest",
+    lastName: "Traveler",
+    role: "user",
+    isActive: true,
+    emailVerified: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+  };
+
+  it("never carries credentials or internal columns", () => {
+    const parsed = publicUserSchema.parse({ ...user, password: "x", address: { city: "London" } });
+    expect(parsed).toEqual(user);
+  });
+
+  it("adds the admin list counters on top of the account", () => {
+    const row = adminUserListItemSchema.parse({ ...user, totalBookings: 3, totalSpent: 1080 });
+    expect(row.totalSpent).toBe(1080);
+    expect(adminUserListItemSchema.safeParse(user).success).toBe(false);
+  });
+
+  it("rejects an unknown role", () => {
+    expect(publicUserSchema.safeParse({ ...user, role: "owner" }).success).toBe(false);
   });
 });

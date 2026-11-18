@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { BOOKING_STATUS_VALUES } from "./bookings";
 import { cursorPageQuerySchema } from "./pagination";
+import { USER_ROLE_VALUES, USER_STATUS_VALUES } from "./users";
 import {
   optionalQueryEnum,
   optionalQueryInt,
@@ -17,19 +19,6 @@ import {
  * adds a state must be a deliberate contract change.
  */
 export const HOTEL_STATUS_VALUES = ["draft", "active", "inactive", "archived"] as const;
-export const BOOKING_STATUS_VALUES = [
-  "pending_payment",
-  "authorized",
-  "confirming",
-  "confirmed",
-  "cancelling",
-  "cancelled",
-  "failed",
-  "expired",
-  "needs_review",
-] as const;
-export const USER_ROLE_VALUES = ["user", "admin"] as const;
-export const USER_STATUS_VALUES = ["active", "suspended"] as const;
 export const DISCREPANCY_STATUS_VALUES = ["open", "resolved", "ignored"] as const;
 export const DISCREPANCY_KIND_VALUES = [
   "payment_status_mismatch",
