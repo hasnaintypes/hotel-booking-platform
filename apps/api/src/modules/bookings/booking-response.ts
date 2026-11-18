@@ -24,8 +24,8 @@ export type BookingResponse = {
   phone?: string;
   adultCount: number;
   childCount: number;
-  checkIn: Date;
-  checkOut: Date;
+  checkIn: string;
+  checkOut: string;
   totalCost: number;
   status: BookingStatus;
   allowedTransitions: BookingStatus[];
@@ -35,8 +35,8 @@ export type BookingResponse = {
   cancellationReason?: string;
   refundAmount: number;
   stripePaymentIntentId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const chargeOf = (payments: Payment[]) => payments.find((payment) => !payment.originalPaymentId);
@@ -83,8 +83,8 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
     ...(booking.guestPhone ? { phone: booking.guestPhone } : {}),
     adultCount: booking.adultCount,
     childCount: booking.childCount,
-    checkIn: booking.checkIn,
-    checkOut: booking.checkOut,
+    checkIn: booking.checkIn.toISOString(),
+    checkOut: booking.checkOut.toISOString(),
     totalCost: booking.totalAmountMinor / 100,
     status: booking.status,
     allowedTransitions: [...allowedNextStatuses(booking.status)],
@@ -94,8 +94,8 @@ export function toBookingResponse({ booking, payments }: BookingWithPayments): B
     ...(booking.cancellationReason ? { cancellationReason: booking.cancellationReason } : {}),
     refundAmount: refundAmountMinor / 100,
     ...(charge?.provider === "stripe" ? { stripePaymentIntentId: charge.providerPaymentId } : {}),
-    createdAt: booking.createdAt,
-    updatedAt: booking.updatedAt,
+    createdAt: booking.createdAt.toISOString(),
+    updatedAt: booking.updatedAt.toISOString(),
   };
 }
 
@@ -112,7 +112,7 @@ export type BookingEventResponse = {
   reason?: string;
   requestId?: string;
   metadata: Record<string, unknown>;
-  createdAt: Date;
+  createdAt: string;
 };
 
 export type BookingPaymentResponse = {
@@ -126,14 +126,14 @@ export type BookingPaymentResponse = {
   capturedAmountMinor?: number;
   currencyCode: string;
   originalPaymentId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 /** Everything an operator needs on the detail page, including how the booking got here. */
 export type BookingDetailResponse = BookingResponse & {
   version: number;
-  expiresAt?: Date;
+  expiresAt?: string;
   supplierId?: string;
   supplierReference?: string;
   events: BookingEventResponse[];
@@ -153,7 +153,7 @@ const toEventResponse = (event: BookingEventRecord): BookingEventResponse => ({
   ...(event.reason ? { reason: event.reason } : {}),
   ...(event.requestId ? { requestId: event.requestId } : {}),
   metadata: metadataOf(event.metadata),
-  createdAt: event.createdAt,
+  createdAt: event.createdAt.toISOString(),
 });
 
 const toPaymentResponse = (payment: Payment): BookingPaymentResponse => ({
@@ -168,8 +168,8 @@ const toPaymentResponse = (payment: Payment): BookingPaymentResponse => ({
     : {}),
   currencyCode: payment.currencyCode,
   ...(payment.originalPaymentId ? { originalPaymentId: payment.originalPaymentId } : {}),
-  createdAt: payment.createdAt,
-  updatedAt: payment.updatedAt,
+  createdAt: payment.createdAt.toISOString(),
+  updatedAt: payment.updatedAt.toISOString(),
 });
 
 export function toBookingDetailResponse(
@@ -180,7 +180,7 @@ export function toBookingDetailResponse(
   return {
     ...toBookingResponse(record),
     version: booking.version,
-    ...(booking.expiresAt ? { expiresAt: booking.expiresAt } : {}),
+    ...(booking.expiresAt ? { expiresAt: booking.expiresAt.toISOString() } : {}),
     ...(booking.supplierId ? { supplierId: booking.supplierId } : {}),
     ...(booking.supplierReference ? { supplierReference: booking.supplierReference } : {}),
     events: events.map(toEventResponse),

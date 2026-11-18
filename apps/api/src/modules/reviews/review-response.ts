@@ -16,8 +16,8 @@ export type ReviewResponse = {
   };
   isVerified: boolean;
   helpfulCount: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 /** Maps the PostgreSQL review row to the shape the existing SPAs consume. */
@@ -38,7 +38,7 @@ export function toReviewResponse(review: ReviewRecord): ReviewResponse {
     },
     isVerified: review.isVerified,
     helpfulCount: review.helpfulCount,
-    createdAt: review.createdAt,
-    updatedAt: review.updatedAt,
+    createdAt: review.createdAt.toISOString(),
+    updatedAt: review.updatedAt.toISOString(),
   };
 }

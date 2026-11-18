@@ -106,6 +106,55 @@ describe("OpenAPI snapshot", () => {
     expect(parameters).not.toContain("page");
   });
 
+  it("documents the booking, review and user routes with response schemas", () => {
+    const { combined } = buildApiDocuments(app);
+    const schemaOf = (path: string, method: string, status: string) => {
+      const operation = combined.paths?.[path]?.[method] as
+        | {
+            responses?: Record<
+              string,
+              { content?: Record<string, { schema?: { $ref?: string } }> }
+            >;
+          }
+        | undefined;
+      return operation?.responses?.[status]?.content?.["application/json"]?.schema?.$ref;
+    };
+
+    expect(schemaOf("/api/v1/bookings", "get", "200")).toContain("BookingPageDto_Output");
+    expect(schemaOf("/api/v1/bookings", "post", "201")).toContain("BookingCreationDto_Output");
+    expect(schemaOf("/api/v1/bookings/{id}", "get", "200")).toContain("BookingDto_Output");
+    expect(schemaOf("/api/v1/bookings/{id}/cancel", "post", "200")).toContain(
+      "CancelBookingResponseDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/bookings/{id}", "get", "200")).toContain(
+      "BookingDetailDto_Output",
+    );
+    expect(schemaOf("/api/v1/bookings/{bookingId}/reviews", "post", "201")).toContain(
+      "ReviewDto_Output",
+    );
+    expect(schemaOf("/api/v1/hotels/{hotelId}/reviews", "get", "200")).toContain(
+      "ReviewPageDto_Output",
+    );
+    expect(schemaOf("/api/v1/hotels/{hotelId}/rating", "get", "200")).toContain(
+      "ReviewSummaryDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/users", "get", "200")).toContain("AdminUserPageDto_Output");
+    expect(schemaOf("/api/v1/me", "get", "200")).toContain("PublicUserDto_Output");
+
+    expect(Object.keys(combined.components?.schemas ?? {})).toEqual(
+      expect.arrayContaining([
+        "BookingPageDto_Output",
+        "BookingCreationDto_Output",
+        "BookingDetailDto_Output",
+        "CancelBookingResponseDto_Output",
+        "ReviewPageDto_Output",
+        "ReviewSummaryDto_Output",
+        "AdminUserPageDto_Output",
+        "PublicUserDto_Output",
+      ]),
+    );
+  });
+
   it("documents every routed endpoint with a response and only matrix statuses", () => {
     const { combined } = buildApiDocuments(app);
     const pathOf = (segments: string[]) =>
