@@ -1,10 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import type { BookingStatus, BookingType } from "@hotel-booking/types";
+import type { Booking, BookingStatus } from "@hotel-booking/contracts";
 import { describe, expect, it, vi } from "vitest";
 import BookingStatusCard from "./BookingStatusCard";
 
-const bookingOf = (status: BookingStatus): BookingType =>
+const bookingOf = (status: BookingStatus): Booking =>
   ({
     _id: "b1",
     publicReference: "ref_1",
@@ -15,11 +15,16 @@ const bookingOf = (status: BookingStatus): BookingType =>
     email: "guest@example.com",
     adultCount: 1,
     childCount: 0,
-    checkIn: new Date("2030-01-01T00:00:00Z"),
-    checkOut: new Date("2030-01-03T00:00:00Z"),
+    checkIn: "2030-01-01T00:00:00.000Z",
+    checkOut: "2030-01-03T00:00:00.000Z",
     totalCost: 250,
     status,
-  }) as BookingType;
+    allowedTransitions: [],
+    paymentStatus: "pending",
+    refundAmount: 0,
+    createdAt: "2030-01-01T00:00:00.000Z",
+    updatedAt: "2030-01-01T00:00:00.000Z",
+  }) as Booking;
 
 const renderCard = (props: Parameters<typeof BookingStatusCard>[0]) =>
   render(

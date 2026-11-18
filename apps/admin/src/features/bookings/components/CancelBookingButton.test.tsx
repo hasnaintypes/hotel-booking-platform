@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CancelBookingButton from "./CancelBookingButton";
 
@@ -11,7 +11,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const DAY_MS = 86_400_000;
 
-const booking = (overrides: Partial<BookingType> = {}): BookingType =>
+const booking = (overrides: Partial<Booking> = {}): Booking =>
   ({
     _id: "booking-1",
     status: "confirmed",
@@ -19,9 +19,9 @@ const booking = (overrides: Partial<BookingType> = {}): BookingType =>
     checkIn: new Date(Date.now() + 10 * DAY_MS),
     checkOut: new Date(Date.now() + 12 * DAY_MS),
     ...overrides,
-  }) as BookingType;
+  }) as Booking;
 
-const renderButton = (candidate: BookingType) => {
+const renderButton = (candidate: Booking) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });

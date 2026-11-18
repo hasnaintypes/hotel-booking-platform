@@ -1,4 +1,4 @@
-import type { BookingStatus } from "@hotel-booking/types";
+import type { BookingStatus } from "@hotel-booking/contracts";
 
 /** Badge colours shared by the bookings list, detail page and review queues. */
 export const bookingStatusClass = (status?: BookingStatus | string) => {

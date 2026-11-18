@@ -1,12 +1,12 @@
 import axiosInstance, { authSession, getApiBaseUrl } from "@hotel-booking/api-client";
 import { queryClient } from "@hotel-booking/api-client";
-import type { UserType } from "@hotel-booking/types";
+import type { PublicUser } from "@hotel-booking/contracts";
 import { authKeys } from "@/shared/lib/query-keys";
 import type { RegisterFormData, SignInFormData } from "./types";
 
 export { getApiBaseUrl };
 
-export const fetchCurrentUser = async (): Promise<UserType> => {
+export const fetchCurrentUser = async (): Promise<PublicUser> => {
   const response = await axiosInstance.get("/api/v1/me");
   return response.data;
 };

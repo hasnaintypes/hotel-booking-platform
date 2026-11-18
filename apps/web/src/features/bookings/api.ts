@@ -3,7 +3,13 @@ import axiosInstance, {
   getErrorStatus,
   idempotencyHeaders,
 } from "@hotel-booking/api-client";
-import type { BookingCreationType, BookingType, CursorPage, ListQuery } from "@hotel-booking/types";
+import type {
+  Booking,
+  BookingCreation,
+  CancelBookingResponse,
+  CursorPage,
+  CursorPageQuery,
+} from "@hotel-booking/contracts";
 import type { BookingFormData } from "./types";
 
 type CheckoutStay = Pick<
@@ -35,7 +41,7 @@ export const checkoutSession = (stay: CheckoutStay): string =>
  * Creates the booking (and its PaymentIntent) once per checkout session. The server computes the
  * total from a frozen offer; the client never sends money.
  */
-export const createBooking = async (formData: BookingFormData): Promise<BookingCreationType> => {
+export const createBooking = async (formData: BookingFormData): Promise<BookingCreation> => {
   const session = checkoutSession(formData);
   const response = await axiosInstance.post("/api/v1/bookings", formData, {
     headers: idempotencyHeaders(session),
@@ -48,12 +54,14 @@ export const resetCheckoutSession = (stay: CheckoutStay): void => {
   clearIdempotencyKey(checkoutSession(stay));
 };
 
-export const fetchBooking = async (reference: string): Promise<BookingType> => {
+export const fetchBooking = async (reference: string): Promise<Booking> => {
   const response = await axiosInstance.get(`/api/v1/bookings/${encodeURIComponent(reference)}`);
   return response.data;
 };
 
-export const fetchMyBookings = async (params: ListQuery = {}): Promise<CursorPage<BookingType>> => {
+export const fetchMyBookings = async (
+  params: CursorPageQuery = {},
+): Promise<CursorPage<Booking>> => {
   const response = await axiosInstance.get("/api/v1/bookings", { params });
   return response.data;
 };
@@ -62,11 +70,7 @@ export const fetchMyBookings = async (params: ListQuery = {}): Promise<CursorPag
 export const cancelBooking = async (
   bookingId: string,
   payload?: { cancellationReason?: string },
-): Promise<{
-  booking: BookingType;
-  refundAmount: number;
-  refundSkipped?: string;
-}> => {
+): Promise<CancelBookingResponse> => {
   const session = `cancel:${bookingId}`;
   try {
     const response = await axiosInstance.post(

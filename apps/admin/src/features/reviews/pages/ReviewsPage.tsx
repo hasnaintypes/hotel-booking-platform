@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import type { ReviewType } from "@hotel-booking/types";
+import type { Review } from "@hotel-booking/contracts";
 import { Badge, DataTable, LoadMore } from "@hotel-booking/ui";
 import { getHotelUrl } from "@/shared/lib/app-urls";
 import { adminKeys } from "@/shared/lib/query-keys";
@@ -17,7 +17,7 @@ const ReviewsPage = () => {
   });
   const reviews = flattenPages(reviewsQuery.data);
 
-  const columns = useMemo<LegacyColumnDef<ReviewType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<Review, unknown>[]>(
     () => [
       {
         accessorKey: "rating",

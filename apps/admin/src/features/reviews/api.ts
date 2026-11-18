@@ -1,7 +1,7 @@
 import apiClient from "@hotel-booking/api-client";
-import type { CursorPage, ListQuery, ReviewType } from "@hotel-booking/types";
+import type { CursorPage, CursorPageQuery, Review } from "@hotel-booking/contracts";
 
-export const fetchReviews = async (params: ListQuery = {}): Promise<CursorPage<ReviewType>> => {
+export const fetchReviews = async (params: CursorPageQuery = {}): Promise<CursorPage<Review>> => {
   const response = await apiClient.get("/api/v1/admin/reviews", { params });
   return response.data;
 };

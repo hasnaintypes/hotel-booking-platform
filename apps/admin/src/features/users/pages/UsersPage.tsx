@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import type { CursorPage, UserType } from "@hotel-booking/types";
+import type { AdminUserListItem, CursorPage } from "@hotel-booking/contracts";
 import {
   DataTable,
   LoadMore,
@@ -29,7 +29,7 @@ const ROLE_ICONS: Record<AdminRole, LucideIcon> = {
   admin: Shield,
 };
 
-type UsersCache = InfiniteData<CursorPage<UserType>>;
+type UsersCache = InfiniteData<CursorPage<AdminUserListItem>>;
 
 const UsersPage = () => {
   const queryClient = useQueryClient();
@@ -70,7 +70,7 @@ const UsersPage = () => {
     },
   });
 
-  const columns = useMemo<LegacyColumnDef<UserType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<AdminUserListItem, unknown>[]>(
     () => [
       {
         accessorKey: "firstName",

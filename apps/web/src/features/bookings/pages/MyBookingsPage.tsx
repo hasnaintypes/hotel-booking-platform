@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQueries } from "@tanstack/react-query";
 import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelsApi from "@/features/hotels/api";
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { Badge } from "@hotel-booking/ui";
 import { Button } from "@hotel-booking/ui";
 import { LoadMore } from "@hotel-booking/ui";
@@ -293,7 +293,7 @@ const MyBookings = () => {
               {/* Bookings List */}
               <div className="p-6">
                 <div className="space-y-6">
-                  {group.bookings.map((booking: BookingType) => {
+                  {group.bookings.map((booking: Booking) => {
                     const checkInDate = new Date(booking.checkIn);
                     const checkOutDate = new Date(booking.checkOut);
                     const createdAt = new Date(booking.createdAt || booking.checkIn);

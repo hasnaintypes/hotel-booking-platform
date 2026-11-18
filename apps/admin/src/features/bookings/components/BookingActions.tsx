@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiErrorMessage } from "@hotel-booking/api-client";
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { Button } from "@hotel-booking/ui";
 import { toast } from "sonner";
 import { invalidateAdminBookings } from "@/shared/lib/query-invalidation";
@@ -15,7 +15,7 @@ const MIN_REASON_LENGTH = 3;
  * Manual actions for a booking parked in `needs_review`. The button set mirrors the state machine:
  * only retry and acknowledge are offered, both demand a reason, and neither edits a status by hand.
  */
-const BookingActions = ({ booking }: { booking: BookingType }) => {
+const BookingActions = ({ booking }: { booking: Booking }) => {
   const queryClient = useQueryClient();
   const [reason, setReason] = useState("");
 

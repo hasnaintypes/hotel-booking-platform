@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@hotel-booking/api-client": "workspace:*",
+    "@hotel-booking/contracts": "workspace:*",
     "@hotel-booking/types": "workspace:*",
     "@hotel-booking/ui": "workspace:*",
     "@tanstack/react-query": "^5.105.0",

@@ -2,12 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import { Link } from "react-router-dom";
-import {
-  bookingStatusLabel,
-  type BookingListFilters,
-  type BookingStatus,
-  type BookingType,
-} from "@hotel-booking/types";
+import type { AdminBookingListQuery, Booking, BookingStatus } from "@hotel-booking/contracts";
+import { bookingStatusLabel } from "@hotel-booking/types";
 import { Badge, DataTable, LoadMore } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { flattenPages, nextCursorPageParam } from "@/shared/lib/infinite-pages";
@@ -37,7 +33,7 @@ const BookingsPage = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const filters = useMemo<BookingListFilters>(
+  const filters = useMemo<AdminBookingListQuery>(
     () => ({
       ...(status ? { status } : {}),
       ...(debouncedSearch ? { q: debouncedSearch } : {}),
@@ -53,7 +49,7 @@ const BookingsPage = () => {
   });
   const bookings = flattenPages(bookingsQuery.data);
 
-  const columns = useMemo<LegacyColumnDef<BookingType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<Booking, unknown>[]>(
     () => [
       {
         id: "guest",
