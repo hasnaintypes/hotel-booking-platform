@@ -1,5 +1,5 @@
 import type { InfiniteData } from "@tanstack/react-query";
-import type { CursorPage } from "@hotel-booking/types";
+import type { CursorPage } from "@hotel-booking/contracts";
 import { describe, expect, it } from "vitest";
 import { flattenPages, mapInfiniteRows, nextCursorPageParam } from "./infinite-pages";
 

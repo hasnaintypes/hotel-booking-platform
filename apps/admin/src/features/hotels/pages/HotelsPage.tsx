@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { InfiniteData } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
-import type { CursorPage, HotelType } from "@hotel-booking/types";
+import type { AdminHotel, CursorPage } from "@hotel-booking/contracts";
 import { Badge, Button, DataTable, LoadMore } from "@hotel-booking/ui";
 import { apiErrorMessage } from "@hotel-booking/api-client";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { invalidateAdminCatalogs } from "@/shared/lib/query-invalidation";
 import { flattenPages, mapInfiniteRows, nextCursorPageParam } from "@/shared/lib/infinite-pages";
 import { fetchHotels, updateHotelActive } from "../api";
 
-type HotelsCache = InfiniteData<CursorPage<HotelType>>;
+type HotelsCache = InfiniteData<CursorPage<AdminHotel>>;
 
 const HotelsPage = () => {
   const queryClient = useQueryClient();
@@ -53,7 +53,7 @@ const HotelsPage = () => {
     },
   });
 
-  const columns = useMemo<LegacyColumnDef<HotelType, unknown>[]>(
+  const columns = useMemo<LegacyColumnDef<AdminHotel, unknown>[]>(
     () => [
       {
         accessorKey: "name",

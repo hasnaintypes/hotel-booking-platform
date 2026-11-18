@@ -1,5 +1,5 @@
 import type { InfiniteData } from "@tanstack/react-query";
-import type { CursorPage } from "@hotel-booking/types";
+import type { CursorPage } from "@hotel-booking/contracts";
 
 /** Flattens the cursor pages an infinite query accumulated into the rows a table renders. */
 export const flattenPages = <T>(data: InfiniteData<CursorPage<T>> | undefined): T[] =>
