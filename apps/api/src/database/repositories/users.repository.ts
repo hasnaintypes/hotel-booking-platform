@@ -269,8 +269,8 @@ export type PublicUser = {
   role: "user" | "admin";
   isActive: boolean;
   emailVerified: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 /** Maps the PostgreSQL row to the response shape the existing SPAs already consume. */
@@ -284,6 +284,6 @@ export const toPublicUser = (user: User): PublicUser => ({
   role: user.role,
   isActive: user.status === "active",
   emailVerified: user.emailVerifiedAt !== null,
-  createdAt: user.createdAt,
-  updatedAt: user.updatedAt,
+  createdAt: user.createdAt.toISOString(),
+  updatedAt: user.updatedAt.toISOString(),
 });
