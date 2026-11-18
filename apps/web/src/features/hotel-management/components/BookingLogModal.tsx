@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { hotelKeys } from "@/shared/lib/query-keys";
 import * as hotelManagementApi from "@/features/hotel-management/api";
-import { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@hotel-booking/ui";
 import { Badge } from "@hotel-booking/ui";
 import { Card, CardContent, CardHeader } from "@hotel-booking/ui";
@@ -89,7 +89,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
     }
   };
 
-  const getDateCategory = (checkIn: Date) => {
+  const getDateCategory = (checkIn: string) => {
     const today = new Date();
     const checkInDate = new Date(checkIn);
     const diffTime = checkInDate.getTime() - today.getTime();
@@ -104,13 +104,13 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
     }
   };
 
-  const filteredBookings = bookings?.filter((booking: BookingType) => {
+  const filteredBookings = bookings?.filter((booking: Booking) => {
     const statusMatch = statusFilter === "all" || booking.status === statusFilter;
     const dateMatch = dateFilter === "all" || getDateCategory(booking.checkIn) === dateFilter;
     return statusMatch && dateMatch;
   });
 
-  const groupedBookings = filteredBookings?.reduce((groups: any, booking: BookingType) => {
+  const groupedBookings = filteredBookings?.reduce((groups: any, booking: Booking) => {
     const category = getDateCategory(booking.checkIn);
     if (!groups[category]) {
       groups[category] = [];
@@ -263,7 +263,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                   <div>
                     <p className="text-sm font-medium text-gray-600">Confirmed</p>
                     <p className="text-lg md:text-2xl font-medium text-green-600">
-                      {bookings.filter((b: BookingType) => b.status === "confirmed").length}
+                      {bookings.filter((b: Booking) => b.status === "confirmed").length}
                     </p>
                   </div>
                   <div className="bg-green-100 p-2 rounded-xl">
@@ -281,8 +281,8 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                     <p className="text-lg md:text-2xl font-medium text-gray-700">
                       £
                       {bookings
-                        .filter((b: BookingType) => b.paymentStatus === "paid")
-                        .reduce((sum: number, b: BookingType) => sum + (b.totalCost || 0), 0)
+                        .filter((b: Booking) => b.paymentStatus === "paid")
+                        .reduce((sum: number, b: Booking) => sum + (b.totalCost || 0), 0)
                         .toLocaleString()}
                     </p>
                   </div>
@@ -301,7 +301,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                     <p className="text-lg md:text-2xl font-medium text-yellow-600">
                       {
                         bookings.filter(
-                          (b: BookingType) =>
+                          (b: Booking) =>
                             b.status === "pending_payment" ||
                             b.status === "authorized" ||
                             b.status === "confirming",
@@ -325,7 +325,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               Upcoming:{" "}
               {
                 bookings.filter(
-                  (b: BookingType) =>
+                  (b: Booking) =>
                     (b.status === "pending_payment" ||
                       b.status === "authorized" ||
                       b.status === "confirming" ||
@@ -338,12 +338,12 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
               Completed:{" "}
               {
                 bookings.filter(
-                  (b: BookingType) => b.status === "confirmed" && new Date(b.checkOut) < new Date(),
+                  (b: Booking) => b.status === "confirmed" && new Date(b.checkOut) < new Date(),
                 ).length
               }
             </Badge>
             <Badge className="bg-red-100 text-red-800 border-red-200 border">
-              Cancelled: {bookings.filter((b: BookingType) => b.status === "cancelled").length}
+              Cancelled: {bookings.filter((b: Booking) => b.status === "cancelled").length}
             </Badge>
           </div>
         )}
@@ -408,7 +408,7 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
                     </div>
 
                     <div className="space-y-4">
-                      {categoryBookings.map((booking: BookingType) => (
+                      {categoryBookings.map((booking: Booking) => (
                         <Card key={booking._id} className="hover:shadow-xl transition-shadow">
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">

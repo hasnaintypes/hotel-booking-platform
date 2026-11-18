@@ -1,5 +1,6 @@
 import axiosInstance from "@hotel-booking/api-client";
-import type { BookingType, CursorPage, HotelType, ListQuery } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
+import type { CursorPage, HotelType, ListQuery } from "@hotel-booking/types";
 
 /** JSON body accepted by the hotel create/update endpoints. */
 export type HotelFormPayload = {
@@ -79,7 +80,7 @@ export const updateMyHotelActive = async (
 export const fetchHotelBookings = async (
   hotelId: string,
   params: ListQuery = {},
-): Promise<CursorPage<BookingType>> => {
+): Promise<CursorPage<Booking>> => {
   const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}/bookings`, {
     params,
   });

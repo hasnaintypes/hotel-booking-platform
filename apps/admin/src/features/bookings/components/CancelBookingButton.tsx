@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { isBookingCancellable, type BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
+import { isBookingCancellable } from "@hotel-booking/types";
 import { Button } from "@hotel-booking/ui";
 import { apiErrorMessage } from "@hotel-booking/api-client";
 import { toast } from "sonner";
@@ -9,7 +10,7 @@ import { cancelBooking } from "../api";
 
 const MIN_REASON_LENGTH = 3;
 
-const CancelBookingButton = ({ booking }: { booking: BookingType }) => {
+const CancelBookingButton = ({ booking }: { booking: Booking }) => {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");

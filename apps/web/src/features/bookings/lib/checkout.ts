@@ -1,4 +1,4 @@
-import type { BookingStatus, BookingType } from "@hotel-booking/types";
+import type { Booking, BookingStatus } from "@hotel-booking/contracts";
 
 const DRAFT_KEY = "hotel-booking:checkout-draft";
 
@@ -54,5 +54,5 @@ export const isTerminalBookingStatus = (status?: BookingStatus): boolean =>
   status !== undefined && TERMINAL_BOOKING_STATUSES.includes(status);
 
 /** The booking's reference is what `GET /bookings/:reference` accepts and is safe to show. */
-export const bookingReferenceOf = (booking: Pick<BookingType, "_id" | "publicReference">): string =>
+export const bookingReferenceOf = (booking: Pick<Booking, "_id" | "publicReference">): string =>
   booking.publicReference || booking._id;

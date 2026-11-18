@@ -1,36 +1,3 @@
-export type UserType = {
-  _id: string;
-  email: string;
-  password?: string;
-  firstName: string;
-  lastName: string;
-  image?: string;
-  role?: "user" | "admin";
-  phone?: string;
-  address?: {
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    zipCode: string;
-  };
-  preferences?: {
-    preferredDestinations: string[];
-    preferredHotelTypes: string[];
-    budgetRange: {
-      min: number;
-      max: number;
-    };
-  };
-  totalBookings?: number;
-  totalSpent?: number;
-  lastLogin?: Date;
-  isActive?: boolean;
-  emailVerified?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
-
 export type HotelType = {
   _id: string;
   userId: string;
@@ -46,8 +13,6 @@ export type HotelType = {
   starRating: number;
   imageUrls: string[];
   lastUpdated: Date;
-  // Remove embedded bookings - using separate collection now
-  // bookings: BookingType[];
 
   // New fields
   location?: {
@@ -98,112 +63,6 @@ export type HotelType = {
   createdAt?: Date;
   updatedAt?: Date;
 };
-
-export type ReviewType = {
-  _id: string;
-  userId: string;
-  hotelId: string;
-  bookingId: string;
-  rating: number;
-  comment: string;
-  categories: {
-    cleanliness: number;
-    service: number;
-    location: number;
-    value: number;
-    amenities: number;
-  };
-  isVerified?: boolean;
-  helpfulCount?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
-
-export type BookingStatus =
-  | "pending_payment"
-  | "authorized"
-  | "confirming"
-  | "confirmed"
-  | "cancelling"
-  | "cancelled"
-  | "failed"
-  | "expired"
-  | "needs_review";
-
-export type BookingType = {
-  _id: string;
-  /** Unguessable reference guests can use for status polling in place of the UUID. */
-  publicReference: string;
-  userId: string;
-  hotelId: string;
-  offerId?: string;
-  inventorySource?: "managed" | "supplier";
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  adultCount: number;
-  childCount: number;
-  checkIn: Date;
-  checkOut: Date;
-  totalCost: number;
-  status?: BookingStatus;
-  allowedTransitions?: BookingStatus[];
-  paymentStatus?: "pending" | "paid" | "failed" | "refunded";
-  paymentMethod?: string;
-  specialRequests?: string;
-  cancellationReason?: string;
-  refundAmount?: number;
-  /** Stripe PaymentIntent id used at booking time (for refunds) */
-  stripePaymentIntentId?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-};
-
-export type HotelWithBookingsType = HotelType & {
-  bookings: BookingType[];
-};
-
-export type BookingPaymentStatus = "pending" | "authorized" | "paid" | "failed" | "refunded";
-
-/** One append-only row from `booking_events`; a null `fromStatus` means the booking was created. */
-export type BookingEventType = {
-  id: string;
-  fromStatus: BookingStatus | null;
-  toStatus: BookingStatus;
-  actorUserId?: string;
-  reason?: string;
-  requestId?: string;
-  metadata: Record<string, unknown>;
-  createdAt: Date;
-};
-
-/** One ledger row: a charge, or a refund that points at its original charge. */
-export type BookingPaymentType = {
-  id: string;
-  kind: "charge" | "refund";
-  provider: string;
-  providerReference?: string;
-  status: BookingPaymentStatus;
-  amountMinor: number;
-  capturedAmountMinor?: number;
-  currencyCode: string;
-  originalPaymentId?: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-/** Admin detail: the booking response plus its history, ledger and supplier references. */
-export type BookingDetailType = BookingType & {
-  version: number;
-  expiresAt?: Date;
-  supplierId?: string;
-  supplierReference?: string;
-  events: BookingEventType[];
-  payments: BookingPaymentType[];
-};
-
-export type BookingAction = "cancel" | "retry" | "mark_reviewed";
 
 export type AdminPermission =
   | "booking.read"
@@ -263,23 +122,6 @@ export type CursorPage<T> = {
 export type ListQuery = {
   limit?: number;
   cursor?: string;
-};
-
-/** Query parameters accepted by `GET /api/v1/admin/bookings`. */
-export type BookingListFilters = {
-  status?: BookingStatus;
-  hotelId?: string;
-  q?: string;
-  limit?: number;
-  cursor?: string;
-};
-
-/**
- * `POST /api/v1/bookings` returns the booking plus the PaymentIntent secret for the client SDK.
- * Later reads of the same booking omit `clientSecret`.
- */
-export type BookingCreationType = BookingType & {
-  clientSecret: string | null;
 };
 
 /** `GET /api/v1/hotels/search` returns one cursor page of public hotels. */

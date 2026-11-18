@@ -1,14 +1,14 @@
 import { createContext, useEffect, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authSession, getErrorStatus } from "@hotel-booking/api-client";
-import type { UserType } from "@hotel-booking/types";
+import type { PublicUser } from "@hotel-booking/contracts";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchCurrentUser } from "../api";
 import { clearUserDetails } from "../auth-storage";
 
 export type AuthContextValue = {
   isLoggedIn: boolean;
-  user: UserType | null | undefined;
+  user: PublicUser | null | undefined;
   isLoading: boolean;
   isError: boolean;
   error: unknown;
@@ -19,7 +19,7 @@ export const AuthContext = createContext<AuthContextValue | undefined>(undefined
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const hasSession = useSyncExternalStore(authSession.subscribe, authSession.get, () => false);
-  const { data, isLoading, isError, error, refetch } = useQuery<UserType>({
+  const { data, isLoading, isError, error, refetch } = useQuery<PublicUser>({
     queryKey: adminKeys.currentUser,
     queryFn: fetchCurrentUser,
     enabled: hasSession,

@@ -1,13 +1,13 @@
 import React, { createContext, useEffect, useMemo, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authSession } from "@hotel-booking/api-client";
-import type { UserType } from "@hotel-booking/types";
+import type { PublicUser } from "@hotel-booking/contracts";
 import { clearAuthStorage, fetchCurrentUser } from "../api";
 import { authKeys } from "@/shared/lib/query-keys";
 
 export type AuthContextValue = {
   isLoggedIn: boolean;
-  user: UserType | null | undefined;
+  user: PublicUser | null | undefined;
   isLoading: boolean;
   isError: boolean;
 };
@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const hasSession = useSyncExternalStore(authSession.subscribe, authSession.get, () => false);
 
   // Guests skip /users/me, avoiding expected 401 noise in production.
-  const { isError, data, isLoading, error } = useQuery<UserType>({
+  const { isError, data, isLoading, error } = useQuery<PublicUser>({
     queryKey: authKeys.currentUser(),
     queryFn: fetchCurrentUser,
     retry: false,

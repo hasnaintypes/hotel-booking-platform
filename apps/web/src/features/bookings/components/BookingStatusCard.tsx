@@ -1,4 +1,4 @@
-import type { BookingStatus, BookingType } from "@hotel-booking/types";
+import type { Booking, BookingStatus } from "@hotel-booking/contracts";
 import { Badge } from "@hotel-booking/ui";
 import { Button } from "@hotel-booking/ui";
 import { Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 import { AlertTriangle, CheckCircle2, Clock, Loader2, XCircle } from "lucide-react";
 
 type Props = {
-  booking?: BookingType;
+  booking?: Booking;
   /** Used before the first status response arrives so the guest still sees a reference. */
   reference?: string;
   /** True when the polling request itself failed; the outcome remains unknown. */

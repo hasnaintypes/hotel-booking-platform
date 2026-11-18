@@ -3,12 +3,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as bookingsApi from "@/features/bookings/api";
 import { invalidateBookingQueries } from "@/shared/lib/query-invalidation";
 
-import { isBookingCancellable, type BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
+import { isBookingCancellable } from "@hotel-booking/types";
 import { Button } from "@hotel-booking/ui";
 import { useToast } from "@/shared/context/ToastContext";
 
 type Props = {
-  booking: BookingType;
+  booking: Booking;
   /** Extra class on the outer wrapper */
   className?: string;
 };

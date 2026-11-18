@@ -1,10 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  bookingStatusLabel,
-  type BookingEventType,
-  type BookingPaymentType,
-} from "@hotel-booking/types";
+import type { BookingEvent, BookingPayment } from "@hotel-booking/contracts";
+import { bookingStatusLabel } from "@hotel-booking/types";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchBookingDetail } from "../api";
@@ -29,14 +26,14 @@ const formatMoney = (amountMinor: number, currencyCode: string) =>
     amountMinor / 100,
   );
 
-const stripeLinkOf = (payment: BookingPaymentType): string | null => {
+const stripeLinkOf = (payment: BookingPayment): string | null => {
   if (payment.provider !== "stripe" || !payment.providerReference) return null;
   return payment.kind === "refund"
     ? `https://dashboard.stripe.com/refunds/${payment.providerReference}`
     : `https://dashboard.stripe.com/payments/${payment.providerReference}`;
 };
 
-const EventRow = ({ event }: { event: BookingEventType }) => {
+const EventRow = ({ event }: { event: BookingEvent }) => {
   const isNote = event.metadata?.kind === "note";
   return (
     <li className="border-l-2 border-slate-200 pl-4">

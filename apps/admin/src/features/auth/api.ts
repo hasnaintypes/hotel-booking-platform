@@ -1,5 +1,5 @@
 import apiClient, { authSession } from "@hotel-booking/api-client";
-import type { UserType } from "@hotel-booking/types";
+import type { PublicUser } from "@hotel-booking/contracts";
 import { clearUserDetails } from "./auth-storage";
 
 export type SignInPayload = {
@@ -9,10 +9,10 @@ export type SignInPayload = {
 
 type SignInResponse = {
   userId?: string;
-  user?: Pick<UserType, "email" | "firstName" | "lastName" | "role">;
+  user?: Pick<PublicUser, "email" | "firstName" | "lastName" | "role">;
 };
 
-export const fetchCurrentUser = async (): Promise<UserType> => {
+export const fetchCurrentUser = async (): Promise<PublicUser> => {
   const response = await apiClient.get("/api/v1/me");
   return response.data;
 };

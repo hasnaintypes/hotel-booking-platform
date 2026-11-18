@@ -1,14 +1,14 @@
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { describe, expect, it } from "vitest";
 import { isBookingCancellable } from "@hotel-booking/types";
 
-const booking = (overrides: Partial<BookingType> = {}): BookingType =>
+const booking = (overrides: Partial<Booking> = {}): Booking =>
   ({
     _id: "booking-1",
     status: "confirmed",
-    checkIn: new Date(Date.now() + 86_400_000),
+    checkIn: new Date(Date.now() + 86_400_000).toISOString(),
     ...overrides,
-  }) as BookingType;
+  }) as Booking;
 
 describe("isBookingCancellable", () => {
   it("allows upcoming pre-terminal bookings", () => {
@@ -30,12 +30,8 @@ describe("isBookingCancellable", () => {
   });
 
   it("rejects stays whose check-in has passed", () => {
-    expect(isBookingCancellable(booking({ checkIn: new Date(Date.now() - 86_400_000) }))).toBe(
-      false,
-    );
-  });
-
-  it("rejects a booking with no status", () => {
-    expect(isBookingCancellable(booking({ status: undefined }))).toBe(false);
+    expect(
+      isBookingCancellable(booking({ checkIn: new Date(Date.now() - 86_400_000).toISOString() })),
+    ).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { infiniteQueryOptions } from "@tanstack/react-query";
-import type { CursorPage, BookingType } from "@hotel-booking/types";
+import type { Booking, CursorPage } from "@hotel-booking/contracts";
 import { bookingKeys } from "@/shared/lib/query-keys";
 import * as bookingsApi from "@/features/bookings/api";
 
@@ -15,6 +15,5 @@ export const myBookingsQueryOptions = infiniteQueryOptions({
   initialPageParam: undefined as string | undefined,
   queryFn: ({ pageParam }) =>
     bookingsApi.fetchMyBookings({ limit: MY_BOOKINGS_PAGE_SIZE, cursor: pageParam }),
-  getNextPageParam: (lastPage: CursorPage<BookingType>) =>
-    lastPage.pageInfo.nextCursor ?? undefined,
+  getNextPageParam: (lastPage: CursorPage<Booking>) => lastPage.pageInfo.nextCursor ?? undefined,
 });

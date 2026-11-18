@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import type { BookingCreationType, UserType } from "@hotel-booking/types";
+import type { BookingCreation, PublicUser } from "@hotel-booking/contracts";
 import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { useMutation } from "@tanstack/react-query";
 import { apiErrorMessage, getErrorStatus } from "@hotel-booking/api-client";
@@ -38,14 +38,14 @@ type Stay = {
 };
 
 type Props = {
-  currentUser: UserType;
+  currentUser: PublicUser;
   hotelId: string;
   stay: Stay;
   /** Called once payment has been submitted (or its outcome is unknown) so the page can poll. */
   onPaymentSubmitted: (reference: string) => void;
 };
 
-const returnUrlFor = (hotelId: string, booking: BookingCreationType): string =>
+const returnUrlFor = (hotelId: string, booking: BookingCreation): string =>
   `${window.location.origin}/hotel/${hotelId}/booking/return?reference=${encodeURIComponent(
     bookingReferenceOf(booking),
   )}`;
@@ -61,7 +61,7 @@ const checkoutErrorMessage = (error: unknown): string => {
 };
 
 type PaymentStepProps = {
-  booking: BookingCreationType;
+  booking: BookingCreation;
   hotelId: string;
   onPaymentSubmitted: (reference: string) => void;
 };
@@ -202,7 +202,7 @@ const BookingForm = ({ currentUser, hotelId, stay, onPaymentSubmitted }: Props) 
   const [specialRequests, setSpecialRequests] = useState<string>(draft.specialRequests);
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [booking, setBooking] = useState<BookingCreationType | null>(null);
+  const [booking, setBooking] = useState<BookingCreation | null>(null);
 
   const { mutateAsync: createBooking, isPending: isCreating } = useMutation({
     mutationFn: bookingsApi.createBooking,

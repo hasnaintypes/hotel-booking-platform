@@ -7,7 +7,7 @@ import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "@/features/bookings/components/GuestInfoForm";
 import { Badge } from "@hotel-booking/ui";
 import { SafeImage } from "@hotel-booking/ui";
-import type { ReviewType } from "@hotel-booking/types";
+import type { Review } from "@hotel-booking/contracts";
 import {
   MapPin,
   Phone,
@@ -31,7 +31,7 @@ const Detail = () => {
     enabled: !!hotelId,
   });
 
-  const { data: reviews, isLoading: isReviewsLoading } = useQuery<ReviewType[]>({
+  const { data: reviews, isLoading: isReviewsLoading } = useQuery<Review[]>({
     queryKey: hotelKeys.reviews(hotelId || ""),
     // The detail page shows the latest first page of reviews; there is no "load more" here yet.
     queryFn: async () => (await reviewsApi.fetchHotelReviews(hotelId || "", { limit: 20 })).data,

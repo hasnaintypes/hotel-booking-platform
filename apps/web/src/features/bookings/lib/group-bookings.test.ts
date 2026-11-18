@@ -1,14 +1,14 @@
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { describe, expect, it } from "vitest";
 import { groupBookingsByHotel, summarizeBookings } from "./group-bookings";
 
-const booking = (overrides: Partial<BookingType> = {}): BookingType =>
+const booking = (overrides: Partial<Booking> = {}): Booking =>
   ({
     _id: "booking-1",
     hotelId: "hotel-1",
     totalCost: 120,
     ...overrides,
-  }) as BookingType;
+  }) as Booking;
 
 describe("groupBookingsByHotel", () => {
   it("groups rows by hotel while preserving server order", () => {

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import type { BookingCreationType, UserType } from "@hotel-booking/types";
+import type { BookingCreation, PublicUser } from "@hotel-booking/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BookingForm from "./BookingForm";
 
@@ -28,7 +28,7 @@ const user = {
   email: "guest@example.com",
   firstName: "Gus",
   lastName: "Guest",
-} as UserType;
+} as PublicUser;
 
 const booking = {
   _id: "b1",
@@ -40,12 +40,17 @@ const booking = {
   email: "guest@example.com",
   adultCount: 2,
   childCount: 0,
-  checkIn: new Date("2030-01-01T00:00:00Z"),
-  checkOut: new Date("2030-01-03T00:00:00Z"),
+  checkIn: "2030-01-01T00:00:00.000Z",
+  checkOut: "2030-01-03T00:00:00.000Z",
   totalCost: 250,
   status: "pending_payment",
+  allowedTransitions: ["authorized", "confirmed"],
+  paymentStatus: "pending",
+  refundAmount: 0,
+  createdAt: "2030-01-01T00:00:00.000Z",
+  updatedAt: "2030-01-01T00:00:00.000Z",
   clientSecret: "secret_123",
-} as BookingCreationType;
+} as BookingCreation;
 
 const onPaymentSubmitted = vi.fn();
 

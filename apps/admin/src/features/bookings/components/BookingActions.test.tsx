@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import BookingActions from "./BookingActions";
 
@@ -12,14 +12,14 @@ const bookingsApi = vi.hoisted(() => ({
 vi.mock("../api", () => bookingsApi);
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const booking = (status: BookingType["status"]): BookingType =>
+const booking = (status: Booking["status"]): Booking =>
   ({
     _id: "booking-1",
     status,
-    checkIn: new Date(Date.now() + 86_400_000),
-  }) as BookingType;
+    checkIn: new Date(Date.now() + 86_400_000).toISOString(),
+  }) as Booking;
 
-const renderActions = (status: BookingType["status"]) => {
+const renderActions = (status: Booking["status"]) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });

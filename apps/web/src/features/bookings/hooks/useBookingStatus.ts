@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { BookingType } from "@hotel-booking/types";
+import type { Booking } from "@hotel-booking/contracts";
 import { bookingKeys } from "@/shared/lib/query-keys";
 import * as bookingsApi from "@/features/bookings/api";
 import { isTerminalBookingStatus } from "@/features/bookings/lib/checkout";
@@ -8,7 +8,7 @@ import { isTerminalBookingStatus } from "@/features/bookings/lib/checkout";
 export const BOOKING_POLL_INTERVAL_MS = 2_000;
 
 export function useBookingStatus(reference?: string) {
-  return useQuery<BookingType>({
+  return useQuery<Booking>({
     queryKey: bookingKeys.detail(reference ?? ""),
     queryFn: () => bookingsApi.fetchBooking(reference as string),
     enabled: Boolean(reference),

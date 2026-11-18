@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@hotel-booking/api-client": "workspace:*",
+    "@hotel-booking/contracts": "workspace:*",
     "@hotel-booking/types": "workspace:*",
     "@hotel-booking/ui": "workspace:*",
     "@stripe/react-stripe-js": "^7.0.1",
