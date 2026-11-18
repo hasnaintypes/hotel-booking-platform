@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import type { ReconciliationDiscrepancyType } from "@hotel-booking/types";
+import type { Discrepancy } from "@hotel-booking/contracts";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ReconciliationPage from "./ReconciliationPage";
 
@@ -16,19 +16,28 @@ vi.mock("@/features/auth/hooks/useAuth", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
-const finding = (overrides: Partial<ReconciliationDiscrepancyType> = {}) =>
+const finding = (overrides: Partial<Discrepancy> = {}) =>
   ({
     id: "finding-1",
     dedupeKey: "payment_status_mismatch:1",
     kind: "payment_status_mismatch",
     status: "open",
     provider: "stripe",
+    bookingId: null,
+    paymentId: null,
+    providerReference: null,
     details: { local: "paid", provider: "pending" },
-    detectedAt: new Date(),
-    createdAt: new Date(),
-    updatedAt: new Date(),
+    detectedAt: "2026-05-03T09:00:00.000Z",
+    resolvedAt: null,
+    resolution: null,
+    assignedToUserId: null,
+    assignedAt: null,
+    assignedByUserId: null,
+    resolvedByUserId: null,
+    createdAt: "2026-05-03T09:00:00.000Z",
+    updatedAt: "2026-05-03T09:00:00.000Z",
     ...overrides,
-  }) as ReconciliationDiscrepancyType;
+  }) as Discrepancy;
 
 const renderPage = () => {
   const queryClient = new QueryClient({

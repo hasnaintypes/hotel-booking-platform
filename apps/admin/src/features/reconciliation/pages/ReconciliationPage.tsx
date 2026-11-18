@@ -2,11 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiErrorMessage } from "@hotel-booking/api-client";
-import type {
-  DiscrepancyKind,
-  DiscrepancyStatus,
-  ReconciliationDiscrepancyType,
-} from "@hotel-booking/types";
+import type { Discrepancy, DiscrepancyKind, DiscrepancyStatus } from "@hotel-booking/contracts";
 import {
   Badge,
   Button,
@@ -66,7 +62,7 @@ const DiscrepancyRow = ({
   discrepancy,
   currentUserId,
 }: {
-  discrepancy: ReconciliationDiscrepancyType;
+  discrepancy: Discrepancy;
   currentUserId?: string;
 }) => {
   const queryClient = useQueryClient();
