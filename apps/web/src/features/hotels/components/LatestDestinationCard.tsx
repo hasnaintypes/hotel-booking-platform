@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
-import { HotelType } from "@hotel-booking/types";
+import type { PublicHotel } from "@hotel-booking/contracts";
 import { MapPin, Star, Users } from "lucide-react";
 import { Badge } from "@hotel-booking/ui";
 import { SafeImage } from "@hotel-booking/ui";
 
 type Props = {
-  hotel: HotelType;
+  hotel: PublicHotel;
 };
 
 const LatestDestinationCard = ({ hotel }: Props) => {

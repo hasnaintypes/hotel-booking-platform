@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { HotelType } from "@hotel-booking/types";
+import type { PublicHotel } from "@hotel-booking/contracts";
 import { AiFillStar } from "react-icons/ai";
 import {
   MapPin,
@@ -18,7 +18,7 @@ import { Badge } from "@hotel-booking/ui";
 import { SafeImage } from "@hotel-booking/ui";
 
 type Props = {
-  hotel: HotelType;
+  hotel: PublicHotel;
 };
 
 const SearchResultsCard = ({ hotel }: Props) => {

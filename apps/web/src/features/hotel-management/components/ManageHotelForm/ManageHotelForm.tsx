@@ -6,7 +6,7 @@ import GuestsSection from "@/features/hotel-management/components/ManageHotelFor
 import ImagesSection from "@/features/hotel-management/components/ManageHotelForm/ImagesSection";
 import ContactSection from "@/features/hotel-management/components/ManageHotelForm/ContactSection";
 import PoliciesSection from "@/features/hotel-management/components/ManageHotelForm/PoliciesSection";
-import { HotelType } from "@hotel-booking/types";
+import type { ManageHotel } from "@hotel-booking/contracts";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@hotel-booking/ui";
@@ -53,7 +53,7 @@ export type HotelFormData = {
 };
 
 type Props = {
-  hotel?: HotelType;
+  hotel?: ManageHotel;
   onSave: (payload: HotelFormPayload, imageFiles: File[]) => void;
   isLoading: boolean;
   /** When set, show Cancel (calls this) + Back link to My Hotels */

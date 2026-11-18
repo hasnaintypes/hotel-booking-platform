@@ -258,7 +258,7 @@ const Search = () => {
             </div>
           ) : (
             <>
-              {hotelData?.data.map((hotel: import("@hotel-booking/types").HotelType) => (
+              {hotelData?.data.map((hotel) => (
                 <SearchResultsCard key={hotel._id} hotel={hotel} />
               ))}
               <div>

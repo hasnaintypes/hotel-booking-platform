@@ -1,4 +1,4 @@
-import { HotelType } from "@hotel-booking/types";
+import type { PublicHotel } from "@hotel-booking/contracts";
 
 type Props = {
   checkIn: Date;
@@ -6,7 +6,7 @@ type Props = {
   adultCount: number;
   childCount: number;
   numberOfNights: number;
-  hotel: HotelType;
+  hotel: PublicHotel;
 };
 
 const BookingDetailsSummary = ({
