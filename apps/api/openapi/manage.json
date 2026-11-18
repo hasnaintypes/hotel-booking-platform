@@ -191,6 +191,537 @@
         "properties": {},
         "type": "object"
       },
+      "HotelStatsDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "averageRating": {
+            "type": "number"
+          },
+          "reviewCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "totalBookings": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "totalRevenue": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "totalBookings",
+          "totalRevenue",
+          "averageRating",
+          "reviewCount"
+        ],
+        "type": "object"
+      },
+      "ManageHotelDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "_id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "adultCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "averageRating": {
+            "type": "number"
+          },
+          "cancelledBookings": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "childCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "city": {
+            "type": "string"
+          },
+          "completedBookings": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "contact": {
+            "additionalProperties": false,
+            "properties": {
+              "email": {
+                "type": "string"
+              },
+              "phone": {
+                "type": "string"
+              },
+              "website": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "phone",
+              "email",
+              "website"
+            ],
+            "type": "object"
+          },
+          "country": {
+            "type": "string"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "facilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "imageUrls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isFeatured": {
+            "type": "boolean"
+          },
+          "lastUpdated": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "location": {
+            "additionalProperties": false,
+            "properties": {
+              "address": {
+                "additionalProperties": false,
+                "properties": {
+                  "city": {
+                    "type": "string"
+                  },
+                  "country": {
+                    "type": "string"
+                  },
+                  "state": {
+                    "type": "string"
+                  },
+                  "street": {
+                    "type": "string"
+                  },
+                  "zipCode": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "street",
+                  "city",
+                  "state",
+                  "country",
+                  "zipCode"
+                ],
+                "type": "object"
+              },
+              "latitude": {
+                "type": "number"
+              },
+              "longitude": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "latitude",
+              "longitude",
+              "address"
+            ],
+            "type": "object"
+          },
+          "name": {
+            "type": "string"
+          },
+          "occupancyRate": {
+            "type": "number"
+          },
+          "policies": {
+            "additionalProperties": false,
+            "properties": {
+              "cancellationPolicy": {
+                "type": "string"
+              },
+              "checkInTime": {
+                "type": "string"
+              },
+              "checkOutTime": {
+                "type": "string"
+              },
+              "petPolicy": {
+                "type": "string"
+              },
+              "smokingPolicy": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "checkInTime",
+              "checkOutTime",
+              "cancellationPolicy",
+              "petPolicy",
+              "smokingPolicy"
+            ],
+            "type": "object"
+          },
+          "pricePerNight": {
+            "type": "number"
+          },
+          "reviewCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "starRating": {
+            "type": "number"
+          },
+          "totalBookings": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "totalRevenue": {
+            "type": "number"
+          },
+          "type": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "upcomingBookings": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "_id",
+          "name",
+          "city",
+          "country",
+          "description",
+          "type",
+          "adultCount",
+          "childCount",
+          "facilities",
+          "pricePerNight",
+          "starRating",
+          "imageUrls",
+          "lastUpdated",
+          "contact",
+          "policies",
+          "averageRating",
+          "reviewCount",
+          "createdAt",
+          "updatedAt",
+          "userId",
+          "totalBookings",
+          "totalRevenue",
+          "occupancyRate",
+          "isActive",
+          "isFeatured"
+        ],
+        "type": "object"
+      },
+      "ManageHotelPageDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "_id": {
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "type": "string"
+                },
+                "adultCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "averageRating": {
+                  "type": "number"
+                },
+                "cancelledBookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "childCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "completedBookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "contact": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    },
+                    "phone": {
+                      "type": "string"
+                    },
+                    "website": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "phone",
+                    "email",
+                    "website"
+                  ],
+                  "type": "object"
+                },
+                "country": {
+                  "type": "string"
+                },
+                "createdAt": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "facilities": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "imageUrls": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "isActive": {
+                  "type": "boolean"
+                },
+                "isFeatured": {
+                  "type": "boolean"
+                },
+                "lastUpdated": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "location": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "address": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "city": {
+                          "type": "string"
+                        },
+                        "country": {
+                          "type": "string"
+                        },
+                        "state": {
+                          "type": "string"
+                        },
+                        "street": {
+                          "type": "string"
+                        },
+                        "zipCode": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "street",
+                        "city",
+                        "state",
+                        "country",
+                        "zipCode"
+                      ],
+                      "type": "object"
+                    },
+                    "latitude": {
+                      "type": "number"
+                    },
+                    "longitude": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "latitude",
+                    "longitude",
+                    "address"
+                  ],
+                  "type": "object"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "occupancyRate": {
+                  "type": "number"
+                },
+                "policies": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "cancellationPolicy": {
+                      "type": "string"
+                    },
+                    "checkInTime": {
+                      "type": "string"
+                    },
+                    "checkOutTime": {
+                      "type": "string"
+                    },
+                    "petPolicy": {
+                      "type": "string"
+                    },
+                    "smokingPolicy": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "checkInTime",
+                    "checkOutTime",
+                    "cancellationPolicy",
+                    "petPolicy",
+                    "smokingPolicy"
+                  ],
+                  "type": "object"
+                },
+                "pricePerNight": {
+                  "type": "number"
+                },
+                "reviewCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "starRating": {
+                  "type": "number"
+                },
+                "totalBookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "totalRevenue": {
+                  "type": "number"
+                },
+                "type": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "upcomingBookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "updatedAt": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "userId": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "_id",
+                "name",
+                "city",
+                "country",
+                "description",
+                "type",
+                "adultCount",
+                "childCount",
+                "facilities",
+                "pricePerNight",
+                "starRating",
+                "imageUrls",
+                "lastUpdated",
+                "contact",
+                "policies",
+                "averageRating",
+                "reviewCount",
+                "createdAt",
+                "updatedAt",
+                "userId",
+                "totalBookings",
+                "totalRevenue",
+                "upcomingBookings",
+                "completedBookings",
+                "cancelledBookings",
+                "occupancyRate",
+                "isActive",
+                "isFeatured"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "additionalProperties": false,
+            "properties": {
+              "hasMore": {
+                "type": "boolean"
+              },
+              "nextCursor": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "nextCursor",
+              "hasMore"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "data",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
       "SuggestDto": {
         "properties": {},
         "type": "object"
@@ -271,7 +802,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelPageDto_Output"
+                }
+              }
+            },
+            "description": "One page of the caller's hotels, with the dashboard counters"
           }
         },
         "tags": [
@@ -293,7 +831,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelDto_Output"
+                }
+              }
+            },
+            "description": "The created hotel, with the Location header pointing at it"
           }
         },
         "tags": [
@@ -326,7 +871,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelDto_Output"
+                }
+              }
+            },
+            "description": "The updated hotel"
           }
         },
         "tags": [
@@ -398,7 +950,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelDto_Output"
+                }
+              }
+            },
+            "description": "One hotel owned by the caller"
           }
         },
         "tags": [
@@ -421,7 +980,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelDto_Output"
+                }
+              }
+            },
+            "description": "The hotel with its updated state"
           }
         },
         "tags": [
@@ -444,7 +1010,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelDto_Output"
+                }
+              }
+            },
+            "description": "The hotel with the image removed"
           }
         },
         "tags": [
@@ -465,7 +1038,14 @@
         ],
         "responses": {
           "201": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManageHotelDto_Output"
+                }
+              }
+            },
+            "description": "The hotel with the newly uploaded images"
           }
         },
         "tags": [
@@ -488,7 +1068,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotelStatsDto_Output"
+                }
+              }
+            },
+            "description": "The hotel's booking and rating counters"
           }
         },
         "tags": [

@@ -1,12 +1,13 @@
-import type { PublicHotel } from "@hotel-booking/contracts";
+import type {
+  AdminHotel,
+  HotelStats,
+  ManageHotel,
+  ManageHotelListItem,
+  PublicHotel,
+} from "@hotel-booking/contracts";
 import type { HotelRecord } from "../../database/repositories/hotels.repository";
 
-export type HotelStats = {
-  totalBookings: number;
-  totalRevenue: number;
-  averageRating: number;
-  reviewCount: number;
-};
+export type { HotelStats };
 
 export const EMPTY_HOTEL_STATS: HotelStats = {
   totalBookings: 0,
@@ -19,33 +20,13 @@ export const EMPTY_HOTEL_STATS: HotelStats = {
 export type PublicHotelResponse = PublicHotel;
 
 /** Public fields plus the owner's own counters and listing controls. */
-export type ManageHotelResponse = PublicHotelResponse & {
-  userId: string;
-  totalBookings: number;
-  totalRevenue: number;
-  upcomingBookings?: number;
-  completedBookings?: number;
-  cancelledBookings?: number;
-  occupancyRate: number;
-  isActive: boolean;
-  isFeatured: boolean;
-};
+export type ManageHotelResponse = ManageHotel;
 
 /** The owner's list row: their own counters plus the booking counts the dashboard shows. */
-export type ManageHotelListItem = ManageHotelResponse & {
-  upcomingBookings: number;
-  completedBookings: number;
-  cancelledBookings: number;
-};
+export type { ManageHotelListItem };
 
 /** Owner fields plus internal ownership and moderation fields. */
-export type AdminHotelResponse = ManageHotelResponse & {
-  ownerUserId: string | null;
-  createdByUserId: string | null;
-  organisationId: string | null;
-  source: HotelRecord["source"];
-  status: HotelRecord["status"];
-};
+export type AdminHotelResponse = AdminHotel;
 
 const withBaseFields = (
   hotel: HotelRecord,
