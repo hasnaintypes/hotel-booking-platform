@@ -64,46 +64,6 @@ export type HotelType = {
   updatedAt?: Date;
 };
 
-export type AdminPermission =
-  | "booking.read"
-  | "booking.cancel"
-  | "booking.retry"
-  | "booking.mark_reviewed"
-  | "reconciliation.read"
-  | "reconciliation.manage";
-
-export type DiscrepancyKind =
-  | "payment_status_mismatch"
-  | "payment_amount_mismatch"
-  | "refund_mismatch"
-  | "local_without_provider"
-  | "provider_missing"
-  | "provider_without_local"
-  | "ledger_mismatch";
-
-export type DiscrepancyStatus = "open" | "resolved" | "ignored";
-
-export type ReconciliationDiscrepancyType = {
-  id: string;
-  dedupeKey: string;
-  kind: DiscrepancyKind;
-  status: DiscrepancyStatus;
-  provider: string;
-  bookingId?: string | null;
-  paymentId?: string | null;
-  providerReference?: string | null;
-  details: Record<string, unknown>;
-  assignedToUserId?: string | null;
-  assignedAt?: Date | null;
-  assignedByUserId?: string | null;
-  resolvedByUserId?: string | null;
-  resolution?: string | null;
-  detectedAt: Date;
-  resolvedAt?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
 /** Paging metadata that accompanies a page of items. */
 export type PageInfo = {
   /** Opaque cursor for the next page, or null when this is the last page. */

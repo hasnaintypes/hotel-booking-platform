@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import type { CursorPage } from "@hotel-booking/contracts";
+import type { CursorPage, Discrepancy } from "@hotel-booking/contracts";
 import type Stripe from "stripe";
 import { CLOCK, type Clock } from "../../common/clock";
 import { pageOf, pageSize } from "../../common/pagination/cursor-page";
@@ -15,7 +15,6 @@ import { readTimestampCursor } from "../../common/pagination/sorted-cursor";
 import {
   type BookingLedgerTotals,
   type BookingPaymentTotals,
-  type DiscrepancyRecord,
   type NewDiscrepancyInput,
   ReconciliationRepository,
 } from "../../database/repositories/reconciliation.repository";
@@ -27,6 +26,7 @@ import {
 } from "../../domain/payments/provider-status";
 import { StripeService } from "../../integrations/stripe/stripe.service";
 import { isMissingProviderResource } from "../payments/payments.service";
+import { toDiscrepancyResponse } from "./discrepancy-response";
 import type { ListDiscrepanciesQueryDto } from "./dto/list-discrepancies-query.dto";
 import { UpdateDiscrepancyDto } from "./dto/update-discrepancy.dto";
 
@@ -434,9 +434,7 @@ export class ReconciliationService {
   }
 
   /** Filtered queue for the admin UI, including closed history, one cursor page at a time. */
-  async listDiscrepancies(
-    query: ListDiscrepanciesQueryDto,
-  ): Promise<CursorPage<DiscrepancyRecord>> {
+  async listDiscrepancies(query: ListDiscrepanciesQueryDto): Promise<CursorPage<Discrepancy>> {
     const limit = pageSize(query);
     const oldestFirst = this.discrepancies.oldestFirstFor(query.status);
     const scope = discrepancyScope(oldestFirst);
@@ -453,7 +451,7 @@ export class ReconciliationService {
     const page = pageOf(rows, limit, scope, (row) => ({ key: row.cursorKey, id: row.id }));
     // The row carries its cursor key for the anchor only; it is not part of the resource.
     return {
-      data: page.data.map(({ cursorKey: _cursorKey, ...row }) => row),
+      data: page.data.map(({ cursorKey: _cursorKey, ...row }) => toDiscrepancyResponse(row)),
       pageInfo: page.pageInfo,
     };
   }
@@ -462,7 +460,11 @@ export class ReconciliationService {
    * Assigns or closes one finding. Closing needs a written resolution and records the operator;
    * a closed finding is immutable from the application, so history cannot be rewritten.
    */
-  async updateDiscrepancy(id: string, dto: UpdateDiscrepancyDto, actorUserId: string) {
+  async updateDiscrepancy(
+    id: string,
+    dto: UpdateDiscrepancyDto,
+    actorUserId: string,
+  ): Promise<Discrepancy> {
     const changesAssignment = Object.prototype.hasOwnProperty.call(dto, "assignedToUserId");
     if (!dto.status && !changesAssignment) {
       throw new BadRequestException("Provide a status or an assignee");
@@ -510,6 +512,6 @@ export class ReconciliationService {
       updated = closed;
     }
 
-    return updated;
+    return toDiscrepancyResponse(updated);
   }
 }

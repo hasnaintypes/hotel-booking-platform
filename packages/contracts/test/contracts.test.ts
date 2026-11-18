@@ -9,6 +9,8 @@ import {
   cursorPageQuerySchema,
   cursorPageSchema,
   DEFAULT_PAGE_LIMIT,
+  discrepancyPageSchema,
+  discrepancySchema,
   hotelSearchQuerySchema,
   pageInfoSchema,
   pageLimit,
@@ -363,5 +365,47 @@ describe("publicUserSchema", () => {
 
   it("rejects an unknown role", () => {
     expect(publicUserSchema.safeParse({ ...user, role: "owner" }).success).toBe(false);
+  });
+});
+
+describe("discrepancySchema", () => {
+  const discrepancy = {
+    id: "77777777-7777-4777-8777-777777777777",
+    dedupeKey: `payment_status_mismatch:${booking._id}`,
+    kind: "payment_status_mismatch",
+    status: "open",
+    provider: "stripe",
+    bookingId: booking._id,
+    paymentId: null,
+    providerReference: "pi_123",
+    details: { localStatus: "paid", providerStatus: "requires_capture" },
+    detectedAt: "2026-05-03T09:00:00.000Z",
+    resolvedAt: null,
+    resolution: null,
+    assignedToUserId: null,
+    assignedAt: null,
+    assignedByUserId: null,
+    resolvedByUserId: null,
+    createdAt: "2026-05-03T09:00:00.000Z",
+    updatedAt: "2026-05-03T09:00:00.000Z",
+  };
+
+  it("parses the queue row, including the nulls the API returns", () => {
+    expect(discrepancySchema.parse(discrepancy)).toEqual(discrepancy);
+  });
+
+  it("rejects an unknown kind or a closed row without a resolution timestamp", () => {
+    expect(discrepancySchema.safeParse({ ...discrepancy, kind: "other" }).success).toBe(false);
+    expect(discrepancySchema.safeParse({ ...discrepancy, detectedAt: "yesterday" }).success).toBe(
+      false,
+    );
+  });
+
+  it("wraps a page of findings", () => {
+    const page = discrepancyPageSchema.parse({
+      data: [discrepancy],
+      pageInfo: { nextCursor: null, hasMore: false },
+    });
+    expect(page.data).toHaveLength(1);
   });
 });

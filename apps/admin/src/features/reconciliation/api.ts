@@ -1,17 +1,5 @@
 import apiClient from "@hotel-booking/api-client";
-import type {
-  CursorPage,
-  DiscrepancyKind,
-  DiscrepancyStatus,
-  ListQuery,
-  ReconciliationDiscrepancyType,
-} from "@hotel-booking/types";
-
-export type DiscrepancyFilters = {
-  status?: DiscrepancyStatus;
-  kind?: DiscrepancyKind;
-  assignedToUserId?: string;
-};
+import type { CursorPage, Discrepancy, DiscrepancyListQuery } from "@hotel-booking/contracts";
 
 export type DiscrepancyUpdate = {
   status?: "resolved" | "ignored";
@@ -20,8 +8,8 @@ export type DiscrepancyUpdate = {
 };
 
 export const fetchDiscrepancies = async (
-  filters: DiscrepancyFilters & ListQuery = {},
-): Promise<CursorPage<ReconciliationDiscrepancyType>> => {
+  filters: DiscrepancyListQuery = {},
+): Promise<CursorPage<Discrepancy>> => {
   const response = await apiClient.get("/api/v1/admin/reconciliation/discrepancies", {
     params: Object.fromEntries(
       Object.entries(filters).filter(([, value]) => value !== undefined && value !== ""),
@@ -33,7 +21,7 @@ export const fetchDiscrepancies = async (
 export const updateDiscrepancy = async (
   id: string,
   update: DiscrepancyUpdate,
-): Promise<ReconciliationDiscrepancyType> => {
+): Promise<Discrepancy> => {
   const response = await apiClient.patch(
     `/api/v1/admin/reconciliation/discrepancies/${id}`,
     update,
