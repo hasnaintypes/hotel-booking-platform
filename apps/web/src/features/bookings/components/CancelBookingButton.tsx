@@ -4,7 +4,7 @@ import * as bookingsApi from "@/features/bookings/api";
 import { invalidateBookingQueries } from "@/shared/lib/query-invalidation";
 
 import type { Booking } from "@hotel-booking/contracts";
-import { isBookingCancellable } from "@hotel-booking/types";
+import { isBookingCancellable } from "@/features/bookings/lib/booking-utils";
 import { Button } from "@hotel-booking/ui";
 import { useToast } from "@/shared/context/ToastContext";
 

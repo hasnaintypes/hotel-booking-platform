@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import type { CursorPage } from "@hotel-booking/contracts";
+import { adminHotelSchema, type CursorPage } from "@hotel-booking/contracts";
 import { PreconditionFailedException } from "../../common/errors/precondition-failed.exception";
 import { ifMatchSatisfied, representationEtag } from "../../common/http/etag";
 import { anchorOf, pageOf, pageSize } from "../../common/pagination/cursor-page";
@@ -135,7 +135,15 @@ export class HotelsService {
         throw new NotFoundException("Hotel not found");
       }
       const representation = toAdminHotelResponse(current, await this.hotelStats.forHotel(id));
-      if (!ifMatchSatisfied(options.ifMatch, representationEtag(representation))) {
+      // The ETag must cover the bytes the client receives, and `ZodSerializerInterceptor` returns
+      // a new object in schema order. Hash the parsed representation so `If-Match` stays in step
+      // with `GET /admin/hotels/:id`, which serialises through the same schema.
+      if (
+        !ifMatchSatisfied(
+          options.ifMatch,
+          representationEtag(adminHotelSchema.parse(representation)),
+        )
+      ) {
         throw new PreconditionFailedException();
       }
     }

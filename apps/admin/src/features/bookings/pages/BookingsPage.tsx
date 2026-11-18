@@ -3,7 +3,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import type { LegacyColumnDef } from "@tanstack/react-table/legacy";
 import { Link } from "react-router-dom";
 import type { AdminBookingListQuery, Booking, BookingStatus } from "@hotel-booking/contracts";
-import { bookingStatusLabel } from "@hotel-booking/types";
+import { bookingStatusLabel } from "@/features/bookings/lib/booking-utils";
 import { Badge, DataTable, LoadMore } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { flattenPages, nextCursorPageParam } from "@/shared/lib/infinite-pages";

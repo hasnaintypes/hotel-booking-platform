@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 import {
+  adminHotelPageSchema,
+  adminHotelSchema,
   adminUserListItemSchema,
   bookingCreationSchema,
   bookingDetailSchema,
@@ -12,6 +14,9 @@ import {
   discrepancyPageSchema,
   discrepancySchema,
   hotelSearchQuerySchema,
+  hotelStatsSchema,
+  manageHotelPageSchema,
+  manageHotelSchema,
   pageInfoSchema,
   pageLimit,
   problemDetailsSchema,
@@ -145,6 +150,104 @@ describe("publicHotelSchema", () => {
       expect(publicHotelSchema.safeParse(rest).success).toBe(false);
     },
   );
+});
+
+describe("manageHotelSchema", () => {
+  const manageHotel = {
+    ...hotel,
+    userId: hotel._id,
+    totalBookings: 2,
+    totalRevenue: 240,
+    occupancyRate: 0,
+    isActive: true,
+    isFeatured: false,
+  };
+
+  const listItem = {
+    ...manageHotel,
+    upcomingBookings: 1,
+    completedBookings: 1,
+    cancelledBookings: 0,
+  };
+
+  it("adds ownership, counters and listing controls to the public shape", () => {
+    expect(manageHotelSchema.parse(manageHotel)).toEqual(manageHotel);
+  });
+
+  it("accepts the supplier fallback of an empty owner id", () => {
+    expect(manageHotelSchema.parse({ ...manageHotel, userId: "" }).userId).toBe("");
+  });
+
+  it("requires the dashboard counters only on the list row", () => {
+    expect(manageHotelSchema.safeParse(listItem).success).toBe(true);
+    expect(
+      manageHotelPageSchema.safeParse({
+        data: [manageHotel],
+        pageInfo: { nextCursor: null, hasMore: false },
+      }).success,
+    ).toBe(false);
+
+    const page = manageHotelPageSchema.parse({
+      data: [listItem],
+      pageInfo: { nextCursor: null, hasMore: false },
+    });
+    expect(page.data[0].upcomingBookings).toBe(1);
+  });
+});
+
+describe("adminHotelSchema", () => {
+  const manageHotel = {
+    ...hotel,
+    userId: hotel._id,
+    totalBookings: 2,
+    totalRevenue: 240,
+    occupancyRate: 0,
+    isActive: true,
+    isFeatured: false,
+  };
+
+  const adminHotel = {
+    ...manageHotel,
+    ownerUserId: hotel._id,
+    createdByUserId: hotel._id,
+    organisationId: null,
+    source: "managed",
+    status: "active",
+  };
+
+  it("parses the wire shape, including the nullable ownership columns", () => {
+    expect(adminHotelSchema.parse(adminHotel)).toEqual(adminHotel);
+    expect(
+      adminHotelSchema.parse({ ...adminHotel, ownerUserId: null, createdByUserId: null })
+        .ownerUserId,
+    ).toBeNull();
+  });
+
+  it("rejects an unknown status or source", () => {
+    expect(adminHotelSchema.safeParse({ ...adminHotel, status: "published" }).success).toBe(false);
+    expect(adminHotelSchema.safeParse({ ...adminHotel, source: "manual" }).success).toBe(false);
+  });
+
+  it("wraps a page of listings", () => {
+    const page = adminHotelPageSchema.parse({
+      data: [adminHotel],
+      pageInfo: { nextCursor: null, hasMore: false },
+    });
+    expect(page.data).toHaveLength(1);
+  });
+});
+
+describe("hotelStatsSchema", () => {
+  it("parses the owner stats counters", () => {
+    expect(
+      hotelStatsSchema.parse({
+        totalBookings: 2,
+        totalRevenue: 240,
+        averageRating: 4.5,
+        reviewCount: 1,
+      }),
+    ).toEqual({ totalBookings: 2, totalRevenue: 240, averageRating: 4.5, reviewCount: 1 });
+  });
 });
 
 describe("problemDetailsSchema", () => {

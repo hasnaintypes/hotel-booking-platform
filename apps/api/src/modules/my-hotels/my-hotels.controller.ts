@@ -18,12 +18,18 @@ import {
 import { FilesInterceptor } from "@nestjs/platform-express";
 import type { Response } from "express";
 import multer from "multer";
+import { ZodResponse } from "nestjs-zod";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { imageFileFilter, MAX_IMAGE_BYTES } from "../../common/uploads/image-validation";
 import { HotelFormDto } from "./dto/hotel-form.dto";
+import {
+  HotelStatsDto,
+  ManageHotelDto,
+  ManageHotelPageDto,
+} from "../hotels/dto/hotel-response.dto";
 import { MyHotelListQueryDto } from "../hotels/dto/hotel.dto";
 import { MyHotelsService } from "./my-hotels.service";
 
@@ -40,6 +46,11 @@ export class MyHotelsController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @ZodResponse({
+    type: ManageHotelDto,
+    status: 201,
+    description: "The created hotel, with the Location header pointing at it",
+  })
   async create(
     @Body() dto: HotelFormDto,
     @CurrentUser() user: AuthenticatedUser,
@@ -51,22 +62,38 @@ export class MyHotelsController {
   }
 
   @Get()
+  @ZodResponse({
+    type: ManageHotelPageDto,
+    status: 200,
+    description: "One page of the caller's hotels, with the dashboard counters",
+  })
   findAll(@CurrentUser() user: AuthenticatedUser, @Query() query: MyHotelListQueryDto) {
     return this.myHotelsService.findAll(user.userId, query);
   }
 
   @Get(":id")
+  @ZodResponse({ type: ManageHotelDto, status: 200, description: "One hotel owned by the caller" })
   findOne(@Param("id", UuidPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.myHotelsService.findOne(id, user.userId);
   }
 
   @Get(":id/stats")
+  @ZodResponse({
+    type: HotelStatsDto,
+    status: 200,
+    description: "The hotel's booking and rating counters",
+  })
   stats(@Param("id", UuidPipe) id: string, @CurrentUser() user: AuthenticatedUser) {
     return this.myHotelsService.stats(id, user.userId);
   }
 
   @Patch(":id/active")
   @HttpCode(HttpStatus.OK)
+  @ZodResponse({
+    type: ManageHotelDto,
+    status: 200,
+    description: "The hotel with its updated state",
+  })
   setActive(
     @Param("id", UuidPipe) id: string,
     @Body("isActive") isActive: unknown,
@@ -80,6 +107,7 @@ export class MyHotelsController {
 
   @Patch(":hotelId")
   @HttpCode(HttpStatus.OK)
+  @ZodResponse({ type: ManageHotelDto, status: 200, description: "The updated hotel" })
   update(
     @Param("hotelId", UuidPipe) hotelId: string,
     @Body() dto: HotelFormDto,
@@ -91,6 +119,11 @@ export class MyHotelsController {
   @Post(":id/images")
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
+  @ZodResponse({
+    type: ManageHotelDto,
+    status: 201,
+    description: "The hotel with the newly uploaded images",
+  })
   addImages(
     @Param("id", UuidPipe) id: string,
     @UploadedFiles() files: Express.Multer.File[],
@@ -101,6 +134,11 @@ export class MyHotelsController {
 
   @Delete(":id/images")
   @HttpCode(HttpStatus.OK)
+  @ZodResponse({
+    type: ManageHotelDto,
+    status: 200,
+    description: "The hotel with the image removed",
+  })
   removeImage(
     @Param("id", UuidPipe) id: string,
     @Body("url") url: unknown,

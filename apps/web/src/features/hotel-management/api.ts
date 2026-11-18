@@ -1,6 +1,11 @@
 import axiosInstance from "@hotel-booking/api-client";
-import type { Booking } from "@hotel-booking/contracts";
-import type { CursorPage, HotelType, ListQuery } from "@hotel-booking/types";
+import type {
+  Booking,
+  CursorPage,
+  CursorPageQuery,
+  ManageHotel,
+  ManageHotelListItem,
+} from "@hotel-booking/contracts";
 
 /** JSON body accepted by the hotel create/update endpoints. */
 export type HotelFormPayload = {
@@ -25,7 +30,7 @@ export type HotelFormPayload = {
   "policies.smokingPolicy"?: string;
 };
 
-const uploadImages = async (hotelId: string, files: File[]): Promise<HotelType> => {
+const uploadImages = async (hotelId: string, files: File[]): Promise<ManageHotel> => {
   const formData = new FormData();
   files.forEach((file) => formData.append("imageFiles", file));
   const response = await axiosInstance.post(`/api/v1/manage/hotels/${hotelId}/images`, formData, {
@@ -37,18 +42,20 @@ const uploadImages = async (hotelId: string, files: File[]): Promise<HotelType> 
 export const addMyHotel = async (
   payload: HotelFormPayload,
   imageFiles: File[] = [],
-): Promise<HotelType> => {
-  const response = await axiosInstance.post<HotelType>("/api/v1/manage/hotels", payload);
+): Promise<ManageHotel> => {
+  const response = await axiosInstance.post<ManageHotel>("/api/v1/manage/hotels", payload);
   if (imageFiles.length === 0) return response.data;
   return uploadImages(response.data._id, imageFiles);
 };
 
-export const fetchMyHotels = async (params: ListQuery = {}): Promise<CursorPage<HotelType>> => {
+export const fetchMyHotels = async (
+  params: CursorPageQuery = {},
+): Promise<CursorPage<ManageHotelListItem>> => {
   const response = await axiosInstance.get("/api/v1/manage/hotels", { params });
   return response.data;
 };
 
-export const fetchMyHotelById = async (hotelId: string): Promise<HotelType> => {
+export const fetchMyHotelById = async (hotelId: string): Promise<ManageHotel> => {
   const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}`);
   return response.data;
 };
@@ -57,8 +64,8 @@ export const updateMyHotelById = async (
   hotelId: string,
   payload: HotelFormPayload,
   imageFiles: File[] = [],
-): Promise<HotelType> => {
-  const response = await axiosInstance.patch<HotelType>(
+): Promise<ManageHotel> => {
+  const response = await axiosInstance.patch<ManageHotel>(
     `/api/v1/manage/hotels/${hotelId}`,
     payload,
   );
@@ -70,7 +77,7 @@ export const updateMyHotelById = async (
 export const updateMyHotelActive = async (
   hotelId: string,
   isActive: boolean,
-): Promise<HotelType> => {
+): Promise<ManageHotel> => {
   const response = await axiosInstance.patch(`/api/v1/manage/hotels/${hotelId}/active`, {
     isActive,
   });
@@ -79,7 +86,7 @@ export const updateMyHotelActive = async (
 
 export const fetchHotelBookings = async (
   hotelId: string,
-  params: ListQuery = {},
+  params: CursorPageQuery = {},
 ): Promise<CursorPage<Booking>> => {
   const response = await axiosInstance.get(`/api/v1/manage/hotels/${hotelId}/bookings`, {
     params,

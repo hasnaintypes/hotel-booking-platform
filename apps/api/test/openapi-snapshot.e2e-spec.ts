@@ -178,6 +178,53 @@ describe("OpenAPI snapshot", () => {
     );
   });
 
+  it("documents the owner and admin hotel routes with response schemas", () => {
+    const { combined } = buildApiDocuments(app);
+    const schemaOf = (path: string, method: string, status: string) => {
+      const operation = combined.paths?.[path]?.[method] as
+        | {
+            responses?: Record<
+              string,
+              { content?: Record<string, { schema?: { $ref?: string } }> }
+            >;
+          }
+        | undefined;
+      return operation?.responses?.[status]?.content?.["application/json"]?.schema?.$ref;
+    };
+
+    expect(schemaOf("/api/v1/manage/hotels", "post", "201")).toContain("ManageHotelDto_Output");
+    expect(schemaOf("/api/v1/manage/hotels", "get", "200")).toContain("ManageHotelPageDto_Output");
+    expect(schemaOf("/api/v1/manage/hotels/{id}", "get", "200")).toContain("ManageHotelDto_Output");
+    expect(schemaOf("/api/v1/manage/hotels/{hotelId}", "patch", "200")).toContain(
+      "ManageHotelDto_Output",
+    );
+    expect(schemaOf("/api/v1/manage/hotels/{id}/stats", "get", "200")).toContain(
+      "HotelStatsDto_Output",
+    );
+    expect(schemaOf("/api/v1/manage/hotels/{id}/active", "patch", "200")).toContain(
+      "ManageHotelDto_Output",
+    );
+    expect(schemaOf("/api/v1/manage/hotels/{id}/images", "post", "201")).toContain(
+      "ManageHotelDto_Output",
+    );
+    expect(schemaOf("/api/v1/manage/hotels/{id}/images", "delete", "200")).toContain(
+      "ManageHotelDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/hotels", "get", "200")).toContain("AdminHotelPageDto_Output");
+    expect(schemaOf("/api/v1/admin/hotels/{id}", "get", "200")).toContain("AdminHotelDto_Output");
+    expect(schemaOf("/api/v1/admin/hotels/{id}", "patch", "200")).toContain("AdminHotelDto_Output");
+
+    expect(Object.keys(combined.components?.schemas ?? {})).toEqual(
+      expect.arrayContaining([
+        "ManageHotelDto_Output",
+        "ManageHotelPageDto_Output",
+        "AdminHotelDto_Output",
+        "AdminHotelPageDto_Output",
+        "HotelStatsDto_Output",
+      ]),
+    );
+  });
+
   it("documents every routed endpoint with a response and only matrix statuses", () => {
     const { combined } = buildApiDocuments(app);
     const pathOf = (segments: string[]) =>

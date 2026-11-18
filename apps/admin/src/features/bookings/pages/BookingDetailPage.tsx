@@ -1,7 +1,7 @@
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import type { BookingEvent, BookingPayment } from "@hotel-booking/contracts";
-import { bookingStatusLabel } from "@hotel-booking/types";
+import { bookingStatusLabel } from "@/features/bookings/lib/booking-utils";
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "@hotel-booking/ui";
 import { adminKeys } from "@/shared/lib/query-keys";
 import { fetchBookingDetail } from "../api";

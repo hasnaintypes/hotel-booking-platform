@@ -1,5 +1,5 @@
 import apiClient from "@hotel-booking/api-client";
-import type { CursorPage, ListQuery } from "@hotel-booking/types";
+import type { CursorPage, CursorPageQuery } from "@hotel-booking/contracts";
 import type { BusinessInsightsRollup, InsightsDashboard } from "./types";
 
 export const fetchInsightsDashboard = async (): Promise<InsightsDashboard> => {
@@ -8,7 +8,7 @@ export const fetchInsightsDashboard = async (): Promise<InsightsDashboard> => {
 };
 
 export const fetchRollups = async (
-  params: ListQuery = {},
+  params: CursorPageQuery = {},
 ): Promise<CursorPage<BusinessInsightsRollup>> => {
   const response = await apiClient.get("/api/v1/admin/reports/rollups", { params });
   return response.data;

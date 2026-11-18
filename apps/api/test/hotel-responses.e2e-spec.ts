@@ -42,6 +42,13 @@ const MANAGE_HOTEL_KEYS = [
   "userId",
 ].sort();
 
+const MANAGE_HOTEL_LIST_KEYS = [
+  ...MANAGE_HOTEL_KEYS,
+  "upcomingBookings",
+  "completedBookings",
+  "cancelledBookings",
+].sort();
+
 const ADMIN_HOTEL_KEYS = [
   ...MANAGE_HOTEL_KEYS,
   "createdByUserId",
@@ -122,6 +129,17 @@ describe("hotel response allow-lists", () => {
     expect(res.body.totalBookings).toBe(1);
     expect(res.body.totalRevenue).toBe(250);
     expect(res.body.isActive).toBe(true);
+  });
+
+  it("adds the dashboard booking counts on the owner list row", async () => {
+    const res = await owner.agent.get(routes.myHotels.list);
+    expect(res.status).toBe(200);
+    const listed = res.body.data.find((item: { _id: string }) => item._id === hotel.id);
+    expect(listed).toBeDefined();
+    expectAllowList(listed, MANAGE_HOTEL_LIST_KEYS);
+    expect(listed.upcomingBookings).toBe(1);
+    expect(listed.completedBookings).toBe(0);
+    expect(listed.cancelledBookings).toBe(0);
   });
 
   it("keeps internal ownership and moderation fields on the admin response", async () => {

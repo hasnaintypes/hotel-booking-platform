@@ -1,5 +1,10 @@
 import axiosInstance from "@hotel-booking/api-client";
-import type { CursorPage, HotelSearchResponse, HotelType, ListQuery } from "@hotel-booking/types";
+import type {
+  CursorPage,
+  CursorPageQuery,
+  HotelSearchResponse,
+  PublicHotel,
+} from "@hotel-booking/contracts";
 
 export type SearchParams = {
   destination?: string;
@@ -44,12 +49,14 @@ export const searchHotels = async (searchParams: SearchParams): Promise<HotelSea
   return response.data;
 };
 
-export const fetchHotels = async (params: ListQuery = {}): Promise<CursorPage<HotelType>> => {
+export const fetchHotels = async (
+  params: CursorPageQuery = {},
+): Promise<CursorPage<PublicHotel>> => {
   const response = await axiosInstance.get("/api/v1/hotels", { params });
   return response.data;
 };
 
-export const fetchHotelById = async (hotelId: string): Promise<HotelType> => {
+export const fetchHotelById = async (hotelId: string): Promise<PublicHotel> => {
   const response = await axiosInstance.get(`/api/v1/hotels/${hotelId}`);
   return response.data;
 };
