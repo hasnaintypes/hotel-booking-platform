@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { BOOKING_STATUS_VALUES } from "./bookings";
+import { HOTEL_STATUS_VALUES } from "./hotels";
 import { cursorPageQuerySchema } from "./pagination";
 import { DISCREPANCY_KIND_VALUES, DISCREPANCY_STATUS_VALUES } from "./reconciliation";
 import { USER_ROLE_VALUES, USER_STATUS_VALUES } from "./users";
@@ -15,11 +16,10 @@ import {
  * Query schemas for every list endpoint.
  *
  * Each one extends the shared cursor query, so `limit` (1–100, default 20) and `cursor` are defined
- * once, and an endpoint only states its own filters. The filter vocabularies live here rather than
- * being imported from the database package: they are part of the API contract, and a migration that
- * adds a state must be a deliberate contract change.
+ * once, and an endpoint only states its own filters. Filter vocabularies live in this package rather
+ * than being imported from the database package: they are part of the API contract, and a migration
+ * that adds a state must be a deliberate contract change.
  */
-export const HOTEL_STATUS_VALUES = ["draft", "active", "inactive", "archived"] as const;
 
 /** `GET /api/v1/hotels` — the public catalogue. */
 export const publicHotelListQuerySchema = cursorPageQuerySchema.extend({
