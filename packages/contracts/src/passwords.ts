@@ -1,12 +1,17 @@
-import {
-  ValidatorConstraint,
-  type ValidationArguments,
-  type ValidatorConstraintInterface,
-} from "class-validator";
-
+/**
+ * The password rules for new accounts.
+ *
+ * They live in the contract package because the API and the registration form document the same
+ * policy: the browser shows the rule, the API enforces it. Login deliberately keeps its own,
+ * looser rule so accounts created under the previous six-character policy can still sign in.
+ */
 export const PASSWORD_MIN_LENGTH = 10;
 /** bcrypt ignores everything after 72 bytes, so a longer password would not be fully used. */
 export const PASSWORD_MAX_LENGTH = 72;
+
+export const PASSWORD_MIN_MESSAGE = `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
+export const PASSWORD_MAX_MESSAGE = `Password must be at most ${PASSWORD_MAX_LENGTH} characters`;
+export const COMMON_PASSWORD_MESSAGE = "Password is too easy to guess; choose a less common one";
 
 // The commonest passwords that are long enough to pass the length rule. Compared in lower case.
 const COMMON_PASSWORDS = new Set([
@@ -115,17 +120,4 @@ export function isCommonPassword(password: string, email?: string): boolean {
 
   const emailName = (email ?? "").split("@")[0]?.toLowerCase();
   return Boolean(emailName && emailName.length >= 4 && lower === emailName);
-}
-
-@ValidatorConstraint({ name: "notCommonPassword", async: false })
-export class NotCommonPasswordConstraint implements ValidatorConstraintInterface {
-  validate(value: unknown, args: ValidationArguments): boolean {
-    if (typeof value !== "string") return false;
-    const email = (args.object as { email?: unknown }).email;
-    return !isCommonPassword(value, typeof email === "string" ? email : undefined);
-  }
-
-  defaultMessage(): string {
-    return "Password is too easy to guess; choose a less common one";
-  }
 }

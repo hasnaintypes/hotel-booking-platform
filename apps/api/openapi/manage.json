@@ -188,7 +188,186 @@
         "type": "object"
       },
       "HotelFormDto": {
-        "properties": {},
+        "properties": {
+          "adultCount": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "childCount": {
+            "maximum": 50,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "city": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "contact.email": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "format": "email",
+                "maxLength": 254,
+                "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+                "type": "string"
+              }
+            ]
+          },
+          "contact.phone": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "maxLength": 30,
+                "type": "string"
+              }
+            ]
+          },
+          "contact.website": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "format": "uri",
+                "maxLength": 2048,
+                "type": "string"
+              }
+            ]
+          },
+          "country": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "facilities": {
+            "items": {
+              "maxLength": 50,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array"
+          },
+          "imageUrls": {
+            "items": {
+              "format": "uri",
+              "maxLength": 2048,
+              "type": "string"
+            },
+            "maxItems": 6,
+            "type": "array"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "policies.cancellationPolicy": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "maxLength": 1000,
+                "type": "string"
+              }
+            ]
+          },
+          "policies.checkInTime": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "maxLength": 50,
+                "type": "string"
+              }
+            ]
+          },
+          "policies.checkOutTime": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "maxLength": 50,
+                "type": "string"
+              }
+            ]
+          },
+          "policies.petPolicy": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "maxLength": 1000,
+                "type": "string"
+              }
+            ]
+          },
+          "policies.smokingPolicy": {
+            "anyOf": [
+              {
+                "const": "",
+                "type": "string"
+              },
+              {
+                "maxLength": 1000,
+                "type": "string"
+              }
+            ]
+          },
+          "pricePerNight": {
+            "maximum": 100000,
+            "minimum": 0.01,
+            "type": "number"
+          },
+          "starRating": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "type": {
+            "items": {
+              "maxLength": 50,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "city",
+          "country",
+          "description",
+          "type",
+          "facilities",
+          "pricePerNight",
+          "starRating",
+          "adultCount",
+          "childCount"
+        ],
         "type": "object"
       },
       "HotelStatsDto_Output": {
@@ -722,8 +901,48 @@
         ],
         "type": "object"
       },
+      "RemoveHotelImageDto": {
+        "properties": {
+          "url": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "type": "object"
+      },
       "SuggestDto": {
-        "properties": {},
+        "properties": {
+          "input": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "hotel_description",
+              "insights_copy"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "input"
+        ],
+        "type": "object"
+      },
+      "ToggleActiveDto": {
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isActive"
+        ],
         "type": "object"
       }
     },
@@ -978,6 +1197,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleActiveDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -1008,6 +1237,16 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveHotelImageDto"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "content": {
@@ -1036,6 +1275,30 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "imageFiles": {
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    },
+                    "maxItems": 6,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "imageFiles"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "description": "Up to six image files; type and size are checked by the upload interceptor, not by a DTO.",
+          "required": true
+        },
         "responses": {
           "201": {
             "content": {

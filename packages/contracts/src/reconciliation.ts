@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalBody, optionalTrimmedText } from "./body";
 import { cursorPageSchema } from "./pagination";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
@@ -46,3 +47,21 @@ export type DiscrepancyKind = (typeof DISCREPANCY_KIND_VALUES)[number];
 export type DiscrepancyStatus = (typeof DISCREPANCY_STATUS_VALUES)[number];
 export type Discrepancy = z.infer<typeof discrepancySchema>;
 export type DiscrepancyPage = z.infer<typeof discrepancyPageSchema>;
+
+/** The statuses an operator may set; `open` is the initial state and never written by a patch. */
+export const DISCREPANCY_CLOSE_VALUES = ["resolved", "ignored"] as const;
+
+/**
+ * `PATCH /api/v1/admin/reconciliation/discrepancies/:id` — assignment and closure in one patch.
+ * `assignedToUserId: null` clears the owner; closing a finding needs a resolution, and a closed
+ * finding cannot be reopened.
+ */
+export const updateDiscrepancyRequestSchema = optionalBody(
+  z.object({
+    status: z.enum(DISCREPANCY_CLOSE_VALUES).optional(),
+    resolution: optionalTrimmedText(1_000, 3),
+    assignedToUserId: uuidSchema.nullable().optional(),
+  }),
+);
+
+export type UpdateDiscrepancyRequest = z.infer<typeof updateDiscrepancyRequestSchema>;

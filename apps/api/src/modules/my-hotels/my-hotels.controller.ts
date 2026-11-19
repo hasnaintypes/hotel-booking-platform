@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -16,6 +15,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FilesInterceptor } from "@nestjs/platform-express";
+import { ApiBody, ApiConsumes } from "@nestjs/swagger";
 import type { Response } from "express";
 import multer from "multer";
 import { ZodResponse } from "nestjs-zod";
@@ -25,11 +25,13 @@ import { UuidPipe } from "../../common/pipes/uuid.pipe";
 import { AuthenticatedUser } from "../../common/types/jwt-payload.interface";
 import { imageFileFilter, MAX_IMAGE_BYTES } from "../../common/uploads/image-validation";
 import { HotelFormDto } from "./dto/hotel-form.dto";
+import { RemoveHotelImageDto } from "./dto/remove-hotel-image.dto";
 import {
   HotelStatsDto,
   ManageHotelDto,
   ManageHotelPageDto,
 } from "../hotels/dto/hotel-response.dto";
+import { ToggleActiveDto } from "../hotels/dto/toggle-active.dto";
 import { MyHotelListQueryDto } from "../hotels/dto/hotel.dto";
 import { MyHotelsService } from "./my-hotels.service";
 
@@ -96,13 +98,10 @@ export class MyHotelsController {
   })
   setActive(
     @Param("id", UuidPipe) id: string,
-    @Body("isActive") isActive: unknown,
+    @Body() dto: ToggleActiveDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    if (typeof isActive !== "boolean") {
-      throw new BadRequestException("isActive boolean required");
-    }
-    return this.myHotelsService.setActive(id, isActive, user.userId);
+    return this.myHotelsService.setActive(id, dto.isActive, user.userId);
   }
 
   @Patch(":hotelId")
@@ -119,6 +118,22 @@ export class MyHotelsController {
   @Post(":id/images")
   @HttpCode(HttpStatus.CREATED)
   @UseInterceptors(FilesInterceptor("imageFiles", 6, uploadOptions))
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({
+    description:
+      "Up to six image files; type and size are checked by the upload interceptor, not by a DTO.",
+    schema: {
+      type: "object",
+      properties: {
+        imageFiles: {
+          type: "array",
+          maxItems: 6,
+          items: { type: "string", format: "binary" },
+        },
+      },
+      required: ["imageFiles"],
+    },
+  })
   @ZodResponse({
     type: ManageHotelDto,
     status: 201,
@@ -141,12 +156,9 @@ export class MyHotelsController {
   })
   removeImage(
     @Param("id", UuidPipe) id: string,
-    @Body("url") url: unknown,
+    @Body() dto: RemoveHotelImageDto,
     @CurrentUser() user: AuthenticatedUser,
   ) {
-    if (typeof url !== "string" || url.length === 0) {
-      throw new BadRequestException("url required");
-    }
-    return this.myHotelsService.removeImage(id, url, user.userId);
+    return this.myHotelsService.removeImage(id, dto.url, user.userId);
   }
 }

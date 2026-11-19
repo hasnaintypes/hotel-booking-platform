@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCommonPassword } from "./password-policy";
+import { isCommonPassword } from "../src";
 
 describe("isCommonPassword", () => {
   it.each([

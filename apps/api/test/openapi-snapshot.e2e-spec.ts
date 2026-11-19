@@ -225,6 +225,45 @@ describe("OpenAPI snapshot", () => {
     );
   });
 
+  it("documents every JSON request body with its fields", () => {
+    const { combined } = buildApiDocuments(app);
+    const schemas = (combined.components?.schemas ?? {}) as Record<
+      string,
+      { properties?: Record<string, unknown> } | undefined
+    >;
+
+    const bodySchemaOf = (path: string, method: string) =>
+      (
+        combined.paths?.[path]?.[method] as
+          { requestBody?: { content?: Record<string, { schema?: { $ref?: string } }> } } | undefined
+      )?.requestBody?.content?.["application/json"]?.schema?.$ref;
+
+    // These two owner routes used to read one field with `@Body("name")`, so nothing was
+    // documented for them. Both now take a DTO and must appear in the document.
+    expect(bodySchemaOf("/api/v1/manage/hotels/{id}/active", "patch")).toContain("ToggleActiveDto");
+    expect(bodySchemaOf("/api/v1/manage/hotels/{id}/images", "delete")).toContain(
+      "RemoveHotelImageDto",
+    );
+
+    const undocumented = Object.entries(combined.paths ?? {}).flatMap(([path, operations]) =>
+      Object.entries(operations).flatMap(([method, operation]) => {
+        const reference = (
+          operation as {
+            requestBody?: { content?: Record<string, { schema?: { $ref?: string } }> };
+          }
+        ).requestBody?.content?.["application/json"]?.schema?.$ref;
+        if (!reference) return [];
+
+        const name = reference.split("/").pop() ?? "";
+        const properties = schemas[name]?.properties ?? {};
+        return Object.keys(properties).length > 0
+          ? []
+          : [`${method.toUpperCase()} ${path} -> ${name} has no fields`];
+      }),
+    );
+    expect(undocumented).toEqual([]);
+  });
+
   it("documents every routed endpoint with a response and only matrix statuses", () => {
     const { combined } = buildApiDocuments(app);
     const pathOf = (segments: string[]) =>

@@ -39,3 +39,13 @@ export const reviewSummarySchema = z.object({
 export type Review = z.infer<typeof reviewSchema>;
 export type ReviewPage = z.infer<typeof reviewPageSchema>;
 export type ReviewSummary = z.infer<typeof reviewSummarySchema>;
+
+/** `POST /api/v1/bookings/:bookingId/reviews`: the guest rates their own stay. */
+export const createBookingReviewRequestSchema = z.object({
+  hotelId: uuidSchema,
+  rating: ratingSchema,
+  comment: z.string().min(3),
+  categories: reviewCategoriesSchema,
+});
+
+export type CreateBookingReviewRequest = z.infer<typeof createBookingReviewRequestSchema>;

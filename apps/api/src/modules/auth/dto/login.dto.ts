@@ -1,9 +1,5 @@
-import { IsEmail, MinLength } from "class-validator";
+import { createZodDto } from "nestjs-zod";
+import { loginRequestSchema } from "@hotel-booking/contracts";
 
-export class LoginDto {
-  @IsEmail({}, { message: "Email is required" })
-  email: string;
-
-  @MinLength(6, { message: "Password with 6 or more characters required" })
-  password: string;
-}
+/** `POST /api/v1/auth/login`. The password rule is looser than registration on purpose. */
+export class LoginDto extends createZodDto(loginRequestSchema) {}
