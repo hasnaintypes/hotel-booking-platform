@@ -1,31 +1,5 @@
-import { Type } from "class-transformer";
-import {
-  IsDefined,
-  IsInt,
-  IsString,
-  IsUUID,
-  Max,
-  Min,
-  MinLength,
-  ValidateNested,
-} from "class-validator";
-import { ReviewCategoriesDto } from "./review-categories.dto";
+import { createZodDto } from "nestjs-zod";
+import { createBookingReviewRequestSchema } from "@hotel-booking/contracts";
 
-export class CreateBookingReviewDto {
-  @IsUUID()
-  hotelId: string;
-
-  @IsInt()
-  @Min(1)
-  @Max(5)
-  rating: number;
-
-  @IsString()
-  @MinLength(3)
-  comment: string;
-
-  @IsDefined()
-  @ValidateNested()
-  @Type(() => ReviewCategoriesDto)
-  categories: ReviewCategoriesDto;
-}
+/** `POST /api/v1/bookings/:bookingId/reviews`. */
+export class CreateBookingReviewDto extends createZodDto(createBookingReviewRequestSchema) {}

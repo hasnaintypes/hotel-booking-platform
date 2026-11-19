@@ -505,7 +505,11 @@
         "type": "object"
       },
       "CancelBookingDto": {
-        "properties": {},
+        "properties": {
+          "cancellationReason": {
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "CancelBookingResponseDto_Output": {
@@ -681,19 +685,190 @@
         "type": "object"
       },
       "CreateBookingDto": {
-        "properties": {},
+        "properties": {
+          "adultCount": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "checkIn": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "type": "string"
+          },
+          "checkOut": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "type": "string"
+          },
+          "childCount": {
+            "maximum": 50,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "email": {
+            "format": "email",
+            "maxLength": 254,
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          },
+          "firstName": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "hotelId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "lastName": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "offerId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "phone": {
+            "pattern": "^[+()\\d][\\d\\s().-]{5,24}$",
+            "type": "string"
+          },
+          "specialRequests": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "required": [
+          "hotelId",
+          "firstName",
+          "lastName",
+          "email",
+          "adultCount",
+          "childCount",
+          "checkIn",
+          "checkOut"
+        ],
         "type": "object"
       },
       "CreateBookingReviewDto": {
-        "properties": {},
+        "properties": {
+          "categories": {
+            "properties": {
+              "amenities": {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "cleanliness": {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "location": {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "service": {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              },
+              "value": {
+                "maximum": 5,
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "cleanliness",
+              "service",
+              "location",
+              "value",
+              "amenities"
+            ],
+            "type": "object"
+          },
+          "comment": {
+            "minLength": 3,
+            "type": "string"
+          },
+          "hotelId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "rating": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hotelId",
+          "rating",
+          "comment",
+          "categories"
+        ],
         "type": "object"
       },
       "CreateOfferDto": {
-        "properties": {},
+        "properties": {
+          "adultCount": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "checkIn": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "type": "string"
+          },
+          "checkOut": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$",
+            "type": "string"
+          },
+          "childCount": {
+            "maximum": 50,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "hotelId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "hotelId",
+          "adultCount",
+          "childCount",
+          "checkIn",
+          "checkOut"
+        ],
         "type": "object"
       },
       "LoginDto": {
-        "properties": {},
+        "properties": {
+          "email": {
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          },
+          "password": {
+            "minLength": 6,
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
         "type": "object"
       },
       "PublicHotelDto_Output": {
@@ -1175,7 +1350,33 @@
         "type": "object"
       },
       "RegisterDto": {
-        "properties": {},
+        "properties": {
+          "email": {
+            "format": "email",
+            "pattern": "^(?:[A-Za-z0-9_'+\\-]+\\.)*[A-Za-z0-9_'+\\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$",
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 72,
+            "minLength": 10,
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "firstName",
+          "lastName",
+          "email",
+          "password"
+        ],
         "type": "object"
       },
       "ReviewDto_Output": {
@@ -1439,7 +1640,25 @@
         "type": "object"
       },
       "UpdateProfileDto": {
-        "properties": {},
+        "properties": {
+          "firstName": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "image": {
+            "format": "uri",
+            "maxLength": 2048,
+            "type": "string"
+          },
+          "lastName": {
+            "maxLength": 80,
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 40,
+            "type": "string"
+          }
+        },
         "type": "object"
       }
     },

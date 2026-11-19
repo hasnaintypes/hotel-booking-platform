@@ -2,7 +2,16 @@
   "components": {
     "schemas": {
       "AdminCancelBookingDto": {
-        "properties": {},
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
         "type": "object"
       },
       "AdminHotelDto_Output": {
@@ -1645,7 +1654,16 @@
         "type": "object"
       },
       "ManualBookingActionDto": {
-        "properties": {},
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
         "type": "object"
       },
       "PublicUserDto_Output": {
@@ -1842,15 +1860,52 @@
         "type": "object"
       },
       "ToggleActiveDto": {
-        "properties": {},
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "isActive"
+        ],
         "type": "object"
       },
       "UpdateDiscrepancyDto": {
-        "properties": {},
+        "properties": {
+          "assignedToUserId": {
+            "format": "uuid",
+            "nullable": true,
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "resolution": {
+            "maxLength": 1000,
+            "minLength": 3,
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "resolved",
+              "ignored"
+            ],
+            "type": "string"
+          }
+        },
         "type": "object"
       },
       "UpdateRoleDto": {
-        "properties": {},
+        "properties": {
+          "role": {
+            "enum": [
+              "user",
+              "admin"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
         "type": "object"
       }
     },

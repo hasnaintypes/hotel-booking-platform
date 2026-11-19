@@ -1,11 +1,5 @@
-import { IsIn } from "class-validator";
-import { AppRole } from "../../../common/decorators/roles.decorator";
+import { createZodDto } from "nestjs-zod";
+import { updateRoleRequestSchema } from "@hotel-booking/contracts";
 
-export const APP_ROLES: AppRole[] = ["user", "admin"];
-
-export class UpdateRoleDto {
-  @IsIn(APP_ROLES, {
-    message: `role must be one of: ${APP_ROLES.join(", ")}`,
-  })
-  role: AppRole;
-}
+/** `PATCH /api/v1/admin/users/:id`. */
+export class UpdateRoleDto extends createZodDto(updateRoleRequestSchema) {}
