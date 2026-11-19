@@ -8,13 +8,18 @@ import {
   bookingDetailSchema,
   bookingSchema,
   cancelBookingResponseSchema,
+  cancelBookingRequestSchema,
+  createBookingRequestSchema,
+  createOfferRequestSchema,
   cursorPageQuerySchema,
   cursorPageSchema,
   DEFAULT_PAGE_LIMIT,
   discrepancyPageSchema,
   discrepancySchema,
+  hotelFormRequestSchema,
   hotelSearchQuerySchema,
   hotelStatsSchema,
+  loginRequestSchema,
   manageHotelPageSchema,
   manageHotelSchema,
   pageInfoSchema,
@@ -23,8 +28,13 @@ import {
   problemType,
   publicHotelSchema,
   publicUserSchema,
+  registerRequestSchema,
   reviewSchema,
   reviewSummarySchema,
+  suggestRequestSchema,
+  toggleActiveRequestSchema,
+  updateDiscrepancyRequestSchema,
+  updateProfileRequestSchema,
 } from "../src";
 
 const hotel = {
@@ -510,5 +520,262 @@ describe("discrepancySchema", () => {
       pageInfo: { nextCursor: null, hasMore: false },
     });
     expect(page.data).toHaveLength(1);
+  });
+});
+
+const hotelForm = {
+  name: "  Harbour View  ",
+  city: "Bristol",
+  country: "United Kingdom",
+  description: "A calm hotel by the water.",
+  type: ["Hotel"],
+  facilities: ["Free WiFi", "Pool"],
+  pricePerNight: "120",
+  starRating: "4",
+  adultCount: "2",
+  childCount: "1",
+  "contact.phone": " +44 117 000 000 ",
+  "contact.email": "info@harbour.test",
+  "contact.website": "https://harbour.test",
+  "policies.checkInTime": "15:00",
+  "policies.checkOutTime": "11:00",
+  "policies.cancellationPolicy": "Free cancellation for 24 hours",
+  "policies.petPolicy": "",
+  "policies.smokingPolicy": "",
+};
+
+describe("hotelFormRequestSchema", () => {
+  it("parses the flat form the owner app posts", () => {
+    expect(hotelFormRequestSchema.parse(hotelForm)).toEqual({
+      ...hotelForm,
+      name: "Harbour View",
+      pricePerNight: 120,
+      starRating: 4,
+      adultCount: 2,
+      childCount: 1,
+      "contact.phone": "+44 117 000 000",
+    });
+  });
+
+  it("accepts a single value where a list is expected and empty lists as nothing selected", () => {
+    expect(hotelFormRequestSchema.parse({ ...hotelForm, type: "Hotel" }).type).toEqual(["Hotel"]);
+    expect(
+      hotelFormRequestSchema
+        .safeParse({ ...hotelForm, type: "" })
+        .error?.issues.map((issue) => issue.path[0]),
+    ).toContain("type");
+  });
+
+  it("treats an empty optional field as cleared instead of invalid", () => {
+    const parsed = hotelFormRequestSchema.parse({
+      ...hotelForm,
+      "contact.phone": "",
+      "contact.email": "",
+      "contact.website": "   ",
+      imageUrls: "",
+    });
+
+    expect(parsed["contact.phone"]).toBe("");
+    expect(parsed["contact.email"]).toBe("");
+    expect(parsed["contact.website"]).toBe("");
+    expect(parsed.imageUrls).toBeUndefined();
+  });
+
+  it("strips fields the owner may not set", () => {
+    const parsed = hotelFormRequestSchema.parse({
+      ...hotelForm,
+      isFeatured: true,
+      isActive: false,
+      totalRevenue: 999,
+      userId: booking.userId,
+    });
+
+    expect(parsed).not.toHaveProperty("isFeatured");
+    expect(parsed).not.toHaveProperty("isActive");
+    expect(parsed).not.toHaveProperty("totalRevenue");
+    expect(parsed).not.toHaveProperty("userId");
+  });
+
+  it.each([
+    [{ pricePerNight: "0" }, "pricePerNight"],
+    [{ pricePerNight: "abc" }, "pricePerNight"],
+    [{ pricePerNight: undefined }, "pricePerNight"],
+    [{ starRating: "9" }, "starRating"],
+    [{ starRating: "1.5" }, "starRating"],
+    [{ adultCount: "0" }, "adultCount"],
+    [{ childCount: "-1" }, "childCount"],
+    [{ type: [] }, "type"],
+    [{ facilities: [] }, "facilities"],
+    [{ "contact.email": "nope" }, "contact.email"],
+    [{ "contact.website": "javascript:alert(1)" }, "contact.website"],
+    [{ imageUrls: ["javascript:alert(1)"] }, "imageUrls"],
+    [{ name: "x".repeat(101) }, "name"],
+  ])("rejects %j on %s", (overrides, field) => {
+    const result = hotelFormRequestSchema.safeParse({ ...hotelForm, ...overrides });
+
+    expect(result.success).toBe(false);
+    expect(result.error!.issues.map((issue) => issue.path[0])).toContain(field);
+  });
+
+  it("rejects non-scalar values instead of forwarding an operator object", () => {
+    expect(
+      hotelFormRequestSchema.safeParse({ ...hotelForm, pricePerNight: { $gt: 0 } }).success,
+    ).toBe(false);
+    expect(hotelFormRequestSchema.safeParse({ ...hotelForm, name: { $ne: "x" } }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("createBookingRequestSchema", () => {
+  const stay = {
+    hotelId: booking.hotelId,
+    firstName: "  Gus  ",
+    lastName: "Guest",
+    email: " guest@example.test ",
+    phone: "+44 20 7946 0000",
+    adultCount: 2,
+    childCount: 0,
+    checkIn: "2026-06-13T00:00:00.000Z",
+    checkOut: "2026-06-16T00:00:00.000Z",
+    specialRequests: "  Quiet room  ",
+  };
+
+  it("trims text and accepts an explicit timezone offset", () => {
+    const parsed = createBookingRequestSchema.parse({
+      ...stay,
+      checkIn: "2026-06-13T00:00:00+01:00",
+    });
+
+    expect(parsed.firstName).toBe("Gus");
+    expect(parsed.email).toBe("guest@example.test");
+    expect(parsed.specialRequests).toBe("Quiet room");
+  });
+
+  it("strips money and payment fields a client still sends", () => {
+    const parsed = createBookingRequestSchema.parse({
+      ...stay,
+      totalCost: 1,
+      paymentIntentId: "pi_client",
+    });
+
+    expect(parsed).not.toHaveProperty("totalCost");
+    expect(parsed).not.toHaveProperty("paymentIntentId");
+  });
+
+  it.each([
+    ["an invalid email", { email: "nope" }],
+    ["a blank first name", { firstName: "   " }],
+    ["a first name over 100 characters", { firstName: "x".repeat(101) }],
+    ["an invalid phone number", { phone: "call me" }],
+    ["special requests over 1000 characters", { specialRequests: "x".repeat(1001) }],
+    ["a date without a time", { checkIn: "2026-06-13" }],
+    ["a date that is not real", { checkIn: "2030-13-45T00:00:00.000Z" }],
+    ["no adults", { adultCount: 0 }],
+    ["a guest count sent as text", { adultCount: "2" }],
+    ["a fractional guest count", { adultCount: 1.5 }],
+    ["a hotel id that is not a UUID", { hotelId: "not-a-hotel" }],
+  ])("rejects %s", (_name, overrides) => {
+    expect(createBookingRequestSchema.safeParse({ ...stay, ...overrides }).success).toBe(false);
+  });
+});
+
+describe("account request schemas", () => {
+  const account = {
+    firstName: "Alexandria",
+    lastName: "Smith",
+    email: "alexandria.smith@example.test",
+    password: "tulip-Harbour-92",
+  };
+
+  it("reports a short registration password with the rule it breaks", () => {
+    const result = registerRequestSchema.safeParse({ ...account, password: "short" });
+
+    expect(result.error?.issues.map(({ path, message }) => ({ path, message }))).toEqual([
+      { path: ["password"], message: "Password must be at least 10 characters" },
+    ]);
+  });
+
+  it("rejects a common password and a password equal to the email name", () => {
+    for (const password of ["password123", "alexandria.smith", "abcdefghijkl"]) {
+      const result = registerRequestSchema.safeParse({ ...account, password });
+      expect(result.error?.issues.map((issue) => issue.path[0])).toContain("password");
+    }
+  });
+
+  it("accepts a registration password of exactly 72 characters", () => {
+    expect(
+      registerRequestSchema.safeParse({ ...account, password: "x7!Ab".repeat(14) + "cd" }).success,
+    ).toBe(true);
+  });
+
+  it("keeps login looser than registration, so older accounts can sign in", () => {
+    expect(loginRequestSchema.safeParse({ email: account.email, password: "123456" }).success).toBe(
+      true,
+    );
+    expect(loginRequestSchema.safeParse({ email: account.email, password: "12345" }).success).toBe(
+      false,
+    );
+  });
+
+  it("leaves an omitted profile field out of the parsed body", () => {
+    const parsed = updateProfileRequestSchema.parse({ firstName: "Grace" });
+
+    expect(parsed).toEqual({ firstName: "Grace" });
+    expect(parsed).not.toHaveProperty("image");
+  });
+
+  it("rejects a profile image that is not a loadable URL", () => {
+    expect(updateProfileRequestSchema.safeParse({ image: "javascript:alert(1)" }).success).toBe(
+      false,
+    );
+  });
+});
+
+describe("other request schemas", () => {
+  it("requires a boolean for an active toggle", () => {
+    expect(
+      toggleActiveRequestSchema.safeParse({ isActive: "false" }).error?.issues[0]?.message,
+    ).toBe("isActive boolean required");
+    expect(toggleActiveRequestSchema.safeParse({ isActive: false }).success).toBe(true);
+  });
+
+  it("keeps a null assignee as an explicit unassignment", () => {
+    expect(updateDiscrepancyRequestSchema.parse({ assignedToUserId: null })).toEqual({
+      assignedToUserId: null,
+    });
+    expect(updateDiscrepancyRequestSchema.parse({})).not.toHaveProperty("assignedToUserId");
+    expect(updateDiscrepancyRequestSchema.safeParse({ resolution: "ok" }).success).toBe(false);
+  });
+
+  it("describes an offer stay without any price", () => {
+    const offer = createOfferRequestSchema.parse({
+      hotelId: booking.hotelId,
+      adultCount: 2,
+      childCount: 0,
+      checkIn: "2026-06-13T00:00:00.000Z",
+      checkOut: "2026-06-16T00:00:00.000Z",
+      totalPrice: 10,
+    });
+
+    expect(offer).not.toHaveProperty("totalPrice");
+    expect(createOfferRequestSchema.safeParse({ ...offer, adultCount: 0 }).success).toBe(false);
+  });
+
+  it("treats a body-less request as an empty patch when every field is optional", () => {
+    expect(cancelBookingRequestSchema.parse(undefined)).toEqual({});
+    expect(updateProfileRequestSchema.parse(undefined)).toEqual({});
+    expect(updateDiscrepancyRequestSchema.parse(undefined)).toEqual({});
+    expect(cancelBookingRequestSchema.safeParse("not an object").success).toBe(false);
+  });
+
+  it("trims an assistant prompt and rejects a blank one", () => {
+    expect(
+      suggestRequestSchema.parse({ kind: "hotel_description", input: "  Cosy inn  " }).input,
+    ).toBe("Cosy inn");
+    expect(
+      suggestRequestSchema.safeParse({ kind: "hotel_description", input: "   " }).error?.issues[0]
+        ?.message,
+    ).toBe("input must not be empty");
   });
 });

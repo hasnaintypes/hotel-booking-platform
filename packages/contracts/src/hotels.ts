@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { entered, httpUrl, toList, toNumber, toOptionalList, trimmedText } from "./body";
 import { uuidSchema, isoDateTimeSchema } from "./primitives";
 import { cursorPageQuerySchema, cursorPageSchema } from "./pagination";
 import {
@@ -148,3 +149,59 @@ export type ManageHotelPage = z.infer<typeof manageHotelPageSchema>;
 export type AdminHotel = z.infer<typeof adminHotelSchema>;
 export type AdminHotelPage = z.infer<typeof adminHotelPageSchema>;
 export type HotelStats = z.infer<typeof hotelStatsSchema>;
+
+/** The contact and policy fields an owner may set, as the flat keys the form posts. */
+const hotelFormContactAndPolicies = {
+  "contact.phone": entered(z.string().max(30)),
+  "contact.email": entered(z.email().max(254)),
+  "contact.website": entered(httpUrl.max(2048)),
+  "policies.checkInTime": entered(z.string().max(50)),
+  "policies.checkOutTime": entered(z.string().max(50)),
+  "policies.cancellationPolicy": entered(z.string().max(1000)),
+  "policies.petPolicy": entered(z.string().max(1000)),
+  "policies.smokingPolicy": entered(z.string().max(1000)),
+};
+
+/**
+ * `POST /api/v1/manage/hotels` and `PATCH /api/v1/manage/hotels/:hotelId`.
+ *
+ * The body is flat: contact and policy fields keep their dotted keys, numbers may arrive as text,
+ * and a single value where a list is expected means a one-item list. Anything else in the request
+ * (isFeatured, totalRevenue, averageRating, isActive, userId, ...) is stripped and can never reach
+ * the database.
+ */
+export const hotelFormRequestSchema = z.object({
+  name: trimmedText(100, 1),
+  city: trimmedText(100, 1),
+  country: trimmedText(100, 1),
+  description: trimmedText(5000, 1),
+  type: z.preprocess(
+    toList,
+    z.array(z.string().max(50)).min(1, { error: "select at least one hotel type" }).max(10),
+  ),
+  facilities: z.preprocess(
+    toList,
+    z.array(z.string().max(50)).min(1, { error: "select at least one facility" }).max(50),
+  ),
+  pricePerNight: z.preprocess(toNumber, z.number().min(0.01).max(100_000)),
+  starRating: z.preprocess(toNumber, z.number().int().min(1).max(5)),
+  adultCount: z.preprocess(toNumber, z.number().int().min(1).max(50)),
+  childCount: z.preprocess(toNumber, z.number().int().min(0).max(50)),
+  /** Images the owner keeps when editing; new uploads arrive as files on their own route. */
+  imageUrls: z.preprocess(toOptionalList, z.array(httpUrl.max(2048)).max(6).optional()),
+  ...hotelFormContactAndPolicies,
+});
+
+/** `PATCH /api/v1/manage/hotels/:id/active` and `PATCH /api/v1/admin/hotels/:id`. */
+export const toggleActiveRequestSchema = z.object({
+  isActive: z.boolean({ error: "isActive boolean required" }),
+});
+
+/** `DELETE /api/v1/manage/hotels/:id/images`: the stored URL to forget. */
+export const removeHotelImageRequestSchema = z.object({
+  url: z.string().min(1, { error: "url required" }),
+});
+
+export type HotelFormRequest = z.infer<typeof hotelFormRequestSchema>;
+export type ToggleActiveRequest = z.infer<typeof toggleActiveRequestSchema>;
+export type RemoveHotelImageRequest = z.infer<typeof removeHotelImageRequestSchema>;
