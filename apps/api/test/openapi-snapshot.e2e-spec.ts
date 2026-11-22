@@ -225,6 +225,143 @@ describe("OpenAPI snapshot", () => {
     );
   });
 
+  it("documents the remaining response contracts", () => {
+    const { combined } = buildApiDocuments(app);
+    const schemaOf = (path: string, method: string, status: string) => {
+      const operation = combined.paths?.[path]?.[method] as
+        | {
+            responses?: Record<
+              string,
+              { content?: Record<string, { schema?: { $ref?: string } }> }
+            >;
+          }
+        | undefined;
+      return operation?.responses?.[status]?.content?.["application/json"]?.schema?.$ref;
+    };
+
+    expect(schemaOf("/api/v1/auth/login", "post", "200")).toContain("LoginResponseDto_Output");
+    expect(schemaOf("/api/v1/auth/register", "post", "201")).toContain("PublicUserDto_Output");
+    expect(schemaOf("/api/v1/offers", "post", "201")).toContain("OfferDto_Output");
+    expect(schemaOf("/api/v1/manage/ai/suggestions", "post", "200")).toContain(
+      "SuggestResponseDto_Output",
+    );
+    expect(schemaOf("/api/v1/partner/capabilities", "get", "200")).toContain(
+      "PartnerCapabilitiesDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/reports/overview", "get", "200")).toContain(
+      "ReportsOverviewDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/reports/forecast", "get", "200")).toContain(
+      "ForecastReportDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/reports/system-stats", "get", "200")).toContain(
+      "SystemStatsDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/reports/rollups", "get", "200")).toContain(
+      "RollupPageDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/reports/rollups", "post", "201")).toContain("RollupDto_Output");
+    expect(schemaOf("/api/v1/admin/system/health", "get", "200")).toContain(
+      "SystemHealthDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/system/health", "get", "503")).toContain(
+      "SystemHealthDto_Output",
+    );
+    expect(schemaOf("/api/v1/admin/system/jobs", "get", "200")).toContain(
+      "JobQueueMetricsDto_Output",
+    );
+    expect(schemaOf("/health/live", "get", "200")).toContain("HealthStatusDto_Output");
+    expect(schemaOf("/health/ready", "get", "200")).toContain("ReadinessDto_Output");
+    expect(schemaOf("/health/ready", "get", "503")).toContain("ReadinessDto_Output");
+    expect(schemaOf("/webhooks/stripe", "post", "200")).toContain("StripeWebhookAckDto_Output");
+
+    expect(Object.keys(combined.components?.schemas ?? {})).toEqual(
+      expect.arrayContaining([
+        "LoginResponseDto_Output",
+        "OfferDto_Output",
+        "SuggestResponseDto_Output",
+        "PartnerCapabilitiesDto_Output",
+        "ReportsOverviewDto_Output",
+        "ForecastReportDto_Output",
+        "SystemStatsDto_Output",
+        "RollupPageDto_Output",
+        "RollupDto_Output",
+        "SystemHealthDto_Output",
+        "JobQueueMetricsDto_Output",
+        "HealthStatusDto_Output",
+        "ReadinessDto_Output",
+        "StripeWebhookAckDto_Output",
+      ]),
+    );
+  });
+
+  it("documents the redirects and the empty logout response without inventing a body", () => {
+    const { combined } = buildApiDocuments(app);
+    const responsesOf = (path: string, method: string) =>
+      (combined.paths?.[path]?.[method] as { responses?: Record<string, unknown> } | undefined)
+        ?.responses ?? {};
+
+    for (const path of [
+      "/api/v1/auth/oauth/google/authorize",
+      "/api/v1/auth/oauth/google/callback",
+    ]) {
+      const responses = responsesOf(path, "get");
+      expect(Object.keys(responses)).toEqual(["302"]);
+      expect(responses["200"]).toBeUndefined();
+      const redirect = responses["302"] as {
+        description?: string;
+        headers?: Record<string, unknown>;
+        content?: unknown;
+      };
+      expect(redirect.description).toBeTruthy();
+      expect(redirect.headers).toHaveProperty("Location");
+      expect(redirect.content).toBeUndefined();
+    }
+
+    const logout = responsesOf("/api/v1/auth/logout", "post");
+    expect(Object.keys(logout)).toEqual(["204"]);
+    expect((logout["204"] as { description?: string }).description).toBeTruthy();
+    expect((logout["204"] as { content?: unknown }).content).toBeUndefined();
+  });
+
+  it("documents every successful JSON response with a schema that has fields", () => {
+    const { combined } = buildApiDocuments(app);
+    const schemas = (combined.components?.schemas ?? {}) as Record<
+      string,
+      { properties?: Record<string, unknown> } | undefined
+    >;
+
+    const undocumented = Object.entries(combined.paths ?? {}).flatMap(([path, operations]) =>
+      Object.entries(operations).flatMap(([method, operation]) => {
+        const responses =
+          (
+            operation as {
+              responses?: Record<
+                string,
+                { content?: Record<string, { schema?: { $ref?: string } }> }
+              >;
+            }
+          ).responses ?? {};
+
+        return Object.entries(responses).flatMap(([status, response]) => {
+          if (Number(status) < 200 || Number(status) >= 300) return [];
+          const json = response.content?.["application/json"];
+          if (!json) return [];
+
+          const reference = json.schema?.$ref;
+          if (!reference) return [`${method.toUpperCase()} ${path} ${status} has no $ref`];
+
+          const name = reference.split("/").pop() ?? "";
+          const properties = schemas[name]?.properties ?? {};
+          return Object.keys(properties).length > 0
+            ? []
+            : [`${method.toUpperCase()} ${path} ${status} -> ${name} has no fields`];
+        });
+      }),
+    );
+    expect(undocumented).toEqual([]);
+  });
+
   it("documents every JSON request body with its fields", () => {
     const { combined } = buildApiDocuments(app);
     const schemas = (combined.components?.schemas ?? {}) as Record<

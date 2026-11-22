@@ -9,6 +9,8 @@ import {
 } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
 import type { Request } from "express";
+import { ZodResponse } from "nestjs-zod";
+import { StripeWebhookAckDto } from "./dto/stripe-webhook-response.dto";
 import { StripeWebhookService } from "./stripe-webhook.service";
 
 /**
@@ -23,11 +25,16 @@ export class StripeWebhookController {
 
   @Post()
   @HttpCode(200)
+  @ZodResponse({
+    type: StripeWebhookAckDto,
+    status: 200,
+    description: "The event was accepted; duplicate is true when it had already been processed",
+  })
   async receive(
     @Req() request: RawBodyRequest<Request>,
     @Headers("stripe-signature") signature?: string,
   ) {
     const outcome = await this.webhooks.handle(request.rawBody, signature);
-    return { received: true, duplicate: outcome === "duplicate" };
+    return { received: true as const, duplicate: outcome === "duplicate" };
   }
 }

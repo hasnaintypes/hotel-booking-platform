@@ -934,6 +934,34 @@
         ],
         "type": "object"
       },
+      "SuggestResponseDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "draft": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "provider": {
+            "enum": [
+              "groq",
+              "openai",
+              "openrouter",
+              "stub"
+            ],
+            "type": "string"
+          },
+          "usedFallback": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "draft",
+          "provider"
+        ],
+        "type": "object"
+      },
       "ToggleActiveDto": {
         "properties": {
           "isActive": {
@@ -987,7 +1015,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuggestResponseDto_Output"
+                }
+              }
+            },
+            "description": "The generated draft and the provider that answered"
           }
         },
         "tags": [

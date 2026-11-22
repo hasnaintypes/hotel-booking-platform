@@ -47,7 +47,7 @@ export class AuthService {
 
     return {
       userId: user.id,
-      message: "Login successful",
+      message: "Login successful" as const,
       token,
       user: {
         id: user.id,

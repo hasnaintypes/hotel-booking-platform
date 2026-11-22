@@ -1,6 +1,8 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Req, Res } from "@nestjs/common";
+import { ApiResponse } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
 import { Request, Response } from "express";
+import { ZodResponse } from "nestjs-zod";
 import {
   OAUTH_STATE_COOKIE_NAME,
   SESSION_COOKIE_NAME,
@@ -11,6 +13,7 @@ import {
 } from "../../common/auth-cookie";
 import { authRateLimit } from "../../common/security/auth-rate-limit";
 import { AuthService } from "./auth.service";
+import { LoginResponseDto } from "./dto/auth-response.dto";
 import { LoginDto } from "./dto/login.dto";
 import { GoogleOAuthService } from "./google-oauth.service";
 
@@ -26,6 +29,16 @@ export class AuthController {
   ) {}
 
   @Get("oauth/google/authorize")
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description: "Redirects the browser to Google's consent screen and sets the OAuth state cookie",
+    headers: {
+      Location: {
+        description: "Google's authorization URL",
+        schema: { type: "string" },
+      },
+    },
+  })
   google(@Res() res: Response) {
     const { url, stateToken } = this.googleOAuth.buildAuthRequest();
     res.cookie(OAUTH_STATE_COOKIE_NAME, stateToken, oauthStateCookieOptions());
@@ -33,6 +46,17 @@ export class AuthController {
   }
 
   @Get("oauth/google/callback")
+  @ApiResponse({
+    status: HttpStatus.FOUND,
+    description:
+      "Redirects to the web app, setting the session cookie on success and an error reason on failure",
+    headers: {
+      Location: {
+        description: "The web app URL to return to",
+        schema: { type: "string" },
+      },
+    },
+  })
   async googleCallback(
     @Query("code") code: unknown,
     @Query("error") error: unknown,
@@ -60,6 +84,11 @@ export class AuthController {
   @Post("login")
   @Throttle(authRateLimit)
   @HttpCode(HttpStatus.OK)
+  @ZodResponse({
+    type: LoginResponseDto,
+    status: 200,
+    description: "The signed-in account; the session token is set as a cookie",
+  })
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const { token, ...payload } = await this.authService.login(dto);
     res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());
@@ -68,6 +97,7 @@ export class AuthController {
 
   @Post("logout")
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiResponse({ status: HttpStatus.NO_CONTENT, description: "The session cookie is cleared" })
   logout(@Res() res: Response) {
     res.cookie(SESSION_COOKIE_NAME, "", {
       ...clearAuthCookieOptions(),
