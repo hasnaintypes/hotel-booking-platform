@@ -1653,6 +1653,228 @@
         ],
         "type": "object"
       },
+      "ForecastReportDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "forecasts": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "bookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "confidence": {
+                  "maximum": 0.9,
+                  "minimum": 0.6,
+                  "type": "number"
+                },
+                "revenue": {
+                  "type": "number"
+                },
+                "week": {
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "week",
+                "bookings",
+                "revenue",
+                "confidence"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "historical": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "bookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "revenue": {
+                  "type": "number"
+                },
+                "week": {
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "week",
+                "bookings",
+                "revenue"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "lastUpdated": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "seasonalGrowth": {
+            "type": "number"
+          },
+          "trends": {
+            "additionalProperties": false,
+            "properties": {
+              "bookingTrend": {
+                "enum": [
+                  "increasing",
+                  "decreasing",
+                  "stable"
+                ],
+                "type": "string"
+              },
+              "revenueTrend": {
+                "enum": [
+                  "increasing",
+                  "decreasing",
+                  "stable"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "bookingTrend",
+              "revenueTrend"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "historical",
+          "forecasts",
+          "seasonalGrowth",
+          "trends",
+          "lastUpdated"
+        ],
+        "type": "object"
+      },
+      "JobQueueMetricsDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "outbox": {
+            "additionalProperties": false,
+            "properties": {
+              "dispatching": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "failed": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "oldestPendingSeconds": {
+                "nullable": true,
+                "type": "number"
+              },
+              "pending": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "pending",
+              "dispatching",
+              "failed",
+              "oldestPendingSeconds"
+            ],
+            "type": "object"
+          },
+          "queues": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "active": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "failed": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "oldestReadySeconds": {
+                  "nullable": true,
+                  "type": "number"
+                },
+                "queued": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "name",
+                "queued",
+                "active",
+                "failed",
+                "oldestReadySeconds"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "totals": {
+            "additionalProperties": false,
+            "properties": {
+              "active": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "failed": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "oldestReadySeconds": {
+                "nullable": true,
+                "type": "number"
+              },
+              "queued": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "queued",
+              "active",
+              "failed",
+              "oldestReadySeconds"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "enabled",
+          "queues",
+          "totals",
+          "outbox"
+        ],
+        "type": "object"
+      },
       "ManualBookingActionDto": {
         "properties": {
           "reason": {
@@ -1723,6 +1945,354 @@
           "emailVerified",
           "createdAt",
           "updatedAt"
+        ],
+        "type": "object"
+      },
+      "ReportsOverviewDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "bookingStatusBreakdown": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "count": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "status": {
+                  "enum": [
+                    "pending_payment",
+                    "authorized",
+                    "confirming",
+                    "confirmed",
+                    "cancelling",
+                    "cancelled",
+                    "failed",
+                    "expired",
+                    "needs_review"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "count"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "dailyBookings": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "bookings": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "date": {
+                  "format": "date",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "date",
+                "bookings"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "guestMix": {
+            "additionalProperties": false,
+            "properties": {
+              "adults": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "children": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "adults",
+              "children"
+            ],
+            "type": "object"
+          },
+          "hotelPerformance": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "bookingCount": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "city": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "pricePerNight": {
+                  "type": "number"
+                },
+                "starRating": {
+                  "type": "number"
+                },
+                "totalRevenue": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "_id",
+                "name",
+                "city",
+                "starRating",
+                "pricePerNight",
+                "bookingCount",
+                "totalRevenue"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "hotelsByStar": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "count": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "starRating": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "starRating",
+                "count"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "lastUpdated": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "overview": {
+            "additionalProperties": false,
+            "properties": {
+              "adr": {
+                "type": "number"
+              },
+              "avgLos": {
+                "type": "number"
+              },
+              "avgPartySize": {
+                "type": "number"
+              },
+              "avgReviewRating": {
+                "type": "number"
+              },
+              "cancellationRate": {
+                "type": "number"
+              },
+              "cancelledBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "confirmedBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "pendingBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "recentBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "recentRevenue": {
+                "type": "number"
+              },
+              "refundedBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "revenueGrowth": {
+                "type": "number"
+              },
+              "totalBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalHotels": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalRefundAmount": {
+                "type": "number"
+              },
+              "totalRevenue": {
+                "type": "number"
+              },
+              "totalReviews": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalUsers": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "verifiedReviewCount": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "totalHotels",
+              "totalUsers",
+              "totalBookings",
+              "recentBookings",
+              "totalRevenue",
+              "recentRevenue",
+              "revenueGrowth",
+              "cancelledBookings",
+              "confirmedBookings",
+              "pendingBookings",
+              "refundedBookings",
+              "totalRefundAmount",
+              "cancellationRate",
+              "totalReviews",
+              "avgReviewRating",
+              "avgLos",
+              "adr",
+              "avgPartySize",
+              "verifiedReviewCount"
+            ],
+            "type": "object"
+          },
+          "paymentStatusBreakdown": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "count": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "status": {
+                  "enum": [
+                    "pending",
+                    "paid",
+                    "failed",
+                    "refunded"
+                  ],
+                  "type": "string"
+                }
+              },
+              "required": [
+                "status",
+                "count"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "popularDestinations": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "_id": {
+                  "type": "string"
+                },
+                "avgPrice": {
+                  "type": "number"
+                },
+                "count": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                },
+                "totalRevenue": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "_id",
+                "count",
+                "totalRevenue",
+                "avgPrice"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "reviewCategoryAverages": {
+            "additionalProperties": false,
+            "properties": {
+              "amenities": {
+                "type": "number"
+              },
+              "cleanliness": {
+                "type": "number"
+              },
+              "location": {
+                "type": "number"
+              },
+              "service": {
+                "type": "number"
+              },
+              "value": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "cleanliness",
+              "service",
+              "location",
+              "value",
+              "amenities"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "overview",
+          "popularDestinations",
+          "dailyBookings",
+          "hotelPerformance",
+          "bookingStatusBreakdown",
+          "paymentStatusBreakdown",
+          "guestMix",
+          "reviewCategoryAverages",
+          "hotelsByStar",
+          "lastUpdated"
         ],
         "type": "object"
       },
@@ -1856,6 +2426,692 @@
         "required": [
           "data",
           "pageInfo"
+        ],
+        "type": "object"
+      },
+      "RollupDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "_id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "breakdown": {
+            "additionalProperties": false,
+            "properties": {
+              "byDestination": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bookings": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "city": {
+                      "type": "string"
+                    },
+                    "revenue": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "city",
+                    "bookings",
+                    "revenue"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "byHotelType": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "bookings": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "revenue": {
+                      "type": "number"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "bookings",
+                    "revenue"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "byPaymentStatus": {
+                "additionalProperties": false,
+                "properties": {
+                  "failed": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "paid": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "pending": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "refunded": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "pending",
+                  "paid",
+                  "failed",
+                  "refunded"
+                ],
+                "type": "object"
+              },
+              "byStatus": {
+                "additionalProperties": false,
+                "properties": {
+                  "authorized": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "cancelled": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "cancelling": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "confirmed": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "confirming": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "expired": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "failed": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "needs_review": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "pending_payment": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "pending_payment",
+                  "authorized",
+                  "confirming",
+                  "confirmed",
+                  "cancelling",
+                  "cancelled",
+                  "failed",
+                  "expired",
+                  "needs_review"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "byStatus",
+              "byPaymentStatus",
+              "byDestination",
+              "byHotelType"
+            ],
+            "type": "object"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "date": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": false,
+            "properties": {
+              "averageBookingValue": {
+                "type": "number"
+              },
+              "averageRating": {
+                "type": "number"
+              },
+              "cancellationRate": {
+                "type": "number"
+              },
+              "totalBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalHotels": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalRevenue": {
+                "type": "number"
+              },
+              "totalUsers": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "totalBookings",
+              "totalRevenue",
+              "totalUsers",
+              "totalHotels",
+              "averageBookingValue",
+              "cancellationRate",
+              "averageRating"
+            ],
+            "type": "object"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "_id",
+          "date",
+          "metrics",
+          "breakdown",
+          "createdAt",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "RollupPageDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "data": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "_id": {
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                  "type": "string"
+                },
+                "breakdown": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "byDestination": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "bookings": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "city": {
+                            "type": "string"
+                          },
+                          "revenue": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "city",
+                          "bookings",
+                          "revenue"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "byHotelType": {
+                      "items": {
+                        "additionalProperties": false,
+                        "properties": {
+                          "bookings": {
+                            "maximum": 9007199254740991,
+                            "minimum": -9007199254740991,
+                            "type": "integer"
+                          },
+                          "revenue": {
+                            "type": "number"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "bookings",
+                          "revenue"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "byPaymentStatus": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "failed": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "paid": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "pending": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "refunded": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "pending",
+                        "paid",
+                        "failed",
+                        "refunded"
+                      ],
+                      "type": "object"
+                    },
+                    "byStatus": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "authorized": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "cancelled": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "cancelling": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "confirmed": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "confirming": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "expired": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "failed": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "needs_review": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        },
+                        "pending_payment": {
+                          "maximum": 9007199254740991,
+                          "minimum": -9007199254740991,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "pending_payment",
+                        "authorized",
+                        "confirming",
+                        "confirmed",
+                        "cancelling",
+                        "cancelled",
+                        "failed",
+                        "expired",
+                        "needs_review"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "byStatus",
+                    "byPaymentStatus",
+                    "byDestination",
+                    "byHotelType"
+                  ],
+                  "type": "object"
+                },
+                "createdAt": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "date": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                },
+                "metrics": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "averageBookingValue": {
+                      "type": "number"
+                    },
+                    "averageRating": {
+                      "type": "number"
+                    },
+                    "cancellationRate": {
+                      "type": "number"
+                    },
+                    "totalBookings": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "totalHotels": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    },
+                    "totalRevenue": {
+                      "type": "number"
+                    },
+                    "totalUsers": {
+                      "maximum": 9007199254740991,
+                      "minimum": -9007199254740991,
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "totalBookings",
+                    "totalRevenue",
+                    "totalUsers",
+                    "totalHotels",
+                    "averageBookingValue",
+                    "cancellationRate",
+                    "averageRating"
+                  ],
+                  "type": "object"
+                },
+                "updatedAt": {
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "_id",
+                "date",
+                "metrics",
+                "breakdown",
+                "createdAt",
+                "updatedAt"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "pageInfo": {
+            "additionalProperties": false,
+            "properties": {
+              "hasMore": {
+                "type": "boolean"
+              },
+              "nextCursor": {
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "required": [
+              "nextCursor",
+              "hasMore"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "data",
+          "pageInfo"
+        ],
+        "type": "object"
+      },
+      "SystemHealthDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "checks": {
+            "additionalProperties": false,
+            "properties": {
+              "migrations": {
+                "enum": [
+                  "ready",
+                  "pending",
+                  "unknown"
+                ],
+                "type": "string"
+              },
+              "postgres": {
+                "enum": [
+                  "connected",
+                  "disconnected"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "postgres",
+              "migrations"
+            ],
+            "type": "object"
+          },
+          "performance": {
+            "additionalProperties": false,
+            "properties": {
+              "memory": {
+                "additionalProperties": false,
+                "properties": {
+                  "percentage": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "totalMb": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "usedMb": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "usedMb",
+                  "totalMb",
+                  "percentage"
+                ],
+                "type": "object"
+              },
+              "uptime": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "memory",
+              "uptime"
+            ],
+            "type": "object"
+          },
+          "status": {
+            "enum": [
+              "healthy",
+              "unhealthy"
+            ],
+            "type": "string"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "timestamp",
+          "performance",
+          "checks"
+        ],
+        "type": "object"
+      },
+      "SystemStatsDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "application": {
+            "additionalProperties": false,
+            "properties": {
+              "thisWeekBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "todayBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "todayBookings",
+              "thisWeekBookings"
+            ],
+            "type": "object"
+          },
+          "database": {
+            "additionalProperties": false,
+            "properties": {
+              "totalBookings": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalHotels": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              },
+              "totalRevenue": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "totalHotels",
+              "totalBookings",
+              "totalRevenue"
+            ],
+            "type": "object"
+          },
+          "lastUpdated": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "system": {
+            "additionalProperties": false,
+            "properties": {
+              "memory": {
+                "additionalProperties": false,
+                "properties": {
+                  "percentage": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "total": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  },
+                  "used": {
+                    "maximum": 9007199254740991,
+                    "minimum": -9007199254740991,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "used",
+                  "total",
+                  "percentage"
+                ],
+                "type": "object"
+              },
+              "uptime": {
+                "maximum": 9007199254740991,
+                "minimum": -9007199254740991,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "memory",
+              "uptime"
+            ],
+            "type": "object"
+          }
+        },
+        "required": [
+          "database",
+          "application",
+          "system",
+          "lastUpdated"
         ],
         "type": "object"
       },
@@ -2434,7 +3690,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ForecastReportDto_Output"
+                }
+              }
+            },
+            "description": "Weekly history plus a four-week booking and revenue forecast"
           }
         },
         "tags": [
@@ -2448,7 +3711,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportsOverviewDto_Output"
+                }
+              }
+            },
+            "description": "Live dashboard totals, breakdowns and review averages"
           }
         },
         "tags": [
@@ -2482,7 +3752,14 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollupPageDto_Output"
+                }
+              }
+            },
+            "description": "One page of persisted business-insights snapshots, newest first"
           }
         },
         "tags": [
@@ -2494,7 +3771,14 @@
         "parameters": [],
         "responses": {
           "201": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RollupDto_Output"
+                }
+              }
+            },
+            "description": "The newly captured snapshot of the live business figures"
           }
         },
         "tags": [
@@ -2508,7 +3792,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemStatsDto_Output"
+                }
+              }
+            },
+            "description": "Measured database, application and process figures"
           }
         },
         "tags": [
@@ -2583,7 +3874,24 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthDto_Output"
+                }
+              }
+            },
+            "description": "The API is healthy, with process and dependency details"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemHealthDto_Output"
+                }
+              }
+            },
+            "description": "The API is unhealthy; the body has the same shape"
           }
         },
         "tags": [
@@ -2597,7 +3905,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobQueueMetricsDto_Output"
+                }
+              }
+            },
+            "description": "Queue and outbox metrics for the job runner"
           }
         },
         "tags": [

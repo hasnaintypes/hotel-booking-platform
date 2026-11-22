@@ -871,6 +871,257 @@
         ],
         "type": "object"
       },
+      "LoginResponseDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "message": {
+            "enum": [
+              "Login successful"
+            ],
+            "type": "string"
+          },
+          "user": {
+            "additionalProperties": false,
+            "properties": {
+              "email": {
+                "type": "string"
+              },
+              "firstName": {
+                "type": "string"
+              },
+              "id": {
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+                "type": "string"
+              },
+              "lastName": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "email",
+              "firstName",
+              "lastName"
+            ],
+            "type": "object"
+          },
+          "userId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "userId",
+          "message",
+          "user"
+        ],
+        "type": "object"
+      },
+      "OfferDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "adultCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "cancellationPolicy": {
+            "additionalProperties": false,
+            "properties": {
+              "freeCancelHoursBeforeArrival": {
+                "nullable": true,
+                "type": "number"
+              },
+              "penalty": {
+                "anyOf": [
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "percent": {
+                        "type": "number"
+                      },
+                      "type": {
+                        "enum": [
+                          "percent"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "percent"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "nights": {
+                        "type": "number"
+                      },
+                      "type": {
+                        "enum": [
+                          "nights"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "nights"
+                    ],
+                    "type": "object"
+                  },
+                  {
+                    "additionalProperties": false,
+                    "properties": {
+                      "type": {
+                        "enum": [
+                          "full"
+                        ],
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "type"
+                    ],
+                    "type": "object"
+                  }
+                ]
+              },
+              "rawText": {
+                "type": "string"
+              },
+              "source": {
+                "enum": [
+                  "managed",
+                  "supplier"
+                ],
+                "type": "string"
+              },
+              "version": {
+                "enum": [
+                  1
+                ],
+                "type": "number"
+              }
+            },
+            "required": [
+              "version",
+              "source",
+              "freeCancelHoursBeforeArrival",
+              "penalty"
+            ],
+            "type": "object"
+          },
+          "checkIn": {
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+            "type": "string"
+          },
+          "checkOut": {
+            "format": "date",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))$",
+            "type": "string"
+          },
+          "childCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d(?:\\.\\d+)?(?:Z))$",
+            "type": "string"
+          },
+          "hotelId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+            "type": "string"
+          },
+          "rateOptions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "boardBasis": {
+                  "enum": [
+                    "room_only",
+                    "breakfast",
+                    "half_board",
+                    "full_board",
+                    "all_inclusive"
+                  ],
+                  "type": "string"
+                },
+                "currency": {
+                  "type": "string"
+                },
+                "id": {
+                  "type": "string"
+                },
+                "totalCost": {
+                  "type": "number"
+                },
+                "totalMinor": {
+                  "maximum": 9007199254740991,
+                  "minimum": -9007199254740991,
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "boardBasis",
+                "totalMinor",
+                "totalCost",
+                "currency"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "source": {
+            "enum": [
+              "managed",
+              "supplier"
+            ],
+            "type": "string"
+          },
+          "totalCost": {
+            "type": "number"
+          },
+          "totalMinor": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "hotelId",
+          "checkIn",
+          "checkOut",
+          "adultCount",
+          "childCount",
+          "totalMinor",
+          "totalCost",
+          "currency",
+          "cancellationPolicy",
+          "rateOptions",
+          "expiresAt"
+        ],
+        "type": "object"
+      },
       "PublicHotelDto_Output": {
         "additionalProperties": false,
         "properties": {
@@ -1703,7 +1954,14 @@
         },
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponseDto_Output"
+                }
+              }
+            },
+            "description": "The signed-in account; the session token is set as a cookie"
           }
         },
         "tags": [
@@ -1717,7 +1975,7 @@
         "parameters": [],
         "responses": {
           "204": {
-            "description": ""
+            "description": "The session cookie is cleared"
           }
         },
         "tags": [
@@ -1730,8 +1988,16 @@
         "operationId": "AuthController_google_v1",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": ""
+          "302": {
+            "description": "Redirects the browser to Google's consent screen and sets the OAuth state cookie",
+            "headers": {
+              "Location": {
+                "description": "Google's authorization URL",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1744,8 +2010,16 @@
         "operationId": "AuthController_googleCallback_v1",
         "parameters": [],
         "responses": {
-          "200": {
-            "description": ""
+          "302": {
+            "description": "Redirects to the web app, setting the session cookie on success and an error reason on failure",
+            "headers": {
+              "Location": {
+                "description": "The web app URL to return to",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -1769,7 +2043,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicUserDto_Output"
+                }
+              }
+            },
+            "description": "The created account; the session token is set as a cookie"
           }
         },
         "tags": [
@@ -2350,7 +2631,14 @@
         },
         "responses": {
           "201": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OfferDto_Output"
+                }
+              }
+            },
+            "description": "The frozen quote; its id is passed to POST /api/v1/bookings as offerId"
           }
         },
         "tags": [

@@ -1,14 +1,16 @@
 import { Injectable } from "@nestjs/common";
+import type { SystemHealth } from "@hotel-booking/contracts";
 import { PostgresDatabase } from "../../database/postgres.database";
 import { MigrationsRepository } from "../../database/repositories/migrations.repository";
 
-type ComponentStatus = "connected" | "disconnected" | "ready" | "pending" | "unknown";
+type PostgresStatus = "connected" | "disconnected";
+type MigrationStatus = "ready" | "pending" | "unknown";
 
 export type Readiness = {
   ready: boolean;
   checks: {
-    postgres: ComponentStatus;
-    migrations: ComponentStatus;
+    postgres: PostgresStatus;
+    migrations: MigrationStatus;
   };
 };
 
@@ -20,8 +22,8 @@ export class HealthService {
   ) {}
 
   async readiness(): Promise<Readiness> {
-    let postgres: ComponentStatus;
-    let migrations: ComponentStatus;
+    let postgres: PostgresStatus;
+    let migrations: MigrationStatus;
 
     try {
       await this.postgres.ping();
@@ -42,7 +44,7 @@ export class HealthService {
     };
   }
 
-  async details() {
+  async details(): Promise<SystemHealth> {
     const readiness = await this.readiness();
     const memUsage = process.memoryUsage();
     const heapUsedMb = Math.round(memUsage.heapUsed / 1024 / 1024);

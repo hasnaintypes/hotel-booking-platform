@@ -564,7 +564,7 @@ export class AnalyticsRepository {
 
 export type RollupResponse = {
   _id: string;
-  date: Date;
+  date: string;
   metrics: {
     totalBookings: number;
     totalRevenue: number;
@@ -580,8 +580,8 @@ export type RollupResponse = {
     byDestination: Array<{ city: string; bookings: number; revenue: number }>;
     byHotelType: Array<{ type: string; bookings: number; revenue: number }>;
   };
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const round2 = (value: number) => Math.round((value || 0) * 100) / 100;
@@ -589,7 +589,7 @@ const toPounds = (minor: number) => round2(minor / 100);
 
 export const toRollupResponse = (snapshot: AnalyticsSnapshot): RollupResponse => ({
   _id: snapshot.id,
-  date: snapshot.date,
+  date: snapshot.date.toISOString(),
   metrics: {
     totalBookings: snapshot.totalBookings,
     totalRevenue: toPounds(snapshot.totalRevenueMinor),
@@ -613,6 +613,6 @@ export const toRollupResponse = (snapshot: AnalyticsSnapshot): RollupResponse =>
       revenue: toPounds(type.revenueMinor),
     })),
   },
-  createdAt: snapshot.createdAt,
-  updatedAt: snapshot.updatedAt,
+  createdAt: snapshot.createdAt.toISOString(),
+  updatedAt: snapshot.updatedAt.toISOString(),
 });

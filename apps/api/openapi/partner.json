@@ -1,6 +1,29 @@
 {
   "components": {
-    "schemas": {},
+    "schemas": {
+      "PartnerCapabilitiesDto_Output": {
+        "additionalProperties": false,
+        "properties": {
+          "audience": {
+            "enum": [
+              "partner"
+            ],
+            "type": "string"
+          },
+          "available": {
+            "enum": [
+              false
+            ],
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "audience",
+          "available"
+        ],
+        "type": "object"
+      }
+    },
     "securitySchemes": {
       "bearer": {
         "bearerFormat": "JWT",
@@ -32,7 +55,14 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerCapabilitiesDto_Output"
+                }
+              }
+            },
+            "description": "The partner audience exists but has no resources yet"
           }
         },
         "tags": [

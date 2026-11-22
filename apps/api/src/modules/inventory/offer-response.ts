@@ -21,7 +21,7 @@ export type OfferResponse = {
   currency: string;
   cancellationPolicy: OfferSnapshot["cancellationPolicy"];
   rateOptions: OfferRateOptionResponse[];
-  expiresAt: Date;
+  expiresAt: string;
 };
 
 /** The public shape of a frozen offer; booking only needs `id` plus the displayed totals. */
@@ -45,6 +45,6 @@ export function toOfferResponse(offer: OfferSnapshot): OfferResponse {
       totalCost: option.price.totalMinor / 100,
       currency: option.price.currency,
     })),
-    expiresAt: offer.expiresAt,
+    expiresAt: offer.expiresAt.toISOString(),
   };
 }

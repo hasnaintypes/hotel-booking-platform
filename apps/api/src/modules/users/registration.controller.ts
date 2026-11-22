@@ -1,9 +1,11 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, Res } from "@nestjs/common";
 import { Throttle } from "@nestjs/throttler";
 import { Response } from "express";
+import { ZodResponse } from "nestjs-zod";
 import { SESSION_COOKIE_NAME, authCookieOptions } from "../../common/auth-cookie";
 import { authRateLimit } from "../../common/security/auth-rate-limit";
 import { RegisterDto } from "./dto/register.dto";
+import { PublicUserDto } from "./dto/user-response.dto";
 import { UsersService } from "./users.service";
 
 @Controller("auth")
@@ -13,6 +15,11 @@ export class RegistrationController {
   @Post("register")
   @Throttle(authRateLimit)
   @HttpCode(HttpStatus.CREATED)
+  @ZodResponse({
+    type: PublicUserDto,
+    status: 201,
+    description: "The created account; the session token is set as a cookie",
+  })
   async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
     const { token, user } = await this.usersService.register(dto);
     res.cookie(SESSION_COOKIE_NAME, token, authCookieOptions());

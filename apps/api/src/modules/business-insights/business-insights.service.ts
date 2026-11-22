@@ -1,4 +1,11 @@
 import { Injectable } from "@nestjs/common";
+import type {
+  BookingPaymentStatus,
+  BookingStatus,
+  ForecastReport,
+  ReportsOverview,
+  SystemStats,
+} from "@hotel-booking/contracts";
 import { AnalyticsRepository } from "../../database/repositories/analytics.repository";
 import { HotelsRepository } from "../../database/repositories/hotels.repository";
 
@@ -12,7 +19,7 @@ export class BusinessInsightsService {
     private readonly hotels: HotelsRepository,
   ) {}
 
-  async getDashboardData() {
+  async getDashboardData(): Promise<ReportsOverview> {
     const now = new Date();
     const [
       overview,
@@ -64,10 +71,10 @@ export class BusinessInsightsService {
       totalRevenue: toPounds(hotel.totalRevenueMinor),
     }));
 
-    const statusBreakdown = (counts: Record<string, number>) =>
+    const statusBreakdown = <T extends string>(counts: Record<string, number>) =>
       Object.entries(counts)
         .filter(([, count]) => count > 0)
-        .map(([status, count]) => ({ status, count }))
+        .map(([status, count]) => ({ status: status as T, count }))
         .sort((a, b) => b.count - a.count);
 
     return {
@@ -99,8 +106,8 @@ export class BusinessInsightsService {
       popularDestinations,
       dailyBookings,
       hotelPerformance,
-      bookingStatusBreakdown: statusBreakdown(bookingStatus),
-      paymentStatusBreakdown: statusBreakdown(paymentStatus),
+      bookingStatusBreakdown: statusBreakdown<BookingStatus>(bookingStatus),
+      paymentStatusBreakdown: statusBreakdown<BookingPaymentStatus>(paymentStatus),
       guestMix: { adults: overview.totalAdults, children: overview.totalChildren },
       reviewCategoryAverages: {
         cleanliness: round2(reviewStats.categories.cleanliness),
@@ -114,7 +121,7 @@ export class BusinessInsightsService {
     };
   }
 
-  async getForecastData() {
+  async getForecastData(): Promise<ForecastReport> {
     const now = new Date();
     const [weeklyRows, overview] = await Promise.all([
       this.analytics.weeklyTotals(60),
@@ -141,7 +148,7 @@ export class BusinessInsightsService {
     const bookingTrends = calculateTrend(weeklyData.map((data) => data.bookings));
     const revenueTrends = calculateTrend(weeklyData.map((data) => data.revenue));
 
-    const forecasts = [];
+    const forecasts: ForecastReport["forecasts"] = [];
     for (let i = 1; i <= 4; i++) {
       const weekIndex = weeklyData.length + i - 1;
       let forecastedBookings = 0;
@@ -216,7 +223,7 @@ export class BusinessInsightsService {
     };
   }
 
-  async getSystemStatsData() {
+  async getSystemStatsData(): Promise<SystemStats> {
     const memUsage = process.memoryUsage();
     const used = Math.round(memUsage.heapUsed / 1024 / 1024);
     const total = Math.round(memUsage.heapTotal / 1024 / 1024);
