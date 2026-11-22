@@ -16,3 +16,16 @@ export const suggestRequestSchema = z.object({
 });
 
 export type SuggestRequest = z.infer<typeof suggestRequestSchema>;
+
+/** The providers the assistant can answer from; `stub` is the local fallback. */
+export const SUGGEST_PROVIDER_VALUES = ["groq", "openai", "openrouter", "stub"] as const;
+
+/** `POST /api/v1/manage/ai/suggestions`; `model` is absent on the stub path. */
+export const suggestResponseSchema = z.object({
+  draft: z.string(),
+  provider: z.enum(SUGGEST_PROVIDER_VALUES),
+  model: z.string().optional(),
+  usedFallback: z.boolean().optional(),
+});
+
+export type SuggestResponse = z.infer<typeof suggestResponseSchema>;
