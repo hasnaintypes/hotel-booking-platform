@@ -4,6 +4,7 @@ export * from "./auth";
 export * from "./bookings";
 export * from "./body";
 export * from "./hotels";
+export * from "./jobs";
 export * from "./list-queries";
 export * from "./offers";
 export * from "./pagination";
