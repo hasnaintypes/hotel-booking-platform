@@ -5,6 +5,7 @@ import {
   ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { stripeWebhookEventSchema } from "@hotel-booking/contracts";
 import { PinoLogger } from "nestjs-pino";
 import type Stripe from "stripe";
 import {
@@ -90,13 +91,24 @@ export class StripeWebhookService {
       throw new BadRequestException("Invalid Stripe signature");
     }
 
+    // The parsed event is what gets stored: the schema keeps unknown Stripe fields and only fails
+    // when a field the handlers need is missing, which is a real 500 so Stripe retries.
+    const parsed = stripeWebhookEventSchema.safeParse(event);
+    if (!parsed.success) {
+      this.logger.error(
+        { eventId: event.id, eventType: event.type, issues: parsed.error.issues },
+        `Stripe webhook ${event.id} (${event.type}) failed payload validation`,
+      );
+      throw new InternalServerErrorException("Stripe webhook event payload is invalid");
+    }
+
     try {
       const outcome = await this.webhooks.processOnce(
         {
           provider: PROVIDER,
-          eventId: event.id,
-          eventType: event.type,
-          payload: event as unknown as Record<string, unknown>,
+          eventId: parsed.data.id,
+          eventType: parsed.data.type,
+          payload: parsed.data,
         },
         (tx) => this.apply(tx, event),
       );

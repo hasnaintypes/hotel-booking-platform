@@ -1,4 +1,5 @@
 import { Logger } from "@nestjs/common";
+import { parseJobPayload } from "@hotel-booking/contracts";
 import type { Job, PgBoss } from "pg-boss" with { "resolution-mode": "import" };
 import { OutboxRepository } from "../../database/repositories/outbox.repository";
 import type {
@@ -142,9 +143,10 @@ export class PgBossJobQueue implements JobQueue {
     data: JobPayload = {},
     options: JobEnqueueOptions = {},
   ): Promise<string | null> {
+    const payload = parseJobPayload(name, data);
     await this.start();
     await this.ensureQueue(name);
-    return this.boss!.send(name, data, this.toSendOptions(options));
+    return this.boss!.send(name, payload, this.toSendOptions(options));
   }
 
   async enqueueInTransaction(
@@ -153,6 +155,8 @@ export class PgBossJobQueue implements JobQueue {
     data: JobPayload = {},
     options: JobEnqueueOptions = {},
   ): Promise<string> {
+    // A bad producer fails inside the business transaction rather than at relay time.
+    const payload = parseJobPayload(name, data);
     const availableAt =
       options.startAfter instanceof Date
         ? options.startAfter
@@ -163,7 +167,7 @@ export class PgBossJobQueue implements JobQueue {
             : undefined;
     const event = await this.outbox.enqueue(executor, {
       topic: name,
-      payload: data,
+      payload,
       availableAt,
     });
     return event.id;
@@ -175,9 +179,10 @@ export class PgBossJobQueue implements JobQueue {
     data: JobPayload = {},
     options: JobScheduleOptions = {},
   ): Promise<void> {
-    this.schedules.set(name, { cron, data, options });
+    const payload = parseJobPayload(name, data);
+    this.schedules.set(name, { cron, data: payload, options });
     if (this.workerStarted) {
-      await this.registerSchedule(name, { cron, data, options });
+      await this.registerSchedule(name, { cron, data: payload, options });
     }
   }
 
@@ -306,8 +311,10 @@ export class PgBossJobQueue implements JobQueue {
 
       for (const event of events) {
         try {
+          // Re-validate on relay: the row may have been written by an older process or by hand.
+          const payload = parseJobPayload(event.topic, event.payload);
           await this.ensureQueue(event.topic);
-          const jobId = await this.boss!.send(event.topic, event.payload as JobPayload, {
+          const jobId = await this.boss!.send(event.topic, payload, {
             id: event.id,
           });
           if (jobId === null) {
