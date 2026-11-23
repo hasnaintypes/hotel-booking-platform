@@ -1,5 +1,6 @@
 import { JOB_TOPIC_VALUES } from "@hotel-booking/contracts";
 import { describe, expect, it, vi } from "vitest";
+import { runWithRequestContext } from "../../common/logging/request-context";
 import type { OutboxRepository } from "../../database/repositories/outbox.repository";
 import type { JobQueueExecutor } from "../../domain/jobs/job-queue";
 import { JOB_NAMES } from "./job-names";
@@ -70,6 +71,46 @@ describe("PgBossJobQueue payload validation", () => {
     expect(enqueue).toHaveBeenCalledWith(
       executor,
       expect.objectContaining({ topic: "test.jobs.arbitrary", payload: { value: 1 } }),
+    );
+  });
+
+  it("carries the request id of the caller into the outbox payload", async () => {
+    const { enqueue, outbox } = outboxStub();
+    const queue = new PgBossJobQueue(settings, outbox);
+
+    await runWithRequestContext({ requestId: "edge-req-12345678" }, () =>
+      queue.enqueueInTransaction(executor, JOB_NAMES.expirePendingBookings, {}),
+    );
+
+    expect(enqueue).toHaveBeenCalledWith(
+      executor,
+      expect.objectContaining({
+        topic: JOB_NAMES.expirePendingBookings,
+        payload: { requestId: "edge-req-12345678" },
+      }),
+    );
+  });
+
+  it("keeps an explicitly supplied request id and never correlates an ad-hoc queue", async () => {
+    const { enqueue, outbox } = outboxStub();
+    const queue = new PgBossJobQueue(settings, outbox);
+
+    await runWithRequestContext({ requestId: "edge-req-12345678" }, async () => {
+      await queue.enqueueInTransaction(executor, JOB_NAMES.checkLedger, {
+        requestId: "explicit-request-1",
+      });
+      await queue.enqueueInTransaction(executor, "test.jobs.arbitrary", { value: 1 });
+    });
+
+    expect(enqueue).toHaveBeenNthCalledWith(
+      1,
+      executor,
+      expect.objectContaining({ payload: { requestId: "explicit-request-1" } }),
+    );
+    expect(enqueue).toHaveBeenNthCalledWith(
+      2,
+      executor,
+      expect.objectContaining({ payload: { value: 1 } }),
     );
   });
 

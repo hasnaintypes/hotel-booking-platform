@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { JwtService } from "@nestjs/jwt";
 import { UsersRepository } from "../../database/repositories/users.repository";
 import { SESSION_COOKIE_NAME } from "../auth-cookie";
+import { enrichRequestContext } from "../logging/request-context";
 import { JwtPayload } from "../types/jwt-payload.interface";
 
 export const extractToken = (request: {
@@ -58,6 +59,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     request.user = { userId };
+    enrichRequestContext({ userId });
     return true;
   }
 }

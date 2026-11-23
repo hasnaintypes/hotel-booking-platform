@@ -1,6 +1,7 @@
 import { Logger } from "@nestjs/common";
-import { parseJobPayload } from "@hotel-booking/contracts";
+import { isJobTopic, parseJobPayload } from "@hotel-booking/contracts";
 import type { Job, PgBoss } from "pg-boss" with { "resolution-mode": "import" };
+import { currentRequestId, runWithRequestContext } from "../../common/logging/request-context";
 import { OutboxRepository } from "../../database/repositories/outbox.repository";
 import type {
   JobContext,
@@ -143,7 +144,7 @@ export class PgBossJobQueue implements JobQueue {
     data: JobPayload = {},
     options: JobEnqueueOptions = {},
   ): Promise<string | null> {
-    const payload = parseJobPayload(name, data);
+    const payload = parseJobPayload(name, this.correlate(name, data));
     await this.start();
     await this.ensureQueue(name);
     return this.boss!.send(name, payload, this.toSendOptions(options));
@@ -156,7 +157,7 @@ export class PgBossJobQueue implements JobQueue {
     options: JobEnqueueOptions = {},
   ): Promise<string> {
     // A bad producer fails inside the business transaction rather than at relay time.
-    const payload = parseJobPayload(name, data);
+    const payload = parseJobPayload(name, this.correlate(name, data));
     const availableAt =
       options.startAfter instanceof Date
         ? options.startAfter
@@ -179,7 +180,7 @@ export class PgBossJobQueue implements JobQueue {
     data: JobPayload = {},
     options: JobScheduleOptions = {},
   ): Promise<void> {
-    const payload = parseJobPayload(name, data);
+    const payload = parseJobPayload(name, this.correlate(name, data));
     this.schedules.set(name, { cron, data: payload, options });
     if (this.workerStarted) {
       await this.registerSchedule(name, { cron, data: payload, options });
@@ -208,7 +209,7 @@ export class PgBossJobQueue implements JobQueue {
           options.pollingIntervalSeconds ?? this.settings.pollingIntervalSeconds,
       },
       async ([job]) => {
-        await registration.handler(this.toContext(job));
+        await this.runHandler(job, registration.handler);
       },
     );
   }
@@ -233,6 +234,29 @@ export class PgBossJobQueue implements JobQueue {
       retryCount: job.retryCount,
       signal: job.signal,
     };
+  }
+
+  /**
+   * Runs a handler under the request id that produced the job, so its logs, outbox writes and
+   * provider calls are correlated with the HTTP request that caused them.
+   */
+  private async runHandler(job: Job<JobPayload>, handler: JobHandler): Promise<void> {
+    const context = this.toContext(job);
+    this.logger.debug(`Job ${job.name} ${job.id} started`);
+    const requestId = job.data?.requestId;
+    if (typeof requestId !== "string") return handler(context);
+    return runWithRequestContext({ requestId }, () => handler(context));
+  }
+
+  /**
+   * Adds the id of the request that caused the job to a contract topic's payload. Scheduled runs
+   * have no request context, so their payload stays `{}`. Ad-hoc queue names are left untouched:
+   * their payloads are not part of the contract vocabulary.
+   */
+  private correlate(name: string, data: JobPayload): JobPayload {
+    if (!isJobTopic(name) || data.requestId !== undefined) return data;
+    const requestId = currentRequestId();
+    return requestId ? { ...data, requestId } : data;
   }
 
   private toSendOptions(options: JobEnqueueOptions): Record<string, unknown> {

@@ -16,22 +16,32 @@ export const JOB_TOPIC_VALUES = [
 export const jobTopicSchema = z.enum(JOB_TOPIC_VALUES);
 
 /**
- * Every scheduled job currently runs with an empty payload. Strict, because a payload should be
- * exactly what the schema says; a producer adding a field has to declare it here first.
+ * The correlation id an HTTP request receives in `X-Request-Id`. It is bounded and restricted to
+ * characters that are safe in a log line and a header, so a value from a gateway or client can be
+ * reused without allowing log injection. The API accepts exactly this shape.
  */
-export const emptyJobPayloadSchema = z.strictObject({});
+export const requestIdSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9._:-]{8,128}$/, "must be 8-128 characters of letters, digits, . _ : -");
+
+/**
+ * Every job payload carries the id of the request that caused it, when there was one. Scheduled
+ * runs have no originating request and send `{}`. Strict, because a payload should be exactly what
+ * the schema says; a producer adding a field has to declare it here first.
+ */
+export const jobPayloadSchema = z.strictObject({ requestId: requestIdSchema.optional() });
 
 export const jobPayloadSchemas = {
-  "bookings.expire-pending": emptyJobPayloadSchema,
-  "bookings.sweep-stuck": emptyJobPayloadSchema,
-  "payments.reconcile": emptyJobPayloadSchema,
-  "ledger.check": emptyJobPayloadSchema,
-  "platform.cleanup": emptyJobPayloadSchema,
+  "bookings.expire-pending": jobPayloadSchema,
+  "bookings.sweep-stuck": jobPayloadSchema,
+  "payments.reconcile": jobPayloadSchema,
+  "ledger.check": jobPayloadSchema,
+  "platform.cleanup": jobPayloadSchema,
 } as const satisfies Record<JobTopic, z.ZodType>;
 
 export type JobTopic = z.infer<typeof jobTopicSchema>;
 
-/** The payload type each topic accepts; all of them are `{}` today. */
+/** The payload type each topic accepts: an optional request id, nothing else. */
 export type JobPayloads = {
   [Topic in JobTopic]: z.infer<(typeof jobPayloadSchemas)[Topic]>;
 };

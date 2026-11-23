@@ -31,9 +31,28 @@ describe("job payload contracts", () => {
     }
   });
 
-  it("rejects non-object and unknown-key payloads for every topic", () => {
+  it("accepts a request id and keeps it in the parsed payload", () => {
     for (const topic of JOB_TOPIC_VALUES) {
-      for (const payload of [null, undefined, 1, "payload", [], { value: 1 }]) {
+      const payload = { requestId: "edge-req-12345678" };
+      expect(jobPayloadSchemas[topic].parse(payload)).toEqual(payload);
+      expect(parseJobPayload(topic, payload)).toEqual(payload);
+    }
+  });
+
+  it("rejects non-object, unknown-key and unsafe-request-id payloads for every topic", () => {
+    for (const topic of JOB_TOPIC_VALUES) {
+      for (const payload of [
+        null,
+        undefined,
+        1,
+        "payload",
+        [],
+        { value: 1 },
+        { requestId: "short" },
+        { requestId: "has spaces in it" },
+        { requestId: `${"a".repeat(129)}` },
+        { requestId: 42 },
+      ]) {
         expect(jobPayloadSchemas[topic].safeParse(payload).success).toBe(false);
         expect(() => parseJobPayload(topic, payload)).toThrow(topic);
       }
