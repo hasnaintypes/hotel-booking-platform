@@ -7,6 +7,7 @@ import { ClockModule } from "./common/clock";
 import { CommonModule } from "./common/common.module";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module";
 import { AppLoggingModule } from "./common/logging/logging.module";
+import { MetricsModule } from "./common/metrics/metrics.module";
 import { configuration } from "./config/configuration";
 import { validateEnv } from "./config/env.validation";
 import { PostgresModule } from "./database/postgres.module";
@@ -15,6 +16,7 @@ import { CloudinaryModule } from "./integrations/cloudinary/cloudinary.module";
 import { LlmModule } from "./integrations/llm/llm.module";
 import { StripeModule } from "./integrations/stripe/stripe.module";
 import { JobsModule } from "./modules/jobs/jobs.module";
+import { MetricsFeatureModule } from "./modules/metrics/metrics.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { WebhooksModule } from "./modules/webhooks/webhooks.module";
 import { HealthModule } from "./modules/health/health.module";
@@ -29,6 +31,7 @@ import { RoutesModule } from "./routes/routes.module";
       validate: validateEnv,
     }),
     AppLoggingModule,
+    MetricsModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],
@@ -49,6 +52,7 @@ import { RoutesModule } from "./routes/routes.module";
     PaymentsModule,
     WebhooksModule,
     JobsModule,
+    MetricsFeatureModule,
     RoutesModule,
     HealthModule,
   ],

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Controller, Inject, Post } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
 import { eq } from "drizzle-orm";
@@ -119,5 +120,27 @@ describe("request correlation", () => {
     expect(response.body.requestId).toBe(response.headers["x-request-id"]);
 
     await db.delete(outboxEvents).where(eq(outboxEvents.id, response.body.outboxId));
+  });
+
+  it("exposes Prometheus metrics with route templates, not concrete ids", async () => {
+    const hotelId = randomUUID();
+    const correlationId = "metrics-scrape-1234";
+
+    await anonymous(t).get(`/api/v1/hotels/${hotelId}`).set("X-Request-Id", correlationId);
+
+    const scrape = await anonymous(t).get("/metrics");
+
+    expect(scrape.status).toBe(200);
+    expect(scrape.headers["content-type"]).toContain("text/plain");
+    expect(scrape.text).toContain("hotel_booking_http_requests_total");
+    expect(scrape.text).toContain('route="/api/v1/hotels/:id"');
+    // The concrete id must never become a label value.
+    expect(scrape.text).not.toContain(hotelId);
+  });
+
+  it("keeps the scrape endpoint outside the versioned API", async () => {
+    const versioned = await anonymous(t).get("/api/v1/metrics");
+
+    expect(versioned.status).toBe(404);
   });
 });

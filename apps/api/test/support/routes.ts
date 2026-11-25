@@ -5,6 +5,7 @@
 export const routes = {
   health: "/health/live",
   healthReady: "/health/ready",
+  metrics: "/metrics",
   webhooks: {
     stripe: "/webhooks/stripe",
   },

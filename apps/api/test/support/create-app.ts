@@ -9,7 +9,8 @@ import { ConfigService } from "@nestjs/config";
 import { configureApp } from "../../src/app.setup";
 import { setupSwagger } from "../../src/config/swagger.config";
 import { CloudinaryService } from "../../src/integrations/cloudinary/cloudinary.service";
-import { StripeService } from "../../src/integrations/stripe/stripe.service";
+import { runStripeCall, StripeService } from "../../src/integrations/stripe/stripe.service";
+import { MetricsService } from "../../src/common/metrics/metrics.service";
 import { CLOCK, SystemClock, type Clock } from "../../src/common/clock";
 import { LOG_DESTINATION } from "../../src/common/logging/logging.module";
 import { createFakeCloudinary } from "./fakes";
@@ -74,6 +75,16 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
   configureApp(app);
   if (options.docs) setupSwagger(app, app.get(ConfigService));
   await app.init();
+
+  // The real StripeService instruments every call; the double is a plain object, so give it the
+  // same instrumentation against the application's registry.
+  const metrics = app.get(MetricsService);
+  Object.assign(stripe, {
+    call: <T>(operation: string, request: () => Promise<T>) =>
+      runStripeCall(operation, request, (name, outcome, seconds) =>
+        metrics.recordStripeCall(name, outcome, seconds),
+      ),
+  });
 
   if (options.resetDatabase !== false) {
     // Each test file starts from a clean PostgreSQL identity state. Files run in sequence.

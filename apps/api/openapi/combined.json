@@ -7433,6 +7433,26 @@
         ]
       }
     },
+    "/metrics": {
+      "get": {
+        "operationId": "MetricsController_scrape",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Prometheus text exposition format (text/plain; version=0.0.4)"
+          },
+          "401": {
+            "description": "The metrics token is missing or wrong"
+          },
+          "404": {
+            "description": "Metrics are disabled in this environment"
+          }
+        },
+        "tags": [
+          "Metrics"
+        ]
+      }
+    },
     "/webhooks/stripe": {
       "post": {
         "operationId": "StripeWebhookController_receive",

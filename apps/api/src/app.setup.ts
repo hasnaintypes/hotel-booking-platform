@@ -17,6 +17,8 @@ import {
 import { AppValidationPipe } from "./common/validation/app-validation.pipe";
 import { REQUEST_ID_HEADER, resolveRequestId } from "./common/logging/request-id";
 import { runWithRequestContext } from "./common/logging/request-context";
+import { httpMetricsMiddleware } from "./common/metrics/http-metrics.middleware";
+import { MetricsService } from "./common/metrics/metrics.service";
 import { InvalidJsonException } from "./common/errors/invalid-json.exception";
 import { OriginGuard } from "./common/guards/origin.guard";
 import { isAllowedOrigin } from "./common/security/allowed-origins";
@@ -65,7 +67,7 @@ export function configureApp(app: NestExpressApplication): void {
   const logger = new Logger("Cors");
 
   app.setGlobalPrefix("api", {
-    exclude: ["health/(.*)", "webhooks/(.*)"],
+    exclude: ["health/(.*)", "webhooks/(.*)", "metrics"],
   });
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
 
@@ -95,6 +97,9 @@ export function configureApp(app: NestExpressApplication): void {
     res.setHeader("X-Request-Id", requestId);
     runWithRequestContext({ requestId }, next);
   });
+
+  // One observation per response, including requests rejected before routing.
+  app.use(httpMetricsMiddleware(app.get(MetricsService)));
 
   app.use(securityHeaders);
   // Explicit body parsers: bounded size, and parser failures become typed errors

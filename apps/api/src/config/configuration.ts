@@ -17,6 +17,11 @@ export const configuration = () => {
       environment: nodeEnv,
     },
     port,
+    metrics: {
+      // When set, `/metrics` requires `Authorization: Bearer <token>`. In production an unset token
+      // disables the endpoint entirely.
+      token: process.env.METRICS_TOKEN,
+    },
     apiDocs: {
       // On outside production; in production only when ENABLE_API_DOCS=true (and then admin-only).
       enabled:
