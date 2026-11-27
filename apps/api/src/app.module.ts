@@ -5,6 +5,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { ClockModule } from "./common/clock";
 import { CommonModule } from "./common/common.module";
+import { ErrorTrackingModule } from "./common/errors/error-tracking.module";
 import { IdempotencyModule } from "./common/idempotency/idempotency.module";
 import { AppLoggingModule } from "./common/logging/logging.module";
 import { MetricsModule } from "./common/metrics/metrics.module";
@@ -32,6 +33,7 @@ import { RoutesModule } from "./routes/routes.module";
     }),
     AppLoggingModule,
     MetricsModule,
+    ErrorTrackingModule,
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

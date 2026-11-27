@@ -8,6 +8,7 @@ import { AppModule } from "../../src/app.module";
 import { ConfigService } from "@nestjs/config";
 import { configureApp } from "../../src/app.setup";
 import { setupSwagger } from "../../src/config/swagger.config";
+import { ERROR_TRACKER, type ErrorTracker } from "../../src/common/errors/error-tracker";
 import { CloudinaryService } from "../../src/integrations/cloudinary/cloudinary.service";
 import { runStripeCall, StripeService } from "../../src/integrations/stripe/stripe.service";
 import { MetricsService } from "../../src/common/metrics/metrics.service";
@@ -44,6 +45,8 @@ export type CreateTestAppOptions = {
    * a restart passes false so the crashed process's rows are still there.
    */
   resetDatabase?: boolean;
+  /** Replaces error reporting, so a test can assert what a 5xx reported and what a 4xx did not. */
+  errorTracker?: ErrorTracker;
 };
 
 /**
@@ -60,7 +63,7 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     ...(options.controllers ?? []),
   ];
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule], controllers })
+  const builder = Test.createTestingModule({ imports: [AppModule], controllers })
     .overrideProvider(CLOCK)
     .useValue(options.clock ?? new SystemClock())
     .overrideProvider(StripeService)
@@ -68,8 +71,13 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(CloudinaryService)
     .useValue(cloudinary)
     .overrideProvider(LOG_DESTINATION)
-    .useValue(logs)
-    .compile();
+    .useValue(logs);
+
+  if (options.errorTracker) {
+    builder.overrideProvider(ERROR_TRACKER).useValue(options.errorTracker);
+  }
+
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>({ rawBody: true });
   configureApp(app);

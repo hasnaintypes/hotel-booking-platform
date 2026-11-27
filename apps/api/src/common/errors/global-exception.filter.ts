@@ -1,10 +1,12 @@
-import { ArgumentsHost, Catch, ExceptionFilter, Injectable } from "@nestjs/common";
+import { ArgumentsHost, Catch, ExceptionFilter, Inject, Injectable } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { InjectPinoLogger, PinoLogger } from "nestjs-pino";
 import { pathOnly } from "../logging/redaction";
 import { REQUEST_ID_HEADER } from "../logging/request-id";
+import { getRequestContext } from "../logging/request-context";
 import { MetricsService } from "../metrics/metrics.service";
 import { allowedMethodsFor } from "../routing/route-table";
+import { ERROR_TRACKER, type ErrorTracker } from "./error-tracker";
 import { mapException, methodNotAllowed } from "./exception-mapper";
 import { PROBLEM_CONTENT_TYPE, problemType, type ProblemDetails } from "./problem";
 
@@ -18,6 +20,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   constructor(
     @InjectPinoLogger(GlobalExceptionFilter.name) private readonly logger: PinoLogger,
     private readonly metrics: MetricsService,
+    @Inject(ERROR_TRACKER) private readonly tracker: ErrorTracker,
   ) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
@@ -47,6 +50,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         { err: exception, status: result.status, code: result.code, requestId },
         `Unhandled ${result.code}`,
       );
+      const context = getRequestContext();
+      this.tracker.captureException(exception, {
+        requestId,
+        userId: context?.userId,
+        route: request.route?.path,
+        code: result.code,
+        status: result.status,
+        method: request.method,
+        path: pathOnly(request.originalUrl ?? request.url),
+      });
     } else if (rejectedBeforeAccessLog) {
       this.logger.warn(
         {

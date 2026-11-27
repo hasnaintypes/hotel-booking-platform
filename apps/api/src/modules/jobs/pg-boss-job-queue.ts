@@ -1,4 +1,5 @@
 import { Logger } from "@nestjs/common";
+import { SpanStatusCode, trace } from "@opentelemetry/api";
 import { isJobTopic, parseJobPayload } from "@hotel-booking/contracts";
 import type { Job, PgBoss } from "pg-boss" with { "resolution-mode": "import" };
 import { currentRequestId, runWithRequestContext } from "../../common/logging/request-context";
@@ -238,14 +239,43 @@ export class PgBossJobQueue implements JobQueue {
 
   /**
    * Runs a handler under the request id that produced the job, so its logs, outbox writes and
-   * provider calls are correlated with the HTTP request that caused them.
+   * provider calls are correlated with the HTTP request that caused them. The job also runs inside
+   * its own span, tagged with the same request id; when tracing is disabled the global tracer is a
+   * no-op.
    */
   private async runHandler(job: Job<JobPayload>, handler: JobHandler): Promise<void> {
     const context = this.toContext(job);
     this.logger.debug(`Job ${job.name} ${job.id} started`);
     const requestId = job.data?.requestId;
-    if (typeof requestId !== "string") return handler(context);
-    return runWithRequestContext({ requestId }, () => handler(context));
+
+    const run = async () => {
+      const tracer = trace.getTracer("hotel-booking-api/jobs");
+      await tracer.startActiveSpan(
+        `job ${job.name}`,
+        {
+          attributes: {
+            "job.name": job.name,
+            "job.id": job.id,
+            "job.retry_count": job.retryCount ?? 0,
+            ...(typeof requestId === "string" ? { "request.id": requestId } : {}),
+          },
+        },
+        async (span) => {
+          try {
+            await handler(context);
+          } catch (error) {
+            span.recordException(error instanceof Error ? error : String(error));
+            span.setStatus({ code: SpanStatusCode.ERROR });
+            throw error;
+          } finally {
+            span.end();
+          }
+        },
+      );
+    };
+
+    if (typeof requestId !== "string") return run();
+    return runWithRequestContext({ requestId }, run);
   }
 
   /**

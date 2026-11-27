@@ -120,6 +120,26 @@ export const validateEnv = (config: Record<string, unknown>) => {
     throw new Error(`Invalid ENABLE_API_DOCS "${String(apiDocs)}". Use "true" or "false"`);
   }
 
+  const otelEnabled = config.OTEL_ENABLED;
+  if (otelEnabled !== undefined && otelEnabled !== "true" && otelEnabled !== "false") {
+    throw new Error(`Invalid OTEL_ENABLED "${String(otelEnabled)}". Use "true" or "false"`);
+  }
+
+  const sampleRatio = config.OTEL_TRACES_SAMPLER_ARG;
+  if (sampleRatio !== undefined && sampleRatio !== "") {
+    const ratio = Number(sampleRatio);
+    if (!Number.isFinite(ratio) || ratio < 0 || ratio > 1) {
+      throw new Error(
+        `Invalid OTEL_TRACES_SAMPLER_ARG "${String(sampleRatio)}". Use a number from 0 to 1`,
+      );
+    }
+  }
+
+  const sentryDsn = config.SENTRY_DSN;
+  if (sentryDsn !== undefined && sentryDsn !== "" && !/^https?:\/\//.test(String(sentryDsn))) {
+    throw new Error(`Invalid SENTRY_DSN "${String(sentryDsn)}". Use the https DSN from Sentry.`);
+  }
+
   for (const [name, min, max] of INTEGER_SETTINGS) {
     const value = config[name];
     if (value === undefined || value === "") continue;
