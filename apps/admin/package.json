@@ -17,6 +17,7 @@
     "@hotel-booking/api-client": "workspace:*",
     "@hotel-booking/contracts": "workspace:*",
     "@hotel-booking/ui": "workspace:*",
+    "@sentry/react": "11.12.0",
     "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-table": "^9.3.1",
     "lucide-react": "^1.66.0",

@@ -16,6 +16,9 @@ import {
 } from "./common/errors/validation-failed.exception";
 import { AppValidationPipe } from "./common/validation/app-validation.pipe";
 import { REQUEST_ID_HEADER, resolveRequestId } from "./common/logging/request-id";
+import { runWithRequestContext } from "./common/logging/request-context";
+import { httpMetricsMiddleware } from "./common/metrics/http-metrics.middleware";
+import { MetricsService } from "./common/metrics/metrics.service";
 import { InvalidJsonException } from "./common/errors/invalid-json.exception";
 import { OriginGuard } from "./common/guards/origin.guard";
 import { isAllowedOrigin } from "./common/security/allowed-origins";
@@ -64,7 +67,7 @@ export function configureApp(app: NestExpressApplication): void {
   const logger = new Logger("Cors");
 
   app.setGlobalPrefix("api", {
-    exclude: ["health/(.*)", "webhooks/(.*)"],
+    exclude: ["health/(.*)", "webhooks/(.*)", "metrics"],
   });
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: "1" });
 
@@ -86,12 +89,17 @@ export function configureApp(app: NestExpressApplication): void {
   app.set("trust proxy", 1);
 
   // Assign the request id before anything that can reject a request (CORS, body parsing),
-  // so every response and log line is correlated. pino-http reuses `req.id`.
+  // so every response and log line is correlated. pino-http reuses `req.id`, and the async-local
+  // context carries the same id to services, outbox rows, jobs and outbound provider calls.
   app.use((req: Request & { id?: string }, res: Response, next: NextFunction) => {
-    req.id = resolveRequestId(req.headers[REQUEST_ID_HEADER]);
-    res.setHeader("X-Request-Id", req.id);
-    next();
+    const requestId = resolveRequestId(req.headers[REQUEST_ID_HEADER]);
+    req.id = requestId;
+    res.setHeader("X-Request-Id", requestId);
+    runWithRequestContext({ requestId }, next);
   });
+
+  // One observation per response, including requests rejected before routing.
+  app.use(httpMetricsMiddleware(app.get(MetricsService)));
 
   app.use(securityHeaders);
   // Explicit body parsers: bounded size, and parser failures become typed errors

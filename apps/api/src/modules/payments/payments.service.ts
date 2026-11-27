@@ -130,18 +130,20 @@ export class PaymentsService {
     }
 
     try {
-      const intent = await this.stripe.client.paymentIntents.create(
-        {
-          amount: claimed.amountMinor,
-          currency: claimed.currencyCode.toLowerCase(),
-          capture_method: claimed.captureMethod,
-          automatic_payment_methods: { enabled: true },
-          metadata: {
-            bookingId: booking.id,
-            publicReference: booking.publicReference,
+      const intent = await this.stripe.call("paymentIntents.create", () =>
+        this.stripe.client.paymentIntents.create(
+          {
+            amount: claimed.amountMinor,
+            currency: claimed.currencyCode.toLowerCase(),
+            capture_method: claimed.captureMethod,
+            automatic_payment_methods: { enabled: true },
+            metadata: {
+              bookingId: booking.id,
+              publicReference: booking.publicReference,
+            },
           },
-        },
-        { idempotencyKey },
+          { idempotencyKey },
+        ),
       );
 
       const status =
@@ -219,10 +221,12 @@ export class PaymentsService {
     if (!claimed) throw new ConflictException("Payment is already being captured");
 
     try {
-      const intent = await this.stripe.client.paymentIntents.capture(
-        claimed.providerPaymentId as string,
-        requested === claimed.amountMinor ? undefined : { amount_to_capture: requested },
-        { idempotencyKey: `cap_${claimed.id}` },
+      const intent = await this.stripe.call("paymentIntents.capture", () =>
+        this.stripe.client.paymentIntents.capture(
+          claimed.providerPaymentId as string,
+          requested === claimed.amountMinor ? undefined : { amount_to_capture: requested },
+          { idempotencyKey: `cap_${claimed.id}` },
+        ),
       );
       const capturedAmount =
         typeof intent.amount_received === "number" ? intent.amount_received : requested;
@@ -306,12 +310,14 @@ export class PaymentsService {
         status: "pending",
       });
 
-      const refund = await this.stripe.client.refunds.create(
-        {
-          payment_intent: charge.providerPaymentId,
-          amount: requested,
-        },
-        { idempotencyKey: `refund_${refundId}` },
+      const refund = await this.stripe.call("refunds.create", () =>
+        this.stripe.client.refunds.create(
+          {
+            payment_intent: charge.providerPaymentId,
+            amount: requested,
+          },
+          { idempotencyKey: `refund_${refundId}` },
+        ),
       );
 
       const settled = await this.payments.settleRefund(refundRow.id, refund.id);
@@ -384,10 +390,12 @@ export class PaymentsService {
 
     if (intent.status !== "canceled") {
       try {
-        await this.stripe.client.paymentIntents.cancel(
-          charge.providerPaymentId,
-          {},
-          { idempotencyKey: `cancel_${charge.id}` },
+        await this.stripe.call("paymentIntents.cancel", () =>
+          this.stripe.client.paymentIntents.cancel(
+            charge.providerPaymentId,
+            {},
+            { idempotencyKey: `cancel_${charge.id}` },
+          ),
         );
       } catch (error) {
         // A concurrent confirmation can win the race with our cancel.
@@ -464,7 +472,9 @@ export class PaymentsService {
 
   private async retrieveIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent | null> {
     try {
-      return await this.stripe.client.paymentIntents.retrieve(paymentIntentId);
+      return await this.stripe.call("paymentIntents.retrieve", () =>
+        this.stripe.client.paymentIntents.retrieve(paymentIntentId),
+      );
     } catch (error) {
       if (isMissingProviderResource(error)) return null;
       throw error;

@@ -145,9 +145,11 @@ export class ReconciliationService {
 
     let intent: Stripe.PaymentIntent;
     try {
-      intent = await this.stripe.client.paymentIntents.retrieve(payment.providerPaymentId, {
-        expand: ["latest_charge"],
-      });
+      intent = await this.stripe.call("paymentIntents.retrieve", () =>
+        this.stripe.client.paymentIntents.retrieve(payment.providerPaymentId!, {
+          expand: ["latest_charge"],
+        }),
+      );
     } catch (error) {
       if (!isMissingProviderResource(error)) throw error;
       return this.record({
@@ -250,7 +252,9 @@ export class ReconciliationService {
 
     let providerRefund: Stripe.Refund;
     try {
-      providerRefund = await this.stripe.client.refunds.retrieve(refund.providerPaymentId);
+      providerRefund = await this.stripe.call("refunds.retrieve", () =>
+        this.stripe.client.refunds.retrieve(refund.providerPaymentId!),
+      );
     } catch (error) {
       if (!isMissingProviderResource(error)) throw error;
       return this.record({
@@ -318,11 +322,13 @@ export class ReconciliationService {
     const maxPages = 5;
 
     for (let page = 0; page < maxPages; page += 1) {
-      const response = await this.stripe.client.paymentIntents.list({
-        created: { gte: Math.floor(since.getTime() / 1_000) },
-        limit: 100,
-        ...(startingAfter ? { starting_after: startingAfter } : {}),
-      });
+      const response = await this.stripe.call("paymentIntents.list", () =>
+        this.stripe.client.paymentIntents.list({
+          created: { gte: Math.floor(since.getTime() / 1_000) },
+          limit: 100,
+          ...(startingAfter ? { starting_after: startingAfter } : {}),
+        }),
+      );
       results.push(...response.data);
       if (!response.has_more || response.data.length === 0) break;
       startingAfter = response.data[response.data.length - 1]?.id;

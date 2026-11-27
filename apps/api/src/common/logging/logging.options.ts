@@ -2,6 +2,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import { stdSerializers, stdTimeFunctions } from "pino";
 import type { Options } from "pino-http";
 import { REQUEST_ID_HEADER, resolveRequestId } from "./request-id";
+import { requestContextMixin } from "./request-context";
 import { pathOnly, REDACT_CENSOR, REDACT_PATHS, scrubSecrets } from "./redaction";
 
 export type LoggingSettings = {
@@ -34,6 +35,9 @@ export function buildPinoHttpOptions(
     timestamp: stdTimeFunctions.isoTime,
     formatters: { level: (label) => ({ level: label }) },
     redact: { paths: REDACT_PATHS, censor: REDACT_CENSOR },
+    // Every line written while a request or job context is active carries its request id, including
+    // lines from services that never see the HTTP request.
+    mixin: requestContextMixin,
 
     genReqId: (req: IncomingMessage, res: ServerResponse) => {
       const id = resolveRequestId(req.headers[REQUEST_ID_HEADER]);

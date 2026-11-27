@@ -8,8 +8,10 @@ import { AppModule } from "../../src/app.module";
 import { ConfigService } from "@nestjs/config";
 import { configureApp } from "../../src/app.setup";
 import { setupSwagger } from "../../src/config/swagger.config";
+import { ERROR_TRACKER, type ErrorTracker } from "../../src/common/errors/error-tracker";
 import { CloudinaryService } from "../../src/integrations/cloudinary/cloudinary.service";
-import { StripeService } from "../../src/integrations/stripe/stripe.service";
+import { runStripeCall, StripeService } from "../../src/integrations/stripe/stripe.service";
+import { MetricsService } from "../../src/common/metrics/metrics.service";
 import { CLOCK, SystemClock, type Clock } from "../../src/common/clock";
 import { LOG_DESTINATION } from "../../src/common/logging/logging.module";
 import { createFakeCloudinary } from "./fakes";
@@ -43,6 +45,8 @@ export type CreateTestAppOptions = {
    * a restart passes false so the crashed process's rows are still there.
    */
   resetDatabase?: boolean;
+  /** Replaces error reporting, so a test can assert what a 5xx reported and what a 4xx did not. */
+  errorTracker?: ErrorTracker;
 };
 
 /**
@@ -59,7 +63,7 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     ...(options.controllers ?? []),
   ];
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule], controllers })
+  const builder = Test.createTestingModule({ imports: [AppModule], controllers })
     .overrideProvider(CLOCK)
     .useValue(options.clock ?? new SystemClock())
     .overrideProvider(StripeService)
@@ -67,13 +71,28 @@ export async function createTestApp(options: CreateTestAppOptions = {}): Promise
     .overrideProvider(CloudinaryService)
     .useValue(cloudinary)
     .overrideProvider(LOG_DESTINATION)
-    .useValue(logs)
-    .compile();
+    .useValue(logs);
+
+  if (options.errorTracker) {
+    builder.overrideProvider(ERROR_TRACKER).useValue(options.errorTracker);
+  }
+
+  const moduleRef = await builder.compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>({ rawBody: true });
   configureApp(app);
   if (options.docs) setupSwagger(app, app.get(ConfigService));
   await app.init();
+
+  // The real StripeService instruments every call; the double is a plain object, so give it the
+  // same instrumentation against the application's registry.
+  const metrics = app.get(MetricsService);
+  Object.assign(stripe, {
+    call: <T>(operation: string, request: () => Promise<T>) =>
+      runStripeCall(operation, request, (name, outcome, seconds) =>
+        metrics.recordStripeCall(name, outcome, seconds),
+      ),
+  });
 
   if (options.resetDatabase !== false) {
     // Each test file starts from a clean PostgreSQL identity state. Files run in sequence.

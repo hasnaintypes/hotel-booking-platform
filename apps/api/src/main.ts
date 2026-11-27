@@ -1,3 +1,4 @@
+import "./observability/register-tracing";
 import "reflect-metadata";
 import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
@@ -6,15 +7,28 @@ import { NestExpressApplication } from "@nestjs/platform-express";
 import { Logger as AppLogger, PinoLogger } from "nestjs-pino";
 import { AppModule } from "./app.module";
 import { configureApp } from "./app.setup";
+import { ERROR_TRACKER, type ErrorTracker } from "./common/errors/error-tracker";
 import { setupSwagger } from "./config/swagger.config";
+import { tracingSdk } from "./observability/register-tracing";
 
 // Give asynchronous log transports a moment to flush before the process exits.
 const EXIT_FLUSH_MS = 500;
+const TRACKER_FLUSH_MS = 2_000;
 
-function installProcessErrorHandlers(pino: PinoLogger["logger"]) {
+function installProcessErrorHandlers(pino: PinoLogger["logger"], tracker: ErrorTracker) {
   const fatal = (message: string) => (error: unknown) => {
     pino.fatal({ err: error }, message);
-    setTimeout(() => process.exit(1), EXIT_FLUSH_MS).unref();
+    try {
+      tracker.captureException(error, { tags: { process: "api" } });
+    } catch {
+      // A broken tracker must never stop the process from exiting.
+    }
+    void tracker
+      .flush(TRACKER_FLUSH_MS)
+      .catch(() => false)
+      .then(() => {
+        setTimeout(() => process.exit(1), EXIT_FLUSH_MS).unref();
+      });
   };
 
   process.on("uncaughtException", fatal("Uncaught exception, shutting down"));
@@ -31,7 +45,8 @@ async function bootstrap() {
 
   app.useLogger(app.get(AppLogger));
   // PinoLogger is transient-scoped, so it must be resolved rather than fetched.
-  installProcessErrorHandlers((await app.resolve(PinoLogger)).logger);
+  const tracker = app.get<ErrorTracker>(ERROR_TRACKER);
+  installProcessErrorHandlers((await app.resolve(PinoLogger)).logger, tracker);
 
   const config = app.get(ConfigService);
   const port = config.get<number>("port") || 5001;
@@ -41,6 +56,14 @@ async function bootstrap() {
 
   const docsMounted = setupSwagger(app, config);
   app.enableShutdownHooks();
+
+  // Flush any buffered spans before the process exits. Nest's own shutdown hook closes the app;
+  // this one only drains the tracing exporter.
+  const shutdownTracing = () => {
+    void tracingSdk?.shutdown().catch(() => undefined);
+  };
+  process.once("SIGTERM", shutdownTracing);
+  process.once("SIGINT", shutdownTracing);
 
   await app.listen(port, "0.0.0.0");
 

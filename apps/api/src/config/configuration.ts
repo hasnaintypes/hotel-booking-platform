@@ -7,6 +7,13 @@ export const configuration = () => {
 
   return {
     nodeEnv,
+    // Attached to traces and error reports so a deployment can be identified. Operators set this
+    // to the git tag or image tag they deployed.
+    release: process.env.APP_RELEASE ?? "development",
+    sentry: {
+      // Error tracking is off unless a DSN is configured.
+      dsn: process.env.SENTRY_DSN,
+    },
     logging: {
       level:
         process.env.LOG_LEVEL ??
@@ -17,6 +24,11 @@ export const configuration = () => {
       environment: nodeEnv,
     },
     port,
+    metrics: {
+      // When set, `/metrics` requires `Authorization: Bearer <token>`. In production an unset token
+      // disables the endpoint entirely.
+      token: process.env.METRICS_TOKEN,
+    },
     apiDocs: {
       // On outside production; in production only when ENABLE_API_DOCS=true (and then admin-only).
       enabled:

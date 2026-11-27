@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { UsersRepository } from "../../database/repositories/users.repository";
+import { enrichRequestContext } from "../logging/request-context";
 import { activeUserIdFromToken, extractToken } from "./jwt-auth.guard";
 
 /**
@@ -21,7 +22,10 @@ export class OptionalJwtAuthGuard implements CanActivate {
 
     if (token) {
       const userId = await activeUserIdFromToken(this.jwtService, this.users, token);
-      if (userId) request.user = { userId };
+      if (userId) {
+        request.user = { userId };
+        enrichRequestContext({ userId });
+      }
     }
 
     return true;

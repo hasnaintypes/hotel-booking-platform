@@ -14,6 +14,7 @@ const NON_API_ROUTES: RouteEntry[] = [
   { method: "GET", segments: ["health", "live"] },
   { method: "GET", segments: ["health", "ready"] },
   { method: "POST", segments: ["webhooks", "stripe"] },
+  { method: "GET", segments: ["metrics"] },
 ];
 
 const segmentsOf = (path: string) => path.split("/").filter(Boolean);
