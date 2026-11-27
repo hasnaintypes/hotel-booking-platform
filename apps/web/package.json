@@ -18,6 +18,7 @@
     "@hotel-booking/api-client": "workspace:*",
     "@hotel-booking/contracts": "workspace:*",
     "@hotel-booking/ui": "workspace:*",
+    "@sentry/react": "11.12.0",
     "@stripe/react-stripe-js": "^7.0.1",
     "@stripe/stripe-js": "^10.2.0",
     "@tanstack/react-query": "^5.105.0",
